@@ -1,0 +1,77 @@
+@startuml
+title <size:24>Component View: Discordy - Desktop client</size>\n<size:24>Desktop client components.</size>
+
+set separator none
+left to right direction
+
+<style>
+  root {
+    BackgroundColor: #ffffff
+    FontColor: #444444
+  }
+</style>
+
+!include <C4/C4>
+!include <C4/C4_Context>
+!include <C4/C4_Container>
+!include <C4/C4_Component>
+
+System_Boundary("Discordy_boundary", "Discordy", $tags="") {
+  Container_Boundary("Discordy.Desktopclient_boundary", "Desktop client", $tags="") {
+    Component(Discordy.Desktopclient.Mainprocess, "Main process", $techn="Electron main", $descr="Window lifecycle, tray, global hotkeys, voics:// deep links, notifications, single instance.", $tags="", $link="")
+    Component(Discordy.Desktopclient.Autoupdater, "Auto-updater", $techn="electron-updater", $descr="Checks the update feed and installs new versions.", $tags="", $link="")
+    Component(Discordy.Desktopclient.Capturepicker, "Capture picker", $techn="desktopCapturer", $descr="Screen/window/app capture with Windows loopback audio and quality presets.", $tags="", $link="")
+    Component(Discordy.Desktopclient.Preloadbridge, "Preload bridge", $techn="contextBridge", $descr="Typed, minimal IPC surface exposed to the sandboxed renderer.", $tags="", $link="")
+    Component(Discordy.Desktopclient.Featureslices, "Feature slices", $techn="React, feature-sliced", $descr="Guilds, chat, DMs, voice stage, settings, server settings, command palette.", $tags="", $link="")
+    Component(Discordy.Desktopclient.Stores, "Stores", $techn="Zustand, TanStack Query", $descr="Client state fed by gateway dispatches; REST cache.", $tags="", $link="")
+    Component(Discordy.Desktopclient.RESTclient, "REST client", $techn="TypeScript", $descr="Typed client generated from contracts; rate-limit aware.", $tags="", $link="")
+    Component(Discordy.Desktopclient.Gatewayclient, "Gateway client", $techn="WebSocket", $descr="Heartbeat, resume, reconnect with backoff, op 20/21/22 handling.", $tags="", $link="")
+    Component(Discordy.Desktopclient.Voiceclient, "Voice client", $techn="WebRTC", $descr="Voice WebSocket, local SDP synthesis, simulcast, DAVE frame E2EE, RNNoise, VAD/PTT.", $tags="", $link="")
+    Component(Discordy.Desktopclient.Ephemeralmode, "Ephemeral mode", $techn="TypeScript", $descr="MLS group per chat; encrypts/decrypts E2EE envelopes.", $tags="", $link="")
+    Component(Discordy.Desktopclient.P2Pmode, "P2P mode", $techn="WebRTC", $descr="WebRTC data channels; identity-signed DTLS fingerprints.", $tags="", $link="")
+    Component(Discordy.Desktopclient.Nativecrypto, "Native crypto", $techn="Rust, napi-rs", $descr="OpenMLS, Ed25519 identity keys, SQLCipher local history, OS keychain.", $tags="", $link="")
+  }
+
+  Container(Discordy.voicesignaling, "voice-signaling", $techn="Elixir, Phoenix", $descr="Voice WebSocket, media setup, speaking indicators, DAVE MLS relay, etcd registration, SFU supervision.", $tags="", $link="")
+  Container(Discordy.sfu, "sfu", $techn="Rust, str0m", $descr="Home-grown selective forwarding unit: ICE-lite, DTLS-SRTP, simulcast/SVC layer selection, RTP rewrite, RTCP/BWE.", $tags="", $link="")
+  ContainerDb(Discordy.MinIO, "MinIO", $techn="MinIO (S3 API)", $descr="Assets, attachments and the client update feed.", $tags="", $link="")
+  Container(Discordy.coturn, "coturn", $techn="coturn", $descr="TURN relay for P2P data channels when NAT requires it (never for voice).", $tags="", $link="")
+  Container(Discordy.api, "api", $techn="Rust, Axum, SQLx", $descr="Auth, users, devices, relationships, guilds, channels, roles, permissions, invites, bots, interactions, webhooks, MLS key packages, admin endpoints; transactional outbox.", $tags="", $link="")
+  Container(Discordy.messages, "messages", $techn="Rust, Axum, scylla driver", $descr="Standard message CRUD and history, Snowflake IDs, request coalescing, reactions, pins, read states, attachments.", $tags="", $link="")
+  Container(Discordy.gateway, "gateway", $techn="Elixir, Phoenix, libcluster", $descr="Client WebSocket protocol, sessions, guild processes, presence, typing, fan-out, E2EE relay, P2P signaling, voice allocation.", $tags="", $link="")
+}
+
+Rel(Discordy.api, Discordy.MinIO, "Presigns asset uploads", $techn="S3", $tags="", $link="")
+Rel(Discordy.api, Discordy.messages, "Last message ids", $techn="HTTP /internal/v1", $tags="", $link="")
+Rel(Discordy.messages, Discordy.MinIO, "Presigns attachment uploads", $techn="S3", $tags="", $link="")
+Rel(Discordy.messages, Discordy.api, "Channel access, bot token introspection", $techn="HTTP /internal/v1", $tags="", $link="")
+Rel(Discordy.gateway, Discordy.api, "Ready payload, guild state, access, introspect", $techn="HTTP /internal/v1", $tags="", $link="")
+Rel(Discordy.gateway, Discordy.messages, "Last message ids", $techn="HTTP /internal/v1", $tags="", $link="")
+Rel(Discordy.voicesignaling, Discordy.sfu, "Controls sessions", $techn="NDJSON over TCP 127.0.0.1:4101", $tags="", $link="")
+Rel(Discordy.Desktopclient.Mainprocess, Discordy.Desktopclient.Autoupdater, "Starts", $techn="", $tags="", $link="")
+Rel(Discordy.Desktopclient.Mainprocess, Discordy.Desktopclient.Capturepicker, "Opens on screen-share request", $techn="", $tags="", $link="")
+Rel(Discordy.Desktopclient.Mainprocess, Discordy.Desktopclient.Preloadbridge, "Exposes IPC through", $techn="", $tags="", $link="")
+Rel(Discordy.Desktopclient.Featureslices, Discordy.Desktopclient.Preloadbridge, "Calls native features through", $techn="", $tags="", $link="")
+Rel(Discordy.Desktopclient.Featureslices, Discordy.Desktopclient.Stores, "Reads/writes", $techn="", $tags="", $link="")
+Rel(Discordy.Desktopclient.Stores, Discordy.Desktopclient.RESTclient, "Fetches via", $techn="", $tags="", $link="")
+Rel(Discordy.Desktopclient.Gatewayclient, Discordy.Desktopclient.Stores, "Feeds dispatches into", $techn="", $tags="", $link="")
+Rel(Discordy.Desktopclient.Featureslices, Discordy.Desktopclient.Voiceclient, "Joins calls with", $techn="", $tags="", $link="")
+Rel(Discordy.Desktopclient.Featureslices, Discordy.Desktopclient.Ephemeralmode, "Sends ephemeral messages with", $techn="", $tags="", $link="")
+Rel(Discordy.Desktopclient.Featureslices, Discordy.Desktopclient.P2Pmode, "Sends P2P messages with", $techn="", $tags="", $link="")
+Rel(Discordy.Desktopclient.Ephemeralmode, Discordy.Desktopclient.Gatewayclient, "Sends op 20/21 through", $techn="", $tags="", $link="")
+Rel(Discordy.Desktopclient.P2Pmode, Discordy.Desktopclient.Gatewayclient, "Signals via op 22 through", $techn="", $tags="", $link="")
+Rel(Discordy.Desktopclient.Ephemeralmode, Discordy.Desktopclient.Nativecrypto, "MLS operations, local history", $techn="", $tags="", $link="")
+Rel(Discordy.Desktopclient.P2Pmode, Discordy.Desktopclient.Nativecrypto, "Identity signatures, local history", $techn="", $tags="", $link="")
+Rel(Discordy.Desktopclient.Voiceclient, Discordy.Desktopclient.Nativecrypto, "DAVE key derivation", $techn="", $tags="", $link="")
+Rel(Discordy.Desktopclient.Voiceclient, Discordy.Desktopclient.Capturepicker, "Gets capture streams from", $techn="", $tags="", $link="")
+Rel(Discordy.Desktopclient.Autoupdater, Discordy.MinIO, "Downloads updates from", $techn="HTTPS", $tags="", $link="")
+Rel(Discordy.Desktopclient.RESTclient, Discordy.api, "Calls", $techn="HTTPS/JSON", $tags="", $link="")
+Rel(Discordy.Desktopclient.RESTclient, Discordy.messages, "Calls", $techn="HTTPS/JSON", $tags="", $link="")
+Rel(Discordy.Desktopclient.Gatewayclient, Discordy.gateway, "Connects to", $techn="WSS", $tags="", $link="")
+Rel(Discordy.Desktopclient.Voiceclient, Discordy.voicesignaling, "Connects to", $techn="WSS", $tags="", $link="")
+Rel(Discordy.Desktopclient.Voiceclient, Discordy.sfu, "Streams media to", $techn="DTLS-SRTP/UDP", $tags="", $link="")
+Rel(Discordy.Desktopclient.P2Pmode, Discordy.coturn, "Relays through when needed", $techn="TURN", $tags="", $link="")
+
+SHOW_LEGEND(true)
+hide stereotypes
+@enduml

@@ -1,0 +1,68 @@
+@startuml
+title <size:24>Deployment View: Discordy - region-template</size>\n<size:24>A voice region rendered from gitops/regions/_template by regionctl.</size>
+
+set separator none
+left to right direction
+
+<style>
+  root {
+    BackgroundColor: #ffffff
+    FontColor: #444444
+  }
+</style>
+
+!include <C4/C4>
+!include <C4/C4_Context>
+!include <C4/C4_Container>
+!include <C4/C4_Deployment>
+
+Deployment_Node(regiontemplate.Userworkstation, "User workstation", $type="Windows / macOS / Linux", $descr="", $tags="", $link="") {
+  Container(regiontemplate.Userworkstation.Desktopclient_1, "Desktop client", $techn="Electron, React, TypeScript, napi-rs", $descr="End-user application for Windows (primary), macOS and Linux.", $tags="", $link="")
+}
+
+Deployment_Node(regiontemplate.Cloudflare, "Cloudflare", $type="Cloudflare", $descr="", $tags="", $link="") {
+  Deployment_Node(regiontemplate.Cloudflare.Tunneledge, "Tunnel edge", $type="Cloudflare Tunnel", $descr="discordy-rtc-<region>.voics.nl (proxied) for the voice WebSocket.", $tags="", $link="")
+  Deployment_Node(regiontemplate.Cloudflare.DNS, "DNS", $type="Cloudflare DNS", $descr="Created by regionctl through the Cloudflare API.", $tags="", $link="")
+}
+
+Deployment_Node(regiontemplate.Controlplanegenserv, "Control plane (gen-serv)", $type="microk8s 1.35", $descr="Shared by every region", $tags="", $link="") {
+  Deployment_Node(regiontemplate.Controlplanegenserv.voicsapps, "voics-apps", $type="Kubernetes namespace", $descr="", $tags="", $link="") {
+    Container(regiontemplate.Controlplanegenserv.voicsapps.gateway_1, "gateway", $techn="Elixir, Phoenix, libcluster", $descr="Client WebSocket protocol, sessions, guild processes, presence, typing, fan-out, E2EE relay, P2P signaling, voice allocation.", $tags="", $link="")
+  }
+
+  Deployment_Node(regiontemplate.Controlplanegenserv.voicsdata, "voics-data", $type="Kubernetes namespace", $descr="", $tags="", $link="") {
+    ContainerDb(regiontemplate.Controlplanegenserv.voicsdata.etcd_1, "etcd", $techn="etcd 3.6", $descr="Voice-server discovery under leased keys.", $tags="", $link="")
+    ContainerQueue(regiontemplate.Controlplanegenserv.voicsdata.Redpanda_1, "Redpanda", $techn="Redpanda 25.x (Kafka API)", $descr="Event bus: discordy.{guild,message,user,interaction,telemetry,audit}.v1.", $tags="", $link="")
+  }
+
+}
+
+Deployment_Node(regiontemplate.Regionsiteregion, "Region site <region>", $type="", $descr="Any location with a public IPv4 and a forwardable UDP port", $tags="", $link="") {
+  Deployment_Node(regiontemplate.Regionsiteregion.Siterouterfirewall, "Site router / firewall", $type="Router", $descr="UDP 50000 -> region node; TCP 443 outbound only.", $tags="", $link="")
+  Deployment_Node(regiontemplate.Regionsiteregion.Regionnodenode, "Region node <node>", $type="Ubuntu 24.04, microk8s (joined or standalone)", $descr="2 vCPU, 2 GB RAM, >=100 Mbit/s symmetric (sizing in runbook)", $tags="", $link="") {
+    Deployment_Node(regiontemplate.Regionsiteregion.Regionnodenode.cloudflared, "cloudflared", $type="cloudflared", $descr="Tunnel connector for discordy-rtc-<region> (standalone clusters only).", $tags="", $link="")
+    Deployment_Node(regiontemplate.Regionsiteregion.Regionnodenode.voicsvoice, "voics-voice", $type="Kubernetes namespace", $descr="", $tags="", $link="") {
+      Deployment_Node(regiontemplate.Regionsiteregion.Regionnodenode.voicsvoice.voiceregion, "voice-<region>", $type="Deployment", $descr="hostNetwork, UDP 50000; rendered from gitops/regions/_template", $tags="", $link="") {
+        Container(regiontemplate.Regionsiteregion.Regionnodenode.voicsvoice.voiceregion.voicesignaling_1, "voice-signaling", $techn="Elixir, Phoenix", $descr="Voice WebSocket, media setup, speaking indicators, DAVE MLS relay, etcd registration, SFU supervision.", $tags="", $link="")
+        Container(regiontemplate.Regionsiteregion.Regionnodenode.voicsvoice.voiceregion.sfu_1, "sfu", $techn="Rust, str0m", $descr="Home-grown selective forwarding unit: ICE-lite, DTLS-SRTP, simulcast/SVC layer selection, RTP rewrite, RTCP/BWE.", $tags="", $link="")
+      }
+
+    }
+
+  }
+
+}
+
+Rel(regiontemplate.Userworkstation.Desktopclient_1, regiontemplate.Controlplanegenserv.voicsapps.gateway_1, "Real-time events, E2EE envelopes, P2P signaling", $techn="WSS/JSON", $tags="", $link="")
+Rel(regiontemplate.Controlplanegenserv.voicsapps.gateway_1, regiontemplate.Controlplanegenserv.voicsdata.etcd_1, "Watches voice nodes", $techn="gRPC", $tags="", $link="")
+Rel(regiontemplate.Controlplanegenserv.voicsapps.gateway_1, regiontemplate.Controlplanegenserv.voicsdata.Redpanda_1, "Consumes all topics; publishes telemetry", $techn="Kafka", $tags="", $link="")
+Rel(regiontemplate.Userworkstation.Desktopclient_1, regiontemplate.Regionsiteregion.Regionnodenode.voicsvoice.voiceregion.voicesignaling_1, "Voice WebSocket", $techn="WSS/JSON", $tags="", $link="")
+Rel(regiontemplate.Regionsiteregion.Regionnodenode.voicsvoice.voiceregion.voicesignaling_1, regiontemplate.Controlplanegenserv.voicsdata.etcd_1, "Registers node under a lease", $techn="gRPC", $tags="", $link="")
+Rel(regiontemplate.Regionsiteregion.Regionnodenode.voicsvoice.voiceregion.voicesignaling_1, regiontemplate.Controlplanegenserv.voicsdata.Redpanda_1, "Publishes voice quality telemetry", $techn="Kafka", $tags="", $link="")
+Rel(regiontemplate.Userworkstation.Desktopclient_1, regiontemplate.Regionsiteregion.Regionnodenode.voicsvoice.voiceregion.sfu_1, "Voice, video and screen share", $techn="DTLS-SRTP over UDP", $tags="", $link="")
+Rel(regiontemplate.Regionsiteregion.Regionnodenode.voicsvoice.voiceregion.voicesignaling_1, regiontemplate.Regionsiteregion.Regionnodenode.voicsvoice.voiceregion.sfu_1, "Controls sessions", $techn="NDJSON over TCP 127.0.0.1:4101", $tags="", $link="")
+Rel(regiontemplate.Cloudflare.Tunneledge, regiontemplate.Regionsiteregion.Regionnodenode.cloudflared, "Proxies voice WebSocket", $techn="QUIC/HTTP2", $tags="", $link="")
+
+SHOW_LEGEND(true)
+hide stereotypes
+@enduml

@@ -1,0 +1,88 @@
+@startuml
+title <size:24>Component View: Discordy - gateway</size>\n<size:24>gateway components.</size>
+
+set separator none
+left to right direction
+
+<style>
+  root {
+    BackgroundColor: #ffffff
+    FontColor: #444444
+  }
+</style>
+
+!include <C4/C4>
+!include <C4/C4_Context>
+!include <C4/C4_Container>
+!include <C4/C4_Component>
+
+System_Boundary("Discordy_boundary", "Discordy", $tags="") {
+  Container_Boundary("Discordy.gateway_boundary", "gateway", $tags="") {
+    Component(Discordy.gateway.Gatewaysocket, "Gateway socket", $techn="Phoenix socket", $descr="/gateway?v=1&encoding=json transport; close codes 4000-4014.", $tags="", $link="")
+    Component(Discordy.gateway.Protocolcodec, "Protocol codec", $techn="Elixir", $descr="Encodes/decodes {op, d, s, t} frames for every P7 opcode.", $tags="", $link="")
+    Component(Discordy.gateway.InternalHTTP, "Internal HTTP", $techn="Plug", $descr="Admin stats, voice node drain/undrain.", $tags="", $link="")
+    Component(Discordy.gateway.Session, "Session", $techn="GenServer", $descr="GenServer per connection: identify, heartbeat, sequence, resume buffer, 120/60 s rate limit.", $tags="", $link="")
+    Component(Discordy.gateway.Guildprocess, "Guild process", $techn="GenServer", $descr="GenServer per guild: members, roles, channels, permission cache, voice state.", $tags="", $link="")
+    Component(Discordy.gateway.Guildregistry, "Guild registry", $techn="Horde / :pg", $descr="Cluster-wide process registry and lazy start.", $tags="", $link="")
+    Component(Discordy.gateway.Fanout, "Fan-out", $techn="Elixir", $descr="Filters recipients by VIEW_CHANNEL and intents; dispatches to sessions.", $tags="", $link="")
+    Component(Discordy.gateway.Permissioncalculator, "Permission calculator", $techn="Elixir (domain)", $descr="Port of api's algorithm, tested with the same tables.", $tags="", $link="")
+    Component(Discordy.gateway.Presence, "Presence", $techn="Elixir", $descr="Aggregates a user's sessions; PRESENCE_UPDATE to guilds and friends.", $tags="", $link="")
+    Component(Discordy.gateway.Voiceallocator, "Voice allocator", $techn="GenServer", $descr="Picks the least-utilised healthy voice node in the guild's region; reallocates on loss.", $tags="", $link="")
+    Component(Discordy.gateway.Voicestateregistry, "Voice-state registry", $techn="Elixir", $descr="Who is in which voice channel; VOICE_STATE_UPDATE fan-out.", $tags="", $link="")
+    Component(Discordy.gateway.E2EEinbox, "E2EE inbox", $techn="Elixir", $descr="Per-device ciphertext streams, ACK deletion, 7-day TTL sweeper, replay after READY.", $tags="", $link="")
+    Component(Discordy.gateway.P2Prelay, "P2P relay", $techn="Elixir", $descr="Relays op 22 to online devices only; never persists.", $tags="", $link="")
+    Component(Discordy.gateway.WatchTogetherrelay, "Watch Together relay", $techn="Elixir", $descr="Relays op 24 with the server clock.", $tags="", $link="")
+    Component(Discordy.gateway.Eventconsumers, "Event consumers", $techn="brod", $descr="One consumer group per topic; P6 routing; 10k-entry dedup LRU.", $tags="", $link="")
+    Component(Discordy.gateway.apiclient, "api client", $techn="Req", $descr="ready, guild state, channel access, introspect.", $tags="", $link="")
+    Component(Discordy.gateway.Valkeyadapter, "Valkey adapter", $techn="Redix", $descr="gw:*, e2ee:*, voice:*, presence:* keys.", $tags="", $link="")
+    Component(Discordy.gateway.etcdwatcher, "etcd watcher", $techn="eetcd", $descr="Watches /discordy/voice/nodes/.", $tags="", $link="")
+    Component(Discordy.gateway.Telemetrypublisher, "Telemetry publisher", $techn="brod", $descr="VOICE_TELEMETRY and USAGE_TICK to discordy.telemetry.v1.", $tags="", $link="")
+  }
+
+  ContainerQueue(Discordy.Redpanda, "Redpanda", $techn="Redpanda 25.x (Kafka API)", $descr="Event bus: discordy.{guild,message,user,interaction,telemetry,audit}.v1.", $tags="", $link="")
+  ContainerDb(Discordy.Valkey, "Valkey", $techn="Valkey 8", $descr="Resume buffers, presence, rate limits, voice allocations, E2EE inboxes (AOF on).", $tags="", $link="")
+  ContainerDb(Discordy.etcd, "etcd", $techn="etcd 3.6", $descr="Voice-server discovery under leased keys.", $tags="", $link="")
+  Container(Discordy.api, "api", $techn="Rust, Axum, SQLx", $descr="Auth, users, devices, relationships, guilds, channels, roles, permissions, invites, bots, interactions, webhooks, MLS key packages, admin endpoints; transactional outbox.", $tags="", $link="")
+}
+
+Rel(Discordy.api, Discordy.Redpanda, "Publishes guild, user, interaction, audit events", $techn="Kafka", $tags="", $link="")
+Rel(Discordy.api, Discordy.Valkey, "Rate limits and caches", $techn="RESP", $tags="", $link="")
+Rel(Discordy.gateway.Gatewaysocket, Discordy.gateway.Protocolcodec, "Decodes/encodes frames with", $techn="", $tags="", $link="")
+Rel(Discordy.gateway.Gatewaysocket, Discordy.gateway.Session, "Starts one per connection", $techn="", $tags="", $link="")
+Rel(Discordy.gateway.Session, Discordy.gateway.apiclient, "Fetches ready payload, introspects bot tokens", $techn="", $tags="", $link="")
+Rel(Discordy.gateway.Session, Discordy.gateway.Valkeyadapter, "Resume buffer gw:resume:<session_id>", $techn="", $tags="", $link="")
+Rel(Discordy.gateway.Session, Discordy.gateway.Guildregistry, "Subscribes to guilds via", $techn="", $tags="", $link="")
+Rel(Discordy.gateway.Session, Discordy.gateway.Presence, "Reports status to", $techn="", $tags="", $link="")
+Rel(Discordy.gateway.Session, Discordy.gateway.Voicestateregistry, "Forwards op 4 to", $techn="", $tags="", $link="")
+Rel(Discordy.gateway.Session, Discordy.gateway.E2EEinbox, "Forwards op 20/21 to", $techn="", $tags="", $link="")
+Rel(Discordy.gateway.Session, Discordy.gateway.P2Prelay, "Forwards op 22 to", $techn="", $tags="", $link="")
+Rel(Discordy.gateway.Session, Discordy.gateway.WatchTogetherrelay, "Forwards op 24 to", $techn="", $tags="", $link="")
+Rel(Discordy.gateway.Session, Discordy.gateway.Telemetrypublisher, "Forwards op 23 to", $techn="", $tags="", $link="")
+Rel(Discordy.gateway.Guildregistry, Discordy.gateway.Guildprocess, "Locates or starts", $techn="", $tags="", $link="")
+Rel(Discordy.gateway.Guildprocess, Discordy.gateway.apiclient, "Loads guild state", $techn="", $tags="", $link="")
+Rel(Discordy.gateway.Guildprocess, Discordy.gateway.Permissioncalculator, "Computes VIEW_CHANNEL with", $techn="", $tags="", $link="")
+Rel(Discordy.gateway.Guildprocess, Discordy.gateway.Fanout, "Dispatches through", $techn="", $tags="", $link="")
+Rel(Discordy.gateway.Guildprocess, Discordy.gateway.Voiceallocator, "Allocates voice server via", $techn="", $tags="", $link="")
+Rel(Discordy.gateway.Fanout, Discordy.gateway.Session, "Delivers DISPATCH to", $techn="", $tags="", $link="")
+Rel(Discordy.gateway.Eventconsumers, Discordy.gateway.Guildregistry, "Routes guild events to", $techn="", $tags="", $link="")
+Rel(Discordy.gateway.Eventconsumers, Discordy.gateway.Fanout, "Routes targeted events to", $techn="", $tags="", $link="")
+Rel(Discordy.gateway.Presence, Discordy.gateway.Valkeyadapter, "presence:*", $techn="", $tags="", $link="")
+Rel(Discordy.gateway.Presence, Discordy.gateway.Fanout, "Publishes PRESENCE_UPDATE through", $techn="", $tags="", $link="")
+Rel(Discordy.gateway.Voicestateregistry, Discordy.gateway.Guildprocess, "Tracks state in", $techn="", $tags="", $link="")
+Rel(Discordy.gateway.Voiceallocator, Discordy.gateway.etcdwatcher, "Discovers nodes via", $techn="", $tags="", $link="")
+Rel(Discordy.gateway.Voiceallocator, Discordy.gateway.Valkeyadapter, "voice:alloc:<srv_id>", $techn="", $tags="", $link="")
+Rel(Discordy.gateway.E2EEinbox, Discordy.gateway.Valkeyadapter, "e2ee:inbox:<device_id>, e2ee:ttl", $techn="", $tags="", $link="")
+Rel(Discordy.gateway.E2EEinbox, Discordy.gateway.Fanout, "Delivers envelopes through", $techn="", $tags="", $link="")
+Rel(Discordy.gateway.P2Prelay, Discordy.gateway.Fanout, "Delivers signals through", $techn="", $tags="", $link="")
+Rel(Discordy.gateway.WatchTogetherrelay, Discordy.gateway.Fanout, "Delivers sync events through", $techn="", $tags="", $link="")
+Rel(Discordy.gateway.InternalHTTP, Discordy.gateway.Voiceallocator, "Drain/undrain", $techn="", $tags="", $link="")
+Rel(Discordy.gateway.InternalHTTP, Discordy.gateway.Guildregistry, "Stats", $techn="", $tags="", $link="")
+Rel(Discordy.gateway.apiclient, Discordy.api, "Calls", $techn="HTTP /internal/v1", $tags="", $link="")
+Rel(Discordy.gateway.Eventconsumers, Discordy.Redpanda, "Consumes", $techn="Kafka", $tags="", $link="")
+Rel(Discordy.gateway.Telemetrypublisher, Discordy.Redpanda, "Publishes", $techn="Kafka", $tags="", $link="")
+Rel(Discordy.gateway.Valkeyadapter, Discordy.Valkey, "RESP", $techn="", $tags="", $link="")
+Rel(Discordy.gateway.etcdwatcher, Discordy.etcd, "Watches", $techn="gRPC", $tags="", $link="")
+
+SHOW_LEGEND(true)
+hide stereotypes
+@enduml

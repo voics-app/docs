@@ -1,0 +1,72 @@
+@startuml code-voice-allocator
+title C4 code (UML): VoiceAllocator — gateway
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+hide empty members
+
+class VoiceAllocator <<GenServer>> {
+  + allocate(srv_id, channel): {:ok, VoiceNode} | {:error, :no_capacity}
+  + reallocate(node_id): :ok
+  + drain(node_id) / undrain(node_id)
+}
+
+class RegionResolver <<pure>> {
+  + resolve(channel_region, guild_region, default): region
+}
+
+class NodeSelector <<pure>> {
+  + pick([VoiceNode]): VoiceNode | nil
+}
+
+class VoiceNode <<struct>> {
+  node_id
+  region
+  ws_url
+  public_ip
+  udp_port
+  users: integer
+  cpu_pct: float
+  egress_bps: integer
+  draining: boolean
+  version
+}
+
+interface NodeDirectory <<behaviour>> {
+  + list(region): [VoiceNode]
+  + subscribe(region): :ok
+}
+
+class EtcdNodeDirectory <<adapter>>
+interface AllocationStore <<behaviour>> {
+  + get(srv_id): node_id | nil
+  + put(srv_id, node_id): :ok
+  + delete(srv_id): :ok
+}
+class ValkeyAllocationStore <<adapter>>
+class VoiceTokenSigner {
+  + sign(sub, sid, srv, chn, node, e2ee): jwt  ' HS256, 60 s
+}
+class VoiceServerNotifier {
+  + notify(sessions, token, guild_id, channel_id, endpoint, region)
+}
+
+VoiceAllocator ..> RegionResolver : 1
+VoiceAllocator --> NodeDirectory : 2
+VoiceAllocator ..> NodeSelector : 3
+VoiceAllocator --> AllocationStore : 4
+VoiceAllocator ..> VoiceTokenSigner : 5
+VoiceAllocator ..> VoiceServerNotifier : 6
+NodeSelector ..> VoiceNode
+EtcdNodeDirectory ..|> NodeDirectory
+ValkeyAllocationStore ..|> AllocationStore
+
+note right of NodeSelector
+  filter(not draining)
+  |> min_by({users, cpu_pct})
+end note
+note bottom of EtcdNodeDirectory
+  Watches /discordy/voice/nodes/<region>/.
+  A key deleted by lease expiry triggers
+  VoiceAllocator.reallocate(node_id).
+end note
+@enduml

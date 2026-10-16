@@ -1,0 +1,57 @@
+@startuml code-request-coalescer
+title C4 code (UML): Request coalescer — messages
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+hide empty members
+
+interface MessageRepository <<port>> {
+  + history(q: HistoryQuery): Result<Vec<Message>>
+  + insert(m: Message): Result<()>
+  + update(m: Message): Result<()>
+  + delete(channel_id, message_id): Result<()>
+}
+
+class GetHistory <<use case>> {
+  - repo: Arc<dyn MessageRepository>
+  + execute(channel_id, before, after, around, limit): Result<Vec<Message>>
+}
+
+class HistoryQuery <<Hash + Eq + Clone>> {
+  + channel_id: Snowflake
+  + bucket: i32
+  + before: Option<Snowflake>
+  + after: Option<Snowflake>
+  + around: Option<Snowflake>
+  + limit: u16
+}
+
+class "Coalescer<K, V>" as Coalescer {
+  - in_flight: DashMap<K, Shared<BoxFuture<Result<V, Arc<E>>>>>
+  + get_or_load(key: K, loader: FnOnce() -> Future<Result<V>>): Result<V>
+}
+
+class CoalescingMessageRepository <<decorator>> {
+  - inner: Arc<ScyllaMessageRepository>
+  - coalescer: Coalescer<HistoryQuery, Vec<Message>>
+}
+
+class ScyllaMessageRepository <<adapter>> {
+  - session: Arc<Session>
+  - prepared: PreparedStatements
+}
+
+GetHistory --> MessageRepository
+CoalescingMessageRepository ..|> MessageRepository
+ScyllaMessageRepository ..|> MessageRepository
+CoalescingMessageRepository --> Coalescer
+CoalescingMessageRepository --> ScyllaMessageRepository : loads / writes
+Coalescer ..> HistoryQuery : key
+
+note bottom of Coalescer
+  First caller inserts a Shared future and runs the loader.
+  Concurrent callers with an equal key clone and await it.
+  The entry is removed when the future resolves, so results
+  are never cached beyond the in-flight window.
+  Test: 100 concurrent identical calls => 1 repository call.
+end note
+@enduml
