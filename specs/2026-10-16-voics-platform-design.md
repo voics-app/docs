@@ -1,4 +1,4 @@
-# Voics Platform — Design Specification
+# Discordy Platform — Design Specification
 
 | | |
 |---|---|
@@ -6,6 +6,7 @@
 | Date | 2026-10-16 |
 | Owner | @oussamaelhajoui |
 | GitHub org | `discordy-voics` (private repos) |
+| Product name | **Discordy** (lives at `discordy.voics.nl`; the existing `voics.nl` / `app.voics.nl` product is unrelated and untouched) |
 | Scope | Full Discord-equivalent platform, excluding payments (Nitro, boosts, shop) |
 
 ## 1. Goals
@@ -167,7 +168,7 @@ Modelled on *How Discord Handles 2.5M Concurrent Voice Users Using WebRTC*. Each
 | Voice server | One pod per node: `voice-signaling` (Elixir) controls a local `sfu` (Rust/str0m) over a Unix socket. Signaling issues stream IDs and keys and forwards speaking indicators. |
 | Allocation | **All voice channels of a guild share one voice server.** The first joiner triggers the gateway guild process to pick the **least-utilised healthy server in the guild's region** from etcd. Region is set per guild and overridable per channel. |
 | Discovery | Each voice server writes `/voics/voice/<region>/<node>` to etcd with a 10 s TTL lease, carrying users, CPU and egress. A missed lease removes it from allocation. |
-| Handshake | `VOICE_STATE_UPDATE` (gateway) → `VOICE_SERVER_UPDATE {endpoint, token}` → client opens the **voice WebSocket** at `wss://<region>.<rtc-domain>` → join payload of about 1 KB (SSRCs, codecs, crypto). The client synthesises SDP locally; the server is **ICE-lite**; there is no TURN for voice. Client IPs are never exposed to peers. |
+| Handshake | `VOICE_STATE_UPDATE` (gateway) → `VOICE_SERVER_UPDATE {endpoint, token}` → client opens the **voice WebSocket** at `wss://discordy-rtc-<region>.voics.nl` → join payload of about 1 KB (SSRCs, codecs, crypto). The client synthesises SDP locally; the server is **ICE-lite**; there is no TURN for voice. Client IPs are never exposed to peers. |
 | Media | Opus with FEC and **DTX**: no packets in silence, and the SFU rewrites RTP sequence numbers and timestamps. Video uses VP9 SVC, AV1 or H.264 simulcast with per-subscriber layer selection driven by RTCP/REMB/TWCC bandwidth estimation. |
 | Failover | **SFU crash** → signaling restarts it and rebuilds state without client involvement (also used for zero-downtime upgrades). **Server loss or DDoS** → the lease expires or the node is drained → the client's voice WebSocket drops → the client asks the gateway → the guild process reassigns → the client reconnects. |
 | E2EE | DAVE-style: frame-level encryption with keys derived from the call's MLS group. Always on in Ephemeral and P2P chats, opt-in per channel in Standard. P2P-mode DM calls are direct peer connections with no SFU. |
@@ -255,17 +256,20 @@ Modelled on *How Discord Handles 2.5M Concurrent Voice Users Using WebRTC*. Each
 - **Flux**: bootstrapped to `discordy-voics/gitops` with the layout `clusters/gen-serv/{infrastructure,apps,regions}.yaml`. Infrastructure is split into controllers and configs, and applied in dependency order. Image automation follows semver tags from GHCR and commits the bumps to git.
 - **Ingress**: `cloudflared` → ingress-nginx → services, with TLS at Cloudflare.
 - **Router forwards**: UDP **50000** (SFU) and UDP **3478** (coturn, P2P fallback only).
-- **Hostnames** live in the `cluster-config` ConfigMap and are substituted through Flux `postBuild`. Defaults:
+- **Hostnames** live in the `cluster-config` ConfigMap and are substituted through Flux `postBuild`, so every hostname is configurable. Cloudflare's free Universal SSL only covers `*.voics.nl`, so **every hostname is exactly one level deep**. Defaults:
 
-  | Host | Serves |
-  |---|---|
-  | `chat.voics.nl` | API + gateway |
-  | `<region>.rtc.voics.nl` | Voice |
-  | `admin.voics.nl` | Admin portal |
-  | `headlamp.voics.nl` | Headlamp |
-  | `updates.voics.nl` | Client update feed |
+  | Host | Serves | Path |
+  |---|---|---|
+  | `discordy.voics.nl` | Landing page + download page | tunnel |
+  | `discordy-api.voics.nl` | REST API | tunnel |
+  | `discordy-gateway.voics.nl` | Gateway WebSocket | tunnel |
+  | `discordy-rtc-<region>.voics.nl` | Voice WebSocket for a region | tunnel |
+  | `discordy-admin.voics.nl` | Admin portal (Cloudflare Access) | tunnel |
+  | `discordy-headlamp.voics.nl` | Headlamp (Cloudflare Access) | tunnel |
+  | `discordy-updates.voics.nl` | Client auto-update feed (MinIO) | tunnel |
+  | `discordy-cdn.voics.nl` | Attachments/avatars (MinIO, signed URLs) | tunnel |
 
-  None of these collide with `voics.nl` or `app.voics.nl`.
+  Voice media (UDP 50000) and coturn (UDP 3478) cannot go through Cloudflare's proxy. Each region's public IP is configured in the region's ConfigMap and sent to clients in the voice join payload. DNS records are created through the Cloudflare API from the `regionctl` / gitops workflows, on the account that already hosts `voics.nl`.
 - **Monitoring**: Headlamp (behind Cloudflare Access), VictoriaMetrics + Grafana, OpenTelemetry collector. The host's Prometheus snap is left untouched.
 - **Secrets**:
   1. Values are stored in GitHub org and environment secrets.
@@ -336,5 +340,5 @@ Modelled on *How Discord Handles 2.5M Concurrent Voice Users Using WebRTC*. Each
 1. **Create the org** `discordy-voics` on GitHub Free.
 2. **Widen the token scopes**: `gh auth refresh -s admin:org,workflow,write:packages,delete:packages`.
 3. **On the VM**: `sudo usermod -aG microk8s karma && sudo chown -R karma ~/.kube`. Passwordless sudo is optional.
-4. **Cloudflare**: a tunnel token for the zone, and Access set up for `admin` and `headlamp`.
+4. **Cloudflare**: an API token (Zone:DNS:Edit + Account:Cloudflare Tunnel:Edit + Access:Edit) for the `voics.nl` zone, stored as the GitHub org secret `CLOUDFLARE_API_TOKEN`. Discordy creates its own tunnel and DNS records.
 5. **Router**: forward UDP 50000 and 3478 to 192.168.1.212.
