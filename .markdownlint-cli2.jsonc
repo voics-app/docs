@@ -1,0 +1,14 @@
+{
+  // markdownlint rules for the docs repo. Long lines are allowed because
+  // tables and runbook commands read better unwrapped.
+  "config": {
+    "default": true,
+    "MD013": false,
+    "MD024": { "siblings_only": true },
+    "MD033": { "allowed_elements": ["br", "details", "summary", "kbd", "img"] },
+    "MD041": true,
+    "MD060": false
+  },
+  "globs": ["**/*.md"],
+  "ignores": ["node_modules/**", "specs/**", "plans/**", "CHANGELOG.md"]
+}
