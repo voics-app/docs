@@ -93,7 +93,7 @@ Every secret on the Discordy platform is listed here. The source is [`inventory.
 | Kubernetes Secret | `voics-system/cloudflared-tunnel` |
 | Owner | @oussamaelhajoui |
 | Rotation | 365d — [secret-rotation.md#cloudflare-tunnel-token](../runbooks/secret-rotation.md#cloudflare-tunnel-token) |
-| Generate | regionctl add ... --standalone creates the tunnel and prints the GitHub secret name to fill |
+| Generate | Create a tunnel for the region via the Cloudflare API (cloudflare-setup.md#region-tunnels-standalone-clusters) and fetch its token |
 | Notes | Not needed for regions whose node joins the gen-serv cluster. |
 
 ## OpenBao
