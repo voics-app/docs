@@ -120,7 +120,7 @@
 | voice-signaling | `VOICE_REGION`, `VOICE_NODE_ID`, `VOICE_PUBLIC_WS_URL`, `VOICE_PUBLIC_IP`, `VOICE_UDP_PORT` (default `50000`), `ETCD_ENDPOINTS`, `VOICE_TOKEN_SECRET`, `SFU_CONTROL_ADDR` (default `127.0.0.1:4101`) |
 | coturn | `TURN_STATIC_AUTH_SECRET` (shared with gateway, which mints short-lived TURN credentials for P2P) |
 | sfu | `SFU_UDP_BIND` (default `0.0.0.0:50000`), `SFU_PUBLIC_IP`, `SFU_CONTROL_BIND` (default `127.0.0.1:4101`) |
-| admin-bff | `ADMIN_DATABASE_URL`, `API_INTERNAL_URL`, `VICTORIAMETRICS_URL`, `ETCD_ENDPOINTS`, `ADMIN_ALLOWED_EMAILS` (comma-separated; the second gate after Cloudflare Access) |
+| admin-bff | `ADMIN_DATABASE_URL`, `API_INTERNAL_URL`, `VICTORIAMETRICS_URL`, `ETCD_ENDPOINTS`, `ADMIN_ALLOWED_EMAILS` (comma-separated; the second gate after Cloudflare Access), `CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD` (both optional only when `DISCORDY_ENV=local`), `GATEWAY_INTERNAL_URL` |
 
 ### P3. Auth tokens
 
