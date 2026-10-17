@@ -2,22 +2,22 @@
 # Internal relative links are always checked. External links to private
 # GitHub repos, the production hostnames and the LAN are excluded because
 # CI cannot (and must not) reach them anonymously.
-include_fragments = true
+include_fragments = "full"
 max_retries = 3
 timeout = 20
 accept = ["200..=299", "429"]
-exclude_path = ["node_modules", "specs", "plans"]
+exclude_path = ['node_modules', '(^|/)specs/', '(^|/)plans/']
 exclude = [
-  "^https://github\.com/discordy-voics/",
-  "^https://ghcr\.io/",
-  "^https?://([a-z0-9-]+\.)?voics\.nl",
-  "^https?://192\.168\.",
-  "^https?://localhost",
-  "^https?://127\.0\.0\.1",
-  "^https?://[a-z0-9-]+\.(voics-[a-z]+|observability|flux-system)\.svc",
-  "^https://dash\.cloudflare\.com",
-  "^https://one\.dash\.cloudflare\.com",
-  "^https://my\.1password\.com",
-  "^wss?://",
-  "^mailto:"
+  '^https://github\.com/discordy-voics/',
+  '^https://ghcr\.io/',
+  '^https?://([a-z0-9-]+\.)?voics\.nl',
+  '^https?://192\.168\.',
+  '^https?://localhost',
+  '^https?://127\.0\.0\.1',
+  '^https?://[a-z0-9-]+\.(voics-[a-z]+|observability|flux-system)\.svc',
+  '^https://dash\.cloudflare\.com',
+  '^https://one\.dash\.cloudflare\.com',
+  '^https://my\.1password\.com',
+  '^wss?://',
+  '^mailto:'
 ]
