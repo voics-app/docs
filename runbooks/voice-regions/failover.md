@@ -160,7 +160,7 @@ Voice UDP bypasses Cloudflare, so a region's public IP is exposed by design.
 **Actions**:
 
 1. Check the `cloudflared` pods (`kubectl -n voics-system get pods -l app=cloudflared`) and the tunnel health in the Cloudflare dashboard.
-2. Restart `cloudflared`. If the tunnel token is invalid, rotate it ([secret rotation → tunnel token](../secret-rotation.md#cloudflare-tunnel-token)).
+2. Restart `cloudflared`. If the tunnel credentials are invalid, rotate them ([secret rotation → Cloudflare tunnel credentials](../secret-rotation.md#cloudflare-tunnel-credentials)).
 3. If Cloudflare itself is down, there is nothing to do locally. Watch cloudflarestatus.com.
 
 ## Post-incident checklist

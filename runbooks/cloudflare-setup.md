@@ -2,6 +2,8 @@
 
 This runbook sets up Discordy's Cloudflare resources in the account that already hosts `voics.nl` ([ADR-0005](../adr/0005-cloudflare-tunnel.md)). It is used during WS9 bring-up, and again when hostnames or regions change.
 
+The bring-up procedure is the gitops bootstrap scripts: `gitops/bootstrap/40-cloudflare.sh` creates the tunnel and the DNS records, and `gitops/bootstrap/50-public-ip.sh` sets the home IP. Read `gitops/bootstrap/README.md` for the order and the prerequisites. The steps below show what the script does, so you can debug or repeat one step by hand.
+
 > **Hard rule:** never modify `voics.nl`, `app.voics.nl` or any record that does not start with `discordy`. Those belong to a different product, hosted on another machine. Every request below creates or changes only `discordy*` names.
 
 ## Resources
@@ -9,9 +11,11 @@ This runbook sets up Discordy's Cloudflare resources in the account that already
 | Resource | Name | Purpose |
 |---|---|---|
 | API token | "Discordy automation" | DNS, tunnel and Access automation ([inventory](../secrets/README.md#cloudflare-api-token)) |
-| Tunnel | `discordy-gen-serv` | Outbound connector from `cloudflared` in `voics-system` |
+| Tunnel (locally managed) | `discordy-gen-serv` | Outbound connector from `cloudflared` in `voics-system`. Its credentials JSON is the secret `CLOUDFLARED_CREDENTIALS_JSON` ([inventory](../secrets/README.md#cloudflared-credentials)) |
 | DNS (proxied CNAME → tunnel) | `discordy`, `discordy-api`, `discordy-gateway`, `discordy-admin`, `discordy-headlamp`, `discordy-updates`, `discordy-cdn`, `discordy-rtc-<region>` | Public hostnames, each exactly one level under `voics.nl` |
 | Access applications | `discordy-admin`, `discordy-headlamp` | Identity gate for the admin surfaces |
+
+**Locally managed tunnel.** The tunnel is created with `config_src: local`, so Cloudflare does not hold its ingress rules. The rules live in the gitops `cloudflared` ConfigMap (`gitops/infrastructure/controllers/cloudflared/cloudflared.yaml`) and reach the pods through Flux. The only tunnel secret is the credentials JSON, `{AccountTag, TunnelSecret, TunnelID}`, stored as the GitHub `production` environment secret `CLOUDFLARED_CREDENTIALS_JSON` and synced into OpenBao at `kv/discordy/cloudflared` (key `CREDENTIALS_JSON`). External Secrets materialises it as `voics-system/cloudflared-credentials`, mounted at `/etc/cloudflared/creds/credentials.json`.
 
 All hostnames are configurable in the gitops `cluster-config` ConfigMap. The defaults are listed below. If you change one, change it in the ConfigMap, the DNS record and the tunnel ingress rule together.
 
@@ -62,38 +66,31 @@ curl -s -H "$AUTH" "$CF/user/tokens/verify" | jq -r .result.status     # active
 ```bash
 TUNNEL=$(curl -s -X POST -H "$AUTH" -H 'Content-Type: application/json' \
   "$CF/accounts/$ACCOUNT_ID/cfd_tunnel" \
-  --data "{\"name\":\"discordy-gen-serv\",\"config_src\":\"cloudflare\",\"tunnel_secret\":\"$(openssl rand -base64 32)\"}")
+  --data "{\"name\":\"discordy-gen-serv\",\"config_src\":\"local\",\"tunnel_secret\":\"$(openssl rand -base64 32)\"}")
 TUNNEL_ID=$(echo "$TUNNEL" | jq -r .result.id)
 echo "$TUNNEL_ID"
 
-# Token for cloudflared, stored as a GitHub environment secret
-curl -s -H "$AUTH" "$CF/accounts/$ACCOUNT_ID/cfd_tunnel/$TUNNEL_ID/token" | jq -r .result \
-  | gh secret set CLOUDFLARE_TUNNEL_TOKEN --repo discordy-voics/gitops --env production
+# Credentials JSON for cloudflared, stored as a GitHub environment secret.
+# The API returns it once, in result.credentials_file. Never write it to disk.
+echo "$TUNNEL" | jq -c .result.credentials_file \
+  | gh secret set CLOUDFLARED_CREDENTIALS_JSON --repo discordy-voics/gitops --env production
 ```
 
 Record `TUNNEL_ID` in `gitops/infrastructure/configs/cluster-config.yaml` as `CLOUDFLARE_TUNNEL_ID`. It is an identifier, not a secret.
 
-## 4. Configure the tunnel ingress (remotely managed)
+## 4. Check the ingress rules
 
-```bash
-INGRESS=http://ingress-nginx-controller.voics-system.svc.cluster.local:80
-curl -s -X PUT -H "$AUTH" -H 'Content-Type: application/json' \
-  "$CF/accounts/$ACCOUNT_ID/cfd_tunnel/$TUNNEL_ID/configurations" --data @- <<EOF | jq .success
-{"config":{"ingress":[
-  {"hostname":"discordy.voics.nl","service":"$INGRESS"},
-  {"hostname":"discordy-api.voics.nl","service":"$INGRESS"},
-  {"hostname":"discordy-gateway.voics.nl","service":"$INGRESS"},
-  {"hostname":"discordy-admin.voics.nl","service":"$INGRESS"},
-  {"hostname":"discordy-headlamp.voics.nl","service":"$INGRESS"},
-  {"hostname":"discordy-updates.voics.nl","service":"$INGRESS"},
-  {"hostname":"discordy-cdn.voics.nl","service":"$INGRESS"},
-  {"hostname":"discordy-rtc-nl-home.voics.nl","service":"http://voice-nl-home.voics-voice.svc.cluster.local:4100"},
-  {"service":"http_status:404"}
-]}}
-EOF
+Because the tunnel is locally managed, there is no ingress call to the Cloudflare API. Check that the ingress rules in the gitops `cloudflared` ConfigMap match the table above, and that the file ends with the catch-all rule:
+
+```yaml
+ingress:
+  - hostname: discordy.voics.nl
+    service: http://ingress-nginx-controller.voics-system.svc.cluster.local:80
+  # ...one rule per host in the table above...
+  - service: http_status:404
 ```
 
-The final catch-all rule is mandatory. Region rules are inserted **before** it ([adding a region → step 8](voice-regions/adding-a-region.md#step-8-cloudflare-dns-and-tunnel-route)).
+The final catch-all rule is mandatory. Region rules are inserted **before** it ([adding a region → step 8](voice-regions/adding-a-region.md#step-8-cloudflare-dns-and-tunnel-route)). A change reaches the pods through Flux, so a restart of `cloudflared` is needed only when the credentials change.
 
 ## 5. Create the DNS records
 
@@ -149,22 +146,18 @@ Then:
 
 ## Region tunnels (standalone clusters)
 
-Regions whose node **joins** gen-serv reuse the `discordy-gen-serv` tunnel and only need an ingress rule and a DNS record.
+Regions whose node **joins** gen-serv reuse the `discordy-gen-serv` tunnel and only need an ingress rule in the gitops `cloudflared` ConfigMap and a DNS record.
 
-A **standalone** region cluster gets its own tunnel:
+A **standalone** region cluster needs its own locally managed tunnel. Its credentials are not in the [secrets inventory](../secrets/README.md) yet, because gitops does not read them from OpenBao. Until the secret name and the OpenBao path are added to both gitops and the inventory, do not store the credentials JSON anywhere. The API call below creates the tunnel only:
 
 ```bash
 REGION=de-fra
 T=$(curl -s -X POST -H "$AUTH" -H 'Content-Type: application/json' "$CF/accounts/$ACCOUNT_ID/cfd_tunnel" \
-  --data "{\"name\":\"discordy-$REGION\",\"config_src\":\"cloudflare\",\"tunnel_secret\":\"$(openssl rand -base64 32)\"}")
-RT_ID=$(echo "$T" | jq -r .result.id)
-curl -s -X PUT -H "$AUTH" -H 'Content-Type: application/json' "$CF/accounts/$ACCOUNT_ID/cfd_tunnel/$RT_ID/configurations" \
-  --data "{\"config\":{\"ingress\":[{\"hostname\":\"discordy-rtc-$REGION.voics.nl\",\"service\":\"http://voice-$REGION.voics-voice.svc.cluster.local:4100\"},{\"service\":\"http_status:404\"}]}}" | jq .success
-curl -s -H "$AUTH" "$CF/accounts/$ACCOUNT_ID/cfd_tunnel/$RT_ID/token" | jq -r .result \
-  | gh secret set "CLOUDFLARE_TUNNEL_TOKEN_$(echo $REGION | tr a-z- A-Z_)" --repo discordy-voics/gitops --env production
+  --data "{\"name\":\"discordy-$REGION\",\"config_src\":\"local\",\"tunnel_secret\":\"$(openssl rand -base64 32)\"}")
+echo "$T" | jq -r .result.id
 ```
 
-The region's DNS record (created by `regionctl add`) must point at `$RT_ID.cfargotunnel.com`, not at the gen-serv tunnel. Correct its `content` with a `PATCH` to `dns_records/<id>` if needed.
+The region's DNS record (created by `regionctl add`) must point at `<region tunnel id>.cfargotunnel.com`, not at the gen-serv tunnel. Correct its `content` with a `PATCH` to `dns_records/<id>` if needed.
 
 ## Verification
 
@@ -177,7 +170,7 @@ curl -s -o /dev/null -w '%{http_code}\n' https://discordy-admin.voics.nl/      #
 curl -s -o /dev/null -w '%{http_code}\n' https://voics.nl/                     # unchanged, still the other product
 ```
 
-In the Cloudflare dashboard, go to Zero Trust → Networks → Tunnels. `discordy-gen-serv` must be **Healthy**, with 2 connectors (the `cloudflared` replicas).
+In the Cloudflare dashboard, go to Zero Trust → Networks → Tunnels. `discordy-gen-serv` must be **Healthy** and show **Locally managed**, with 2 connectors (the `cloudflared` replicas).
 
 ## Teardown
 

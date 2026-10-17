@@ -2,6 +2,8 @@
 
 Every secret in the [inventory](../secrets/README.md) links to a section of this runbook. Values flow from GitHub, through `secrets-sync`, into OpenBao, then through External Secrets Operator into Kubernetes Secrets ([ADR-0006](../adr/0006-secrets-flow.md)). Rotating a secret therefore always follows the [generic procedure](#generic-procedure). The per-secret sections add ordering and zero-downtime details.
 
+The GitHub secret names and OpenBao keys below match `gitops/secrets/inventory.yaml`. CI in gitops enforces that match.
+
 **Rotate immediately**, whatever the schedule, when:
 
 - the value may have leaked (a log, a screenshot, a commit; gitleaks will usually flag it);
@@ -44,22 +46,29 @@ Every secret in the [inventory](../secrets/README.md) links to a section of this
 4. Delete the old token, if you created a new one rather than rolling.
 5. Update 1Password's copy, which `regionctl` users read.
 
-## Cloudflare tunnel token
+## Cloudflare tunnel credentials
 
-Tunnel tokens can't be rolled independently. Instead, rotate the **tunnel secret**:
+The gen-serv tunnel is locally managed. Its only secret is the credentials JSON, `{AccountTag, TunnelSecret, TunnelID}`, held in the GitHub `production` environment secret `CLOUDFLARED_CREDENTIALS_JSON`. Rotate the **tunnel secret**, then rebuild the credentials JSON with it:
 
 ```bash
 CF=https://api.cloudflare.com/client/v4; AUTH="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
 NEW_SECRET=$(openssl rand -base64 32)
 curl -s -X PATCH -H "$AUTH" -H 'Content-Type: application/json' \
   "$CF/accounts/$ACCOUNT_ID/cfd_tunnel/$TUNNEL_ID" --data "{\"tunnel_secret\":\"$NEW_SECRET\"}" | jq .success
-curl -s -H "$AUTH" "$CF/accounts/$ACCOUNT_ID/cfd_tunnel/$TUNNEL_ID/token" | jq -r .result \
-  | gh secret set CLOUDFLARE_TUNNEL_TOKEN --repo discordy-voics/gitops --env production
+jq -cn --arg a "$ACCOUNT_ID" --arg t "$TUNNEL_ID" --arg s "$NEW_SECRET" \
+  '{AccountTag: $a, TunnelSecret: $s, TunnelID: $t}' \
+  | gh secret set CLOUDFLARED_CREDENTIALS_JSON --repo discordy-voics/gitops --env production
 ```
 
-Then run `secrets-sync`, force-sync `voics-system/cloudflared-tunnel`, and restart `cloudflared`. Expect a few seconds of public downtime while the connectors reconnect.
+Then run `secrets-sync`, force-sync `voics-system/cloudflared-credentials`, and restart `cloudflared`:
 
-For a standalone region, apply the same steps to its tunnel and to `CLOUDFLARE_TUNNEL_TOKEN_<REGION>`.
+```bash
+kubectl -n voics-system rollout restart deploy/cloudflared
+```
+
+Expect a few seconds of public downtime while the connectors reconnect. Check that the tunnel is **Healthy** in Zero Trust → Networks → Tunnels.
+
+Standalone region tunnels are not in the inventory yet, so they have no rotation procedure here. See [cloudflare-setup → region tunnels](cloudflare-setup.md#region-tunnels-standalone-clusters).
 
 ## JWT signing key
 
@@ -68,17 +77,19 @@ P2 has a single `JWT_PUBLIC_KEY`, so rotation is a **hard cut**:
 - Access tokens signed with the old key are rejected once the verifiers restart.
 - Access tokens live for only 15 minutes, and refresh tokens are opaque (not JWTs), so clients transparently refresh on their next 401.
 
+The private key is `API_JWT_PRIVATE_KEY` (read by api only). The public key is `SHARED_JWT_PUBLIC_KEY`.
+
 1. Generate the pair:
 
    ```bash
    openssl genpkey -algorithm ed25519 -out jwt.pem
    openssl pkey -in jwt.pem -pubout -out jwt.pub.pem
-   gh secret set JWT_PRIVATE_KEY --repo discordy-voics/gitops --env production < jwt.pem
-   gh secret set JWT_PUBLIC_KEY  --repo discordy-voics/gitops --env production < jwt.pub.pem
+   gh secret set API_JWT_PRIVATE_KEY    --repo discordy-voics/gitops --env production < jwt.pem
+   gh secret set SHARED_JWT_PUBLIC_KEY  --repo discordy-voics/gitops --env production < jwt.pub.pem
    shred -u jwt.pem jwt.pub.pem
    ```
 
-2. Run `secrets-sync`, then force-sync `api-secrets` and `common-secrets` in `voics-apps` and `voics-voice`.
+2. Run `secrets-sync`, then force-sync `api-secrets`, `admin-secrets`, `gateway-secrets` and `messages-secrets` in `voics-apps`, and `voice-secrets` in `voics-voice`.
 3. **Restart everything at once**, so issuer and verifiers switch together:
 
    ```bash
@@ -92,8 +103,8 @@ P2 has a single `JWT_PUBLIC_KEY`, so rotation is a **hard cut**:
 
 There is one shared value, sent as `X-Internal-Token`. During the rollout, pods with different values reject each other's internal calls. Keep that window to seconds:
 
-1. Set the new value: `gh secret set INTERNAL_SERVICE_TOKEN --env production ...`, then run `secrets-sync`.
-2. Force-sync `common-secrets` in `voics-apps` and `voics-voice`.
+1. Set the new value: `gh secret set SHARED_INTERNAL_SERVICE_TOKEN --repo discordy-voics/gitops --env production`, then run `secrets-sync`.
+2. Force-sync `admin-secrets`, `api-secrets`, `gateway-secrets` and `messages-secrets` in `voics-apps`, and `voice-secrets` in `voics-voice`.
 3. Restart **all consumers in one command** (the same command as for the JWT key).
 4. **Verify**: the gateway READY works (it calls api's internal `/ready`), and the admin Overview loads (admin-bff calls the internal stats endpoints).
 
@@ -101,8 +112,8 @@ There is one shared value, sent as `X-Internal-Token`. During the rollout, pods 
 
 This HS256 secret is shared by the gateway (signer) and **every voice node in every region** (verifiers). Voice tokens live 60 seconds.
 
-1. Set `VOICE_TOKEN_SECRET`, then run `secrets-sync`.
-2. Force-sync `gateway-secrets` (`voics-apps`), `voice-secrets` (`voics-voice`) and each standalone region's `voice-secrets`.
+1. Set `SHARED_VOICE_TOKEN_SECRET`, then run `secrets-sync`.
+2. Force-sync `gateway-secrets` (`voics-apps`) and `voice-secrets` (`voics-voice`) in each region.
 3. Restart the gateway and all voice nodes together. Joins in the restart window fail and retry automatically. Calls already in progress keep their media, but reconnect when the voice-signaling pod restarts.
 4. **Verify**: run a test call in each region (`regionctl list` lists them).
 
@@ -110,7 +121,7 @@ This HS256 secret is shared by the gateway (signer) and **every voice node in ev
 
 The Erlang distribution cookie. Gateway pods with different cookies **cannot cluster**, so a rolling restart would split the cluster.
 
-1. Set `RELEASE_COOKIE`, run `secrets-sync`, and force-sync `gateway-secrets`.
+1. Set `GATEWAY_RELEASE_COOKIE`, run `secrets-sync`, and force-sync `gateway-secrets`.
 2. Restart the gateway as a whole:
 
    ```bash
@@ -125,14 +136,12 @@ The Erlang distribution cookie. Gateway pods with different cookies **cannot clu
 
 The order is: update the role, then the secret, then restart, so that the old password works until the restart.
 
-**Postgres app roles** (`discordy`, `discordy_admin`). CloudNativePG manages the roles from Secrets, through `spec.managed.roles`, so updating the Secret updates the role:
+**Postgres app roles** (`discordy` for api, `discordy_admin` for admin-bff). CloudNativePG manages the roles from Secrets, through `spec.managed.roles`, so updating the Secret updates the role:
 
-1. Set `POSTGRES_API_PASSWORD` or `POSTGRES_ADMIN_PASSWORD`, then run `secrets-sync`.
-2. Force-sync the ExternalSecret that feeds the CNPG role Secret, and the app Secret (`api-secrets` or `admin-secrets`). The ExternalSecret also templates `DATABASE_URL` / `ADMIN_DATABASE_URL`.
+1. Set `POSTGRES_APP_PASSWORD` or `POSTGRES_ADMIN_PASSWORD`, then run `secrets-sync`.
+2. Force-sync the ExternalSecret that feeds the CNPG role Secret (`postgres-app` or `postgres-admin` in `voics-data`), and the app Secret (`api-secrets` or `admin-secrets` in `voics-apps`). The app ExternalSecret also templates `DATABASE_URL` / `ADMIN_DATABASE_URL`.
 3. Wait until `kubectl -n voics-data get cluster postgres -o jsonpath='{.status.managedRolesStatus}'` shows the role reconciled.
 4. Run `kubectl -n voics-apps rollout restart deploy/api` (or `deploy/admin-bff`).
-
-**Postgres superuser**: set `POSTGRES_SUPERUSER_PASSWORD`, run `secrets-sync`, then force-sync `postgres-superuser`. CNPG applies it. No app restart is needed.
 
 **Valkey**: Valkey reads `requirepass` at start. Use the dual-password window:
 
@@ -142,7 +151,7 @@ The order is: update the role, then the secret, then restart, so that the old pa
    kubectl -n voics-data exec valkey-0 -- valkey-cli -a "$OLD" ACL SETUSER default on ">$NEW"
    ```
 
-2. Set `VALKEY_PASSWORD`, run `secrets-sync`, then force-sync `valkey-auth`, `api-secrets` and `gateway-secrets`.
+2. Set `VALKEY_PASSWORD`, run `secrets-sync`, then force-sync `valkey` (`voics-data`), `api-secrets` and `gateway-secrets` (`voics-apps`).
 3. Restart `api` and the `gateway` StatefulSet.
 4. Remove the old password:
 
@@ -154,36 +163,31 @@ The order is: update the role, then the secret, then restart, so that the old pa
 
 ## MinIO keys
 
-Service accounts make this zero-downtime:
+The `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` pair is read by MinIO, api and messages. Rotate it with a new service-account pair, so the old pair works until the restart:
 
-1. Create a new service account with the same policy, for example `mc admin user svcacct add --policy attachments-rw.json discordy messages`.
-2. Update the GitHub secrets (`MINIO_MESSAGES_ACCESS_KEY` and `MINIO_MESSAGES_SECRET_KEY`), then run `secrets-sync`, force-sync and restart the consumer.
-3. **Verify**: upload an attachment (messages) or an avatar (api).
-4. Delete the old service account with `mc admin user svcacct rm discordy <old-access-key>`.
-
-**Root credentials**: update `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD`, run `secrets-sync`, force-sync `minio-root`, then restart the MinIO StatefulSet, which causes a short storage blip. Update your `mc alias` afterwards.
+1. Create a new access key pair with the same policy, for example `mc admin user svcacct add --policy attachments-rw.json discordy messages`.
+2. Update the GitHub secrets `MINIO_ACCESS_KEY` and `MINIO_SECRET_KEY`, then run `secrets-sync`.
+3. Force-sync `minio` (`voics-data`), `api-secrets` and `messages-secrets` (`voics-apps`), then restart `api` and `messages`.
+4. **Verify**: upload an attachment (messages) or an avatar (api).
+5. Delete the old service account with `mc admin user svcacct rm discordy <old-access-key>`.
 
 ## GHCR pull token
 
 1. Create a new PAT with `read:packages` only.
-2. Run `gh secret set GHCR_PULL_TOKEN --org discordy-voics`, then `secrets-sync`.
-3. Force-sync `ghcr-pull` (`voics-apps`, `voics-voice`) and `ghcr-auth` (`flux-system`).
+2. Run `gh secret set GHCR_TOKEN --org discordy-voics`, then `secrets-sync`. Use `GHCR_USERNAME` only if the account changes.
+3. Force-sync `ghcr-pull` in `voics-apps`, `voics-voice`, and `flux-system`.
 4. **Verify**: run `flux reconcile image repository api -n flux-system`, which must succeed. Then delete one app pod; its image must pull.
 5. Delete the old PAT.
 
 ## ARC GitHub credentials
 
-**GitHub App** (preferred):
-
-1. Generate a new private key in the App settings.
-2. Update `ARC_GITHUB_APP_PRIVATE_KEY`, then run `secrets-sync`. That workflow runs **on ARC itself**, but the old key still works at this point, so this is fine.
-3. Force-sync `voics-system/arc-github-app`, then restart the ARC controller and listener.
+1. Create a new classic PAT with `admin:org` scope, the one ARC needs to register runners.
+2. Run `gh secret set ARC_GITHUB_TOKEN --org discordy-voics`, then run `secrets-sync`. That workflow runs **on ARC itself**, but the old token still works at this point, so this is fine.
+3. Force-sync `voics-system/arc-github`, then restart the ARC controller and listener.
 4. **Verify**: the runner scale set `discordy` shows as online under Org → Settings → Actions → Runners.
-5. Delete the old key in the App settings.
+5. Revoke the old PAT.
 
-**PAT fallback**: the same steps with `ARC_GITHUB_PAT`.
-
-If ARC is broken and can't run `secrets-sync`, write the value straight into OpenBao, as in [bootstrap step 6](openbao-unseal.md#first-time-bootstrap).
+If ARC is broken and can't run `secrets-sync`, write the value straight into OpenBao, for example `bao kv put -mount=kv discordy/arc GITHUB_TOKEN="$ARC_GITHUB_TOKEN"`, from an admin shell with a valid OpenBao token. Keep the value in the shell only. See [OpenBao → first-time bootstrap](openbao-unseal.md#first-time-bootstrap).
 
 ## Flux deploy key
 

@@ -69,74 +69,43 @@ In GitHub, go to `discordy-voics/gitops` → Actions → secrets-sync → Re-run
 
 ## First-time bootstrap
 
-This is done once, in WS9 bring-up (master plan task 9.3 step 4), after Flux has deployed the OpenBao chart.
+The bring-up is scripted in gitops. Do not run these steps by hand. Read `gitops/bootstrap/README.md` first, then run the scripts in `gitops/bootstrap/` in this order:
 
-```bash
-# 1. Initialise: prints 5 unseal keys and the initial root token
-kubectl -n voics-system exec openbao-0 -- bao operator init -key-shares=5 -key-threshold=3 -format=json > /dev/shm/bao-init.json
+1. `00-inventory.sh`: read-only check for conflicts.
+2. `10-prepare-node.sh`: on the VM.
+3. `30-flux.sh`: installs Flux, which deploys OpenBao.
+4. `20-openbao.sh`: initialises and configures OpenBao. Run it once OpenBao's pod is running. It also runs again after every reboot, where it only unseals.
+5. `40-cloudflare.sh` and `50-public-ip.sh`.
+6. `60-verify.sh`: read-only checks.
 
-# 2. Store each value in 1Password immediately, then shred the file
-for i in 0 1 2 3 4; do
-  op item create --vault Discordy --category password --title "OpenBao unseal key $((i+1))" \
-    "password=$(jq -r ".unseal_keys_b64[$i]" /dev/shm/bao-init.json)"
-done
-op item create --vault Discordy --category password --title "OpenBao root token" \
-  "password=$(jq -r .root_token /dev/shm/bao-init.json)"
-shred -u /dev/shm/bao-init.json
+`20-openbao.sh` does the following. Use this list to check its result, not to run the steps by hand:
 
-# 3. Unseal (routine procedure above), then log in with the root token
-kubectl -n voics-system exec -it openbao-0 -- sh
-export BAO_TOKEN=<root token from 1Password>
-
-# 4. KV v2 at kv/
-bao secrets enable -path=kv kv-v2
-
-# 5. Kubernetes auth for ESO (read) and secrets-sync (write)
-bao auth enable kubernetes
-bao write auth/kubernetes/config kubernetes_host="https://kubernetes.default.svc:443"
-
-bao policy write discordy-eso-read - <<'EOF'
-path "kv/data/discordy/*"     { capabilities = ["read"] }
-path "kv/metadata/discordy/*" { capabilities = ["read", "list"] }
-EOF
-bao policy write discordy-secrets-sync - <<'EOF'
-path "kv/data/discordy/*"     { capabilities = ["create", "update", "read"] }
-path "kv/metadata/discordy/*" { capabilities = ["read", "list"] }
-EOF
-bao policy write discordy-voice-read - <<'EOF'
-path "kv/data/discordy/common"       { capabilities = ["read"] }
-path "kv/data/discordy/voice"        { capabilities = ["read"] }
-path "kv/data/discordy/platform/ghcr" { capabilities = ["read"] }
-path "kv/data/discordy/regions/*"    { capabilities = ["read"] }
-EOF
-
-bao write auth/kubernetes/role/external-secrets \
-  bound_service_account_names=external-secrets bound_service_account_namespaces=voics-system \
-  policies=discordy-eso-read ttl=1h
-bao write auth/kubernetes/role/secrets-sync \
-  bound_service_account_names=arc-runner-discordy bound_service_account_namespaces=voics-system \
-  policies=discordy-secrets-sync ttl=15m
-
-# 6. Chicken-and-egg: ARC needs its GitHub credentials before secrets-sync can run on it.
-#    Write them by hand once; secrets-sync owns them afterwards.
-bao kv put kv/discordy/arc \
-  github_app_id=<id> github_app_installation_id=<id> github_app_private_key=@/dev/shm/arc-app.pem
-shred -u /dev/shm/arc-app.pem
-
-# 7. Enable the audit log
-bao audit enable file file_path=/openbao/audit/audit.log
-
-# 8. Revoke the root token (regenerate later when needed; see below)
-bao token revoke -self
-```
+- Initialises OpenBao with 5 shares and threshold 3. It stores all shares and the root token in 1Password, then unseals.
+- Enables KV v2 at `kv/`.
+- Enables Kubernetes auth with two roles. `external-secrets` gets read access, bound to the `external-secrets` service account. `secrets-sync` gets write access, bound to the `discordy-runner` service account in `voics-system`.
+- Enables the file audit device.
+- Seeds `kv/discordy/arc` from `ARC_GITHUB_TOKEN`. This is the chicken-and-egg step: `secrets-sync` runs on the ARC runners, so the first ARC credential cannot come from GitHub.
+- Revokes the root token.
 
 Then:
 
-1. Run the `secrets-sync` workflow once.
-2. Check that every ExternalSecret reaches `SecretSynced`.
+1. Run the `secrets-sync` workflow once. It needs the GitHub secrets listed in the [inventory](../secrets/README.md).
+2. Check that every ExternalSecret reaches `SecretSynced`. `60-verify.sh` runs this check.
 3. Take the first Raft snapshot ([backup-restore → OpenBao](backup-restore.md#openbao)).
 
-**Standalone voice regions** each get their own Kubernetes auth mount, bound to `discordy-voice-read`:
+**Policies.** The bootstrap writes these read policies. They match the paths in the inventory:
+
+```hcl
+path "kv/data/discordy/*"     { capabilities = ["read"] }
+path "kv/metadata/discordy/*" { capabilities = ["read", "list"] }
+```
+
+```hcl
+path "kv/data/discordy/*"     { capabilities = ["create", "update", "read"] }
+path "kv/metadata/discordy/*" { capabilities = ["read", "list"] }
+```
+
+**Standalone voice regions** each get their own Kubernetes auth mount, bound to a read-only `discordy-voice-read` policy. That policy may read only `kv/data/discordy/shared` and `kv/data/discordy/ghcr`, plus the region's own path. Create the mount by hand, with the same pattern:
 
 ```bash
 bao auth enable -path=k8s-<region> kubernetes
@@ -184,4 +153,5 @@ bao operator seal
 | `bao status` reports `connection refused` | The pod isn't running. Check `kubectl -n voics-system describe pod openbao-0` and the PVC binding. |
 | Unseal progress resets | Shares from different key generations were mixed after a rekey. Use only the current 1Password items. |
 | `permission denied` for ESO after unseal | The Kubernetes auth config is stale after a cluster CA change. Re-run `bao write auth/kubernetes/config ...`. |
+| `secrets-sync` cannot log in | The `secrets-sync` role is bound to the `discordy-runner` service account. Check that the runner pods use that account. |
 | Raft data lost | Restore from a snapshot ([backup-restore → OpenBao](backup-restore.md#openbao)), then unseal with the keys that were current **when the snapshot was taken**. |

@@ -188,5 +188,5 @@ Use this order when the VM is lost entirely:
 6. Postgres PITR, from barman in MinIO.
 7. ScyllaDB snapshot restore.
 8. The apps reconcile.
-9. The Cloudflare tunnel reconnects, using the same token.
+9. The Cloudflare tunnel reconnects, using the same credentials (`CLOUDFLARED_CREDENTIALS_JSON`).
 10. Voice regions re-register.
