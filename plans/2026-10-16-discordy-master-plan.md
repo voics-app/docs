@@ -116,8 +116,9 @@
 |---|---|
 | api | `DATABASE_URL`, `VALKEY_URL`, `JWT_PRIVATE_KEY` (Ed25519 PEM), `PUBLIC_API_URL`, `PUBLIC_GATEWAY_URL`, `CDN_PUBLIC_URL`, `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET_ASSETS` (default `discordy-assets`), `MESSAGES_INTERNAL_URL` |
 | messages | `SCYLLA_NODES`, `SCYLLA_KEYSPACE` (default `discordy`), `API_INTERNAL_URL`, `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET_ATTACHMENTS` (default `discordy-attachments`), `CDN_PUBLIC_URL` |
-| gateway | `VALKEY_URL`, `ETCD_ENDPOINTS`, `API_INTERNAL_URL`, `MESSAGES_INTERNAL_URL`, `VOICE_TOKEN_SECRET` (HS256), `PUBLIC_GATEWAY_URL`, `DEFAULT_VOICE_REGION` (default `nl-home`), `RELEASE_COOKIE` (Erlang distribution), `CLUSTER_DNS_QUERY` (optional, k8s headless service) |
+| gateway | `VALKEY_URL`, `ETCD_ENDPOINTS`, `TURN_STATIC_AUTH_SECRET`, `TURN_URLS`, `API_INTERNAL_URL`, `MESSAGES_INTERNAL_URL`, `VOICE_TOKEN_SECRET` (HS256), `PUBLIC_GATEWAY_URL`, `DEFAULT_VOICE_REGION` (default `nl-home`), `RELEASE_COOKIE` (Erlang distribution), `CLUSTER_DNS_QUERY` (optional, k8s headless service) |
 | voice-signaling | `VOICE_REGION`, `VOICE_NODE_ID`, `VOICE_PUBLIC_WS_URL`, `VOICE_PUBLIC_IP`, `VOICE_UDP_PORT` (default `50000`), `ETCD_ENDPOINTS`, `VOICE_TOKEN_SECRET`, `SFU_CONTROL_ADDR` (default `127.0.0.1:4101`) |
+| coturn | `TURN_STATIC_AUTH_SECRET` (shared with gateway, which mints short-lived TURN credentials for P2P) |
 | sfu | `SFU_UDP_BIND` (default `0.0.0.0:50000`), `SFU_PUBLIC_IP`, `SFU_CONTROL_BIND` (default `127.0.0.1:4101`) |
 | admin-bff | `ADMIN_DATABASE_URL`, `API_INTERNAL_URL`, `VICTORIAMETRICS_URL`, `ETCD_ENDPOINTS`, `ADMIN_ALLOWED_EMAILS` (comma-separated; the second gate after Cloudflare Access) |
 
