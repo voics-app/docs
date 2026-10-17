@@ -1,0 +1,72 @@
+@startuml code-permission-calculator
+title C4 code (UML): Permission calculator — api crates/domain (mirrored in gateway)
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+hide empty members
+
+package "domain::permissions" {
+  class Permissions <<value object>> {
+    - bits: u64
+    + {static} empty(): Permissions
+    + {static} all(): Permissions
+    + contains(other: Permissions): bool
+    + insert(other: Permissions)
+    + remove(other: Permissions)
+    + to_decimal_string(): String
+  }
+
+  enum OverwriteKind {
+    Role
+    Member
+  }
+
+  class PermissionOverwrite <<value object>> {
+    + id: Snowflake
+    + kind: OverwriteKind
+    + allow: Permissions
+    + deny: Permissions
+  }
+
+  class GuildContext {
+    + guild_id: Snowflake
+    + owner_id: Snowflake
+    + everyone: Role
+    + roles: HashMap<Snowflake, Role>
+  }
+
+  class MemberContext {
+    + user_id: Snowflake
+    + role_ids: Vec<Snowflake>
+  }
+
+  class ChannelContext {
+    + channel_id: Snowflake
+    + overwrites: Vec<PermissionOverwrite>
+  }
+
+  class PermissionCalculator <<domain service>> {
+    + compute(guild, member, channel: Option<ChannelContext>): Permissions
+    - compute_base_permissions(guild, member): Permissions
+    - apply_overwrites(base, guild, member, channel): Permissions
+    - apply_implicit_denies(perms): Permissions
+  }
+}
+
+PermissionCalculator ..> GuildContext
+PermissionCalculator ..> MemberContext
+PermissionCalculator ..> ChannelContext
+PermissionCalculator ..> Permissions : returns
+ChannelContext "1" *-- "0..*" PermissionOverwrite
+PermissionOverwrite --> OverwriteKind
+PermissionOverwrite --> Permissions
+
+note right of PermissionCalculator
+  1. base = @everyone | OR(member roles)
+     ADMINISTRATOR or owner => all()
+  2. @everyone overwrite (deny, then allow)
+     role overwrites: OR(denies), then OR(allows)
+     member overwrite (deny, then allow)
+  3. no VIEW_CHANNEL => strip channel-scoped bits
+     no SEND_MESSAGES => strip text-only bits
+end note
+@enduml

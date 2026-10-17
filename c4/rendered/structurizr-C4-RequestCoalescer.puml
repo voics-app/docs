@@ -1,0 +1,43 @@
+@startuml
+title <size:24>Component View: Discordy - messages</size>\n<size:24>Code view: request coalescing of identical concurrent history reads.</size>
+
+set separator none
+top to bottom direction
+
+<style>
+  root {
+    BackgroundColor: #ffffff
+    FontColor: #444444
+  }
+</style>
+
+!include <C4/C4>
+!include <C4/C4_Context>
+!include <C4/C4_Component>
+
+System_Boundary("Discordy_boundary", "Discordy", $tags="") {
+  Container_Boundary("Discordy.messages_boundary", "messages", $tags="") {
+    Component(Discordy.messages.Messageusecases, "Message use cases", $techn="Rust", $descr="Create, edit, delete, bulk delete, react, pin, ack, history; 409/50160 for non-standard channels.", $tags="", $link="")
+    Component(Discordy.messages.CoalescerKV, "Coalescer<K, V>", $techn="generic struct", $descr="get_or_load(key, loader): joins an in-flight future or starts one; removes the entry on completion.", $tags="", $link="")
+    Component(Discordy.messages.InFlightmap, "InFlight map", $techn="DashMap", $descr="DashMap<K, Shared<BoxFuture<Result<V, E>>>>.", $tags="", $link="")
+    Component(Discordy.messages.HistoryQuery, "HistoryQuery", $techn="struct (Hash + Eq)", $descr="Coalescing key: channel_id, bucket, before/after/around, limit.", $tags="", $link="")
+    Component(Discordy.messages.CoalescingMessageRepository, "CoalescingMessageRepository", $techn="struct", $descr="Decorator implementing MessageRepository; routes reads through the coalescer, writes straight through.", $tags="", $link="")
+    Component(Discordy.messages.MessageRepository, "MessageRepository", $techn="trait", $descr="Port used by the history use case.", $tags="", $link="")
+    Component(Discordy.messages.ScyllaMessageRepository, "ScyllaMessageRepository", $techn="struct", $descr="Adapter executing the prepared CQL statement.", $tags="", $link="")
+    Component(Discordy.messages.GetHistory, "GetHistory", $techn="struct", $descr="Use case: walks buckets backwards until limit or the channel's first bucket.", $tags="", $link="")
+  }
+
+}
+
+Rel(Discordy.messages.GetHistory, Discordy.messages.MessageRepository, "Depends on", $techn="", $tags="", $link="")
+Rel(Discordy.messages.CoalescingMessageRepository, Discordy.messages.MessageRepository, "Implements", $techn="", $tags="", $link="")
+Rel(Discordy.messages.ScyllaMessageRepository, Discordy.messages.MessageRepository, "Implements", $techn="", $tags="", $link="")
+Rel(Discordy.messages.CoalescingMessageRepository, Discordy.messages.CoalescerKV, "Routes reads through", $techn="", $tags="", $link="")
+Rel(Discordy.messages.CoalescingMessageRepository, Discordy.messages.ScyllaMessageRepository, "Delegates loads and writes to", $techn="", $tags="", $link="")
+Rel(Discordy.messages.CoalescerKV, Discordy.messages.InFlightmap, "Joins or inserts shared futures in", $techn="", $tags="", $link="")
+Rel(Discordy.messages.CoalescerKV, Discordy.messages.HistoryQuery, "Keyed by", $techn="", $tags="", $link="")
+Rel(Discordy.messages.Messageusecases, Discordy.messages.GetHistory, "Executes", $techn="", $tags="", $link="")
+
+SHOW_LEGEND(true)
+hide stereotypes
+@enduml

@@ -1,0 +1,163 @@
+@startuml
+title <size:24>Deployment View: Discordy - gen-serv</size>\n<size:24>Production on the owner's Proxmox VM gen-serv (microk8s), behind Cloudflare.</size>
+
+set separator none
+left to right direction
+
+<style>
+  root {
+    BackgroundColor: #ffffff
+    FontColor: #444444
+  }
+</style>
+
+!include <C4/C4>
+!include <C4/C4_Context>
+!include <C4/C4_Container>
+!include <C4/C4_Deployment>
+
+Deployment_Node(genserv.Userworkstation, "User workstation", $type="", $descr="Windows 11 (primary), macOS, Linux", $tags="", $link="") {
+  Container(genserv.Userworkstation.Desktopclient_1, "Desktop client", $techn="Electron, React, TypeScript, napi-rs", $descr="End-user application for Windows (primary), macOS and Linux.", $tags="", $link="")
+}
+
+Deployment_Node(genserv.Cloudflareedge, "Cloudflare edge", $type="Cloudflare", $descr="Anycast edge, Universal SSL for *.voics.nl", $tags="", $link="") {
+  Deployment_Node(genserv.Cloudflareedge.Tunneledge, "Tunnel edge", $type="Cloudflare Tunnel", $descr="Terminates TLS for every one-level discordy-*.voics.nl hostname.", $tags="", $link="")
+  Deployment_Node(genserv.Cloudflareedge.Access, "Access", $type="Cloudflare Access", $descr="Protects discordy-admin and discordy-headlamp.", $tags="", $link="")
+  Deployment_Node(genserv.Cloudflareedge.DNS, "DNS", $type="Cloudflare DNS", $descr="voics.nl zone; proxied CNAMEs to the tunnel, DNS-only A records for region UDP.", $tags="", $link="")
+}
+
+Deployment_Node(genserv.Homenetwork, "Home network", $type="LAN 192.168.1.0/24", $descr="", $tags="", $link="") {
+  Deployment_Node(genserv.Homenetwork.Router, "Router", $type="Consumer router", $descr="Port forwards UDP 50000 and UDP/TCP 3478 to 192.168.1.212.", $tags="", $link="")
+  Deployment_Node(genserv.Homenetwork.Proxmoxhost, "Proxmox host", $type="Proxmox VE", $descr="", $tags="", $link="") {
+    Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv, "gen-serv", $type="Ubuntu VM, microk8s 1.35", $descr="192.168.1.212, 7.6 GB RAM (16 GB recommended)", $tags="", $link="") {
+      Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv.fluxsystem, "flux-system", $type="Kubernetes namespace", $descr="", $tags="", $link="") {
+        Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv.fluxsystem.Flux, "Flux", $type="Flux v2", $descr="Reconciles discordy-voics/gitops; image automation on semver tags.", $tags="", $link="")
+      }
+
+      Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv.voicssystem, "voics-system", $type="Kubernetes namespace", $descr="", $tags="", $link="") {
+        Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv.voicssystem.cloudflared, "cloudflared", $type="cloudflared", $descr="Outbound tunnel connector.", $tags="", $link="")
+        Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv.voicssystem.ingressnginx, "ingress-nginx", $type="ingress-nginx", $descr="Routes hostnames and paths to services.", $tags="", $link="")
+        Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv.voicssystem.OpenBao, "OpenBao", $type="OpenBao", $descr="KV v2 at kv/discordy/<service>.", $tags="", $link="")
+        Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv.voicssystem.ExternalSecretsOperator, "External Secrets Operator", $type="ESO", $descr="Syncs OpenBao into Kubernetes Secrets.", $tags="", $link="")
+        Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv.voicssystem.ActionsRunnerController, "Actions Runner Controller", $type="ARC", $descr="Self-hosted runner scale set labelled discordy.", $tags="", $link="")
+        Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv.voicssystem.Headlamp, "Headlamp", $type="Headlamp", $descr="Cluster UI at discordy-headlamp.voics.nl.", $tags="", $link="")
+        Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv.voicssystem.coturn, "coturn", $type="Deployment", $descr="hostNetwork", $tags="", $link="") {
+          Container(genserv.Homenetwork.Proxmoxhost.genserv.voicssystem.coturn.coturn_1, "coturn", $techn="coturn", $descr="TURN relay for P2P data channels when NAT requires it (never for voice).", $tags="", $link="")
+        }
+
+      }
+
+      Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv.voicsapps, "voics-apps", $type="Kubernetes namespace", $descr="", $tags="", $link="") {
+        Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.api, "api", $type="Deployment", $descr="", $tags="", $link="") {
+          Container(genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.api.api_1, "api", $techn="Rust, Axum, SQLx", $descr="Auth, users, devices, relationships, guilds, channels, roles, permissions, invites, bots, interactions, webhooks, MLS key packages, admin endpoints; transactional outbox.", $tags="", $link="")
+        }
+
+        Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.messages, "messages", $type="Deployment", $descr="", $tags="", $link="") {
+          Container(genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.messages.messages_1, "messages", $techn="Rust, Axum, scylla driver", $descr="Standard message CRUD and history, Snowflake IDs, request coalescing, reactions, pins, read states, attachments.", $tags="", $link="")
+        }
+
+        Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.gateway, "gateway", $type="StatefulSet", $descr="Erlang distribution via headless service", $tags="", $link="") {
+          Container(genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.gateway.gateway_1, "gateway", $techn="Elixir, Phoenix, libcluster", $descr="Client WebSocket protocol, sessions, guild processes, presence, typing, fan-out, E2EE relay, P2P signaling, voice allocation.", $tags="", $link="")
+        }
+
+        Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.admin, "admin", $type="Deployment", $descr="", $tags="", $link="") {
+          Container(genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.admin.adminbff_1, "admin-bff", $techn="Rust, Axum, SQLx", $descr="Admin backend: Access verification, usage aggregation, stats proxying, regions, drain, suspension, flags, audit.", $tags="", $link="")
+          Container(genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.admin.adminweb_1, "admin-web", $techn="React, TypeScript, Vite", $descr="Admin SPA: overview, usage, voice regions, platform health, trust & safety, feature flags, audit.", $tags="", $link="")
+        }
+
+      }
+
+      Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv.voicsvoice, "voics-voice", $type="Kubernetes namespace", $descr="", $tags="", $link="") {
+        Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv.voicsvoice.voicenlhome, "voice-nl-home", $type="Deployment (region nl-home)", $descr="hostNetwork, one pod per node", $tags="", $link="") {
+          Container(genserv.Homenetwork.Proxmoxhost.genserv.voicsvoice.voicenlhome.voicesignaling_1, "voice-signaling", $techn="Elixir, Phoenix", $descr="Voice WebSocket, media setup, speaking indicators, DAVE MLS relay, etcd registration, SFU supervision.", $tags="", $link="")
+          Container(genserv.Homenetwork.Proxmoxhost.genserv.voicsvoice.voicenlhome.sfu_1, "sfu", $techn="Rust, str0m", $descr="Home-grown selective forwarding unit: ICE-lite, DTLS-SRTP, simulcast/SVC layer selection, RTP rewrite, RTCP/BWE.", $tags="", $link="")
+        }
+
+      }
+
+      Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv.voicsdata, "voics-data", $type="Kubernetes namespace", $descr="", $tags="", $link="") {
+        Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv.voicsdata.postgres, "postgres", $type="CloudNativePG Cluster", $descr="", $tags="", $link="") {
+          ContainerDb(genserv.Homenetwork.Proxmoxhost.genserv.voicsdata.postgres.Postgres_1, "Postgres", $techn="Postgres 17 (CloudNativePG)", $descr="Relational data (DB discordy, owned by api) and admin rollups (DB discordy_admin).", $tags="", $link="")
+        }
+
+        Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv.voicsdata.scylla, "scylla", $type="StatefulSet", $descr="--smp 1, ~1.5 GB", $tags="", $link="") {
+          ContainerDb(genserv.Homenetwork.Proxmoxhost.genserv.voicsdata.scylla.ScyllaDB_1, "ScyllaDB", $techn="ScyllaDB 2025.x, developer mode", $descr="Messages, reactions, pins, read states, channel_last_message (keyspace discordy).", $tags="", $link="")
+        }
+
+        Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv.voicsdata.redpanda, "redpanda", $type="StatefulSet", $descr="--smp 1 --memory 1G", $tags="", $link="") {
+          ContainerQueue(genserv.Homenetwork.Proxmoxhost.genserv.voicsdata.redpanda.Redpanda_1, "Redpanda", $techn="Redpanda 25.x (Kafka API)", $descr="Event bus: discordy.{guild,message,user,interaction,telemetry,audit}.v1.", $tags="", $link="")
+        }
+
+        Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv.voicsdata.valkey, "valkey", $type="StatefulSet", $descr="AOF on", $tags="", $link="") {
+          ContainerDb(genserv.Homenetwork.Proxmoxhost.genserv.voicsdata.valkey.Valkey_1, "Valkey", $techn="Valkey 8", $descr="Resume buffers, presence, rate limits, voice allocations, E2EE inboxes (AOF on).", $tags="", $link="")
+        }
+
+        Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv.voicsdata.etcd, "etcd", $type="StatefulSet", $descr="", $tags="", $link="") {
+          ContainerDb(genserv.Homenetwork.Proxmoxhost.genserv.voicsdata.etcd.etcd_1, "etcd", $techn="etcd 3.6", $descr="Voice-server discovery under leased keys.", $tags="", $link="")
+        }
+
+        Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv.voicsdata.minio, "minio", $type="StatefulSet", $descr="", $tags="", $link="") {
+          ContainerDb(genserv.Homenetwork.Proxmoxhost.genserv.voicsdata.minio.MinIO_1, "MinIO", $techn="MinIO (S3 API)", $descr="Assets, attachments and the client update feed.", $tags="", $link="")
+        }
+
+      }
+
+      Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv.observability, "observability", $type="Kubernetes namespace", $descr="", $tags="", $link="") {
+        Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv.observability.victoriametrics, "victoria-metrics", $type="VMSingle", $descr="", $tags="", $link="") {
+          ContainerDb(genserv.Homenetwork.Proxmoxhost.genserv.observability.victoriametrics.VictoriaMetrics_1, "VictoriaMetrics", $techn="VictoriaMetrics", $descr="Metrics storage and query.", $tags="", $link="")
+        }
+
+        Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv.observability.Grafana, "Grafana", $type="Grafana", $descr="Dashboards.", $tags="", $link="")
+        Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv.observability.OpenTelemetrycollector, "OpenTelemetry collector", $type="otelcol", $descr="Receives OTLP traces/metrics from every service.", $tags="", $link="")
+      }
+
+    }
+
+  }
+
+}
+
+Rel(genserv.Userworkstation.Desktopclient_1, genserv.Homenetwork.Proxmoxhost.genserv.voicssystem.coturn.coturn_1, "P2P relay when NAT requires it", $techn="TURN", $tags="", $link="")
+Rel(genserv.Userworkstation.Desktopclient_1, genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.api.api_1, "Auth, guilds, users, devices", $techn="HTTPS/JSON", $tags="", $link="")
+Rel(genserv.Userworkstation.Desktopclient_1, genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.messages.messages_1, "Message history and sends (routed by ingress)", $techn="HTTPS/JSON", $tags="", $link="")
+Rel(genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.messages.messages_1, genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.api.api_1, "Channel access, bot token introspection", $techn="HTTP /internal/v1", $tags="", $link="")
+Rel(genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.api.api_1, genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.messages.messages_1, "Last message ids", $techn="HTTP /internal/v1", $tags="", $link="")
+Rel(genserv.Userworkstation.Desktopclient_1, genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.gateway.gateway_1, "Real-time events, E2EE envelopes, P2P signaling", $techn="WSS/JSON", $tags="", $link="")
+Rel(genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.gateway.gateway_1, genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.api.api_1, "Ready payload, guild state, access, introspect", $techn="HTTP /internal/v1", $tags="", $link="")
+Rel(genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.gateway.gateway_1, genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.messages.messages_1, "Last message ids", $techn="HTTP /internal/v1", $tags="", $link="")
+Rel(genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.admin.adminbff_1, genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.api.api_1, "Admin stats, users, suspension", $techn="HTTP /internal/v1", $tags="", $link="")
+Rel(genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.admin.adminbff_1, genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.messages.messages_1, "Message stats", $techn="HTTP /internal/v1", $tags="", $link="")
+Rel(genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.admin.adminbff_1, genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.gateway.gateway_1, "Session stats, drain/undrain", $techn="HTTP /internal/v1", $tags="", $link="")
+Rel(genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.admin.adminweb_1, genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.admin.adminbff_1, "Calls /admin-api", $techn="HTTPS/JSON", $tags="", $link="")
+Rel(genserv.Userworkstation.Desktopclient_1, genserv.Homenetwork.Proxmoxhost.genserv.voicsvoice.voicenlhome.voicesignaling_1, "Voice WebSocket", $techn="WSS/JSON", $tags="", $link="")
+Rel(genserv.Userworkstation.Desktopclient_1, genserv.Homenetwork.Proxmoxhost.genserv.voicsvoice.voicenlhome.sfu_1, "Voice, video and screen share", $techn="DTLS-SRTP over UDP", $tags="", $link="")
+Rel(genserv.Homenetwork.Proxmoxhost.genserv.voicsvoice.voicenlhome.voicesignaling_1, genserv.Homenetwork.Proxmoxhost.genserv.voicsvoice.voicenlhome.sfu_1, "Controls sessions", $techn="NDJSON over TCP 127.0.0.1:4101", $tags="", $link="")
+Rel(genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.api.api_1, genserv.Homenetwork.Proxmoxhost.genserv.voicsdata.postgres.Postgres_1, "Reads/writes relational data and outbox", $techn="SQL", $tags="", $link="")
+Rel(genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.admin.adminbff_1, genserv.Homenetwork.Proxmoxhost.genserv.voicsdata.postgres.Postgres_1, "Rollups, flags, admin audit (discordy_admin)", $techn="SQL", $tags="", $link="")
+Rel(genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.messages.messages_1, genserv.Homenetwork.Proxmoxhost.genserv.voicsdata.scylla.ScyllaDB_1, "Reads/writes messages", $techn="CQL", $tags="", $link="")
+Rel(genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.api.api_1, genserv.Homenetwork.Proxmoxhost.genserv.voicsdata.redpanda.Redpanda_1, "Publishes guild, user, interaction, audit events", $techn="Kafka", $tags="", $link="")
+Rel(genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.messages.messages_1, genserv.Homenetwork.Proxmoxhost.genserv.voicsdata.redpanda.Redpanda_1, "Publishes message events", $techn="Kafka", $tags="", $link="")
+Rel(genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.gateway.gateway_1, genserv.Homenetwork.Proxmoxhost.genserv.voicsdata.redpanda.Redpanda_1, "Consumes all topics; publishes telemetry", $techn="Kafka", $tags="", $link="")
+Rel(genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.admin.adminbff_1, genserv.Homenetwork.Proxmoxhost.genserv.voicsdata.redpanda.Redpanda_1, "Consumes every topic for counters", $techn="Kafka", $tags="", $link="")
+Rel(genserv.Homenetwork.Proxmoxhost.genserv.voicsvoice.voicenlhome.voicesignaling_1, genserv.Homenetwork.Proxmoxhost.genserv.voicsdata.redpanda.Redpanda_1, "Publishes voice quality telemetry", $techn="Kafka", $tags="", $link="")
+Rel(genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.api.api_1, genserv.Homenetwork.Proxmoxhost.genserv.voicsdata.valkey.Valkey_1, "Rate limits and caches", $techn="RESP", $tags="", $link="")
+Rel(genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.gateway.gateway_1, genserv.Homenetwork.Proxmoxhost.genserv.voicsdata.valkey.Valkey_1, "Sessions, resume buffers, presence, voice allocations, E2EE inboxes", $techn="RESP", $tags="", $link="")
+Rel(genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.gateway.gateway_1, genserv.Homenetwork.Proxmoxhost.genserv.voicsdata.etcd.etcd_1, "Watches voice nodes", $techn="gRPC", $tags="", $link="")
+Rel(genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.admin.adminbff_1, genserv.Homenetwork.Proxmoxhost.genserv.voicsdata.etcd.etcd_1, "Reads voice nodes", $techn="gRPC", $tags="", $link="")
+Rel(genserv.Homenetwork.Proxmoxhost.genserv.voicsvoice.voicenlhome.voicesignaling_1, genserv.Homenetwork.Proxmoxhost.genserv.voicsdata.etcd.etcd_1, "Registers node under a lease", $techn="gRPC", $tags="", $link="")
+Rel(genserv.Userworkstation.Desktopclient_1, genserv.Homenetwork.Proxmoxhost.genserv.voicsdata.minio.MinIO_1, "Downloads attachments and updates", $techn="HTTPS (signed URLs)", $tags="", $link="")
+Rel(genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.api.api_1, genserv.Homenetwork.Proxmoxhost.genserv.voicsdata.minio.MinIO_1, "Presigns asset uploads", $techn="S3", $tags="", $link="")
+Rel(genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.messages.messages_1, genserv.Homenetwork.Proxmoxhost.genserv.voicsdata.minio.MinIO_1, "Presigns attachment uploads", $techn="S3", $tags="", $link="")
+Rel(genserv.Homenetwork.Proxmoxhost.genserv.voicsapps.admin.adminbff_1, genserv.Homenetwork.Proxmoxhost.genserv.observability.victoriametrics.VictoriaMetrics_1, "Queries metrics", $techn="HTTP", $tags="", $link="")
+Rel(genserv.Cloudflareedge.Tunneledge, genserv.Homenetwork.Proxmoxhost.genserv.voicssystem.cloudflared, "Proxies requests through the tunnel", $techn="QUIC/HTTP2", $tags="", $link="")
+Rel(genserv.Homenetwork.Proxmoxhost.genserv.voicssystem.cloudflared, genserv.Homenetwork.Proxmoxhost.genserv.voicssystem.ingressnginx, "Forwards", $techn="HTTP", $tags="", $link="")
+Rel(genserv.Homenetwork.Router, genserv.Homenetwork.Proxmoxhost.genserv.voicssystem.coturn.coturn_1, "Forwards", $techn="UDP/TCP 3478", $tags="", $link="")
+Rel(genserv.Homenetwork.Proxmoxhost.genserv.fluxsystem.Flux, genserv.Homenetwork.Proxmoxhost.genserv.voicssystem.OpenBao, "Deploys", $techn="", $tags="", $link="")
+Rel(genserv.Homenetwork.Proxmoxhost.genserv.voicssystem.ExternalSecretsOperator, genserv.Homenetwork.Proxmoxhost.genserv.voicssystem.OpenBao, "Reads secrets from", $techn="HTTPS", $tags="", $link="")
+Rel(genserv.Homenetwork.Proxmoxhost.genserv.voicssystem.ActionsRunnerController, genserv.Homenetwork.Proxmoxhost.genserv.voicssystem.OpenBao, "secrets-sync writes to", $techn="HTTPS", $tags="", $link="")
+Rel(genserv.Homenetwork.Proxmoxhost.genserv.observability.Grafana, genserv.Homenetwork.Proxmoxhost.genserv.observability.victoriametrics.VictoriaMetrics_1, "Queries", $techn="HTTP", $tags="", $link="")
+Rel(genserv.Homenetwork.Proxmoxhost.genserv.observability.OpenTelemetrycollector, genserv.Homenetwork.Proxmoxhost.genserv.observability.victoriametrics.VictoriaMetrics_1, "Remote-writes metrics", $techn="HTTP", $tags="", $link="")
+
+SHOW_LEGEND(true)
+hide stereotypes
+@enduml
