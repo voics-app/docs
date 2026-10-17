@@ -25,14 +25,17 @@ const CATEGORIES = {
 };
 const REQUIRED = ["id", "name", "category", "purpose", "consumers", "env", "github", "openbao", "kubernetes", "owner", "rotation", "generate"];
 const GITHUB_SCOPES = /^(org|none|env:[a-z-]+)$/;
+const OPENBAO_KEY = /^[A-Z][A-Z0-9_]*$/;
 
 function validate(inventory) {
   const errors = [];
   if (inventory?.version !== 1) errors.push("version must be 1");
+  if (typeof inventory?.mount !== "string" || inventory.mount === "") errors.push("mount must name the KV v2 mount");
   if (!Array.isArray(inventory?.secrets)) return [...errors, "secrets must be a list"];
 
   const ids = new Set();
   const githubNames = new Set();
+  const bindings = new Set();
   for (const [index, secret] of inventory.secrets.entries()) {
     const where = `secrets[${index}] (${secret?.id ?? "?"})`;
     for (const field of REQUIRED) {
@@ -43,12 +46,22 @@ function validate(inventory) {
     ids.add(secret.id);
     if (!(secret.category in CATEGORIES)) errors.push(`${where}: unknown category ${secret.category}`);
     if (!GITHUB_SCOPES.test(secret.github?.scope ?? "")) errors.push(`${where}: github.scope must be org, none or env:<name>`);
-    for (const name of secret.github?.names ?? []) {
+    const names = secret.github?.names ?? [];
+    for (const name of names) {
       if (githubNames.has(name)) errors.push(`${where}: GitHub secret ${name} listed twice`);
       githubNames.add(name);
     }
-    if (secret.openbao !== null && !String(secret.openbao?.path ?? "").startsWith("kv/discordy/")) {
-      errors.push(`${where}: openbao.path must start with kv/discordy/ (or openbao must be null)`);
+    if (!Array.isArray(secret.openbao)) {
+      errors.push(`${where}: openbao must be a list of bindings ([] when never stored in OpenBao)`);
+    } else {
+      for (const binding of secret.openbao) {
+        const key = `${binding?.path}#${binding?.key}`;
+        if (!String(binding?.path ?? "").startsWith("discordy/")) errors.push(`${where}: openbao path ${binding?.path} must start with discordy/ (relative to the ${inventory.mount} mount)`);
+        if (!OPENBAO_KEY.test(binding?.key ?? "")) errors.push(`${where}: openbao key ${binding?.key} must be UPPER_SNAKE_CASE`);
+        if (bindings.has(key)) errors.push(`${where}: OpenBao ${key} bound twice`);
+        bindings.add(key);
+        if (!names.includes(binding?.github)) errors.push(`${where}: binding ${key} uses GitHub secret ${binding?.github}, which is not in github.names`);
+      }
     }
     if (!secret.rotation?.interval || !secret.rotation?.procedure) errors.push(`${where}: rotation needs interval and procedure`);
     for (const forbidden of ["value", "secret", "password", "token"]) {
@@ -65,7 +78,10 @@ const runbookLink = (procedure) => {
   return `[${file}${anchor ? `#${anchor}` : ""}](../runbooks/${file}${anchor ? `#${anchor}` : ""})`;
 };
 const githubCell = ({ scope, names }) => (scope === "none" ? "not in GitHub" : `${code(names)} (${scope})`);
-const openbaoCell = (openbao) => (openbao === null ? "not in OpenBao" : `\`${openbao.path}\` → ${code(openbao.keys)}`);
+const openbaoCell = (bindings) =>
+  bindings.length
+    ? bindings.map((b) => `\`${b.path}\` → \`${b.key}\` (from \`${b.github}\`)`).join("; ")
+    : "not in OpenBao";
 const kubernetesCell = (list) => (list.length ? list.map((k) => `\`${k.namespace}/${k.secret}\``).join(", ") : "—");
 
 function render(inventory) {
@@ -74,7 +90,7 @@ function render(inventory) {
     "",
     "<!-- Generated from inventory.yaml by scripts/render-secrets.mjs. Do not edit by hand. -->",
     "",
-    "Every secret on the Discordy platform is listed here. The source is [`inventory.yaml`](inventory.yaml). This page records no values: values exist only in GitHub secrets, OpenBao, Kubernetes Secrets and 1Password.",
+    `Every secret on the Discordy platform is listed here. The source is [\`inventory.yaml\`](inventory.yaml). This page records no values: values exist only in GitHub secrets, OpenBao (KV v2 mount \`${inventory.mount}\`), Kubernetes Secrets and 1Password. The OpenBao paths and keys match \`gitops/secrets/inventory.yaml\`, which CI enforces.`,
     "",
     "**Flow** ([ADR-0006](../adr/0006-secrets-flow.md)):",
     "",
