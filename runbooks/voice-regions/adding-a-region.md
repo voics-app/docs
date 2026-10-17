@@ -54,7 +54,7 @@ A region therefore needs four things:
 | Use when | The site is on the same LAN as gen-serv, or there is a reliable low-latency private link (WireGuard) to it | The site is remote, or the link is unreliable, or you want failure isolation |
 | Flux | The existing `clusters/gen-serv/regions.yaml` | A new `clusters/region-<region>/` bootstrapped separately |
 | Secrets | Already available through the gen-serv External Secrets Operator | A local ESO that reads the central OpenBao over WireGuard |
-| Tunnel for the voice WebSocket | The gen-serv `cloudflared` routes `discordy-rtc-<region>` to the node | A local `cloudflared` with its own tunnel token |
+| Tunnel for the voice WebSocket | The gen-serv `cloudflared` routes `discordy-rtc-<region>` to the node | A local `cloudflared` with its own locally managed tunnel and credentials JSON |
 | etcd / Redpanda | In-cluster service DNS | The gen-serv WireGuard address (`10.77.0.1:2379`, `10.77.0.1:19092`) |
 | Failure mode | Losing the control plane takes the region down too | The region survives control-plane loss for existing calls, but no new allocations happen without etcd and the gateway |
 | Effort | Lower | Higher |
@@ -72,7 +72,7 @@ A region therefore needs four things:
   - The `CLOUDFLARE_API_TOKEN` scope (see [secrets](../../secrets/README.md#cloudflare-api-token)).
   - Write access to `discordy-voics/gitops`.
   - `op` signed in to the Discordy vault.
-- [ ] For **standalone**: a GitHub `production` environment secret slot `CLOUDFLARE_TUNNEL_TOKEN_<REGION>` (see [region tunnel tokens](../../secrets/README.md#region-tunnel-tokens)).
+- [ ] For **standalone**: the region's locally managed tunnel exists, and its credentials secret is in the [inventory](../../secrets/README.md) and in gitops (see [region tunnels](../cloudflare-setup.md#region-tunnels-standalone-clusters)).
 
 ## Step 1: Size the hardware
 
@@ -287,8 +287,8 @@ From the workstation:
      --branch=main --path=clusters/region-de-fra
    ```
 
-3. **Let ESO authenticate to OpenBao.** Create an OpenBao Kubernetes auth mount for this cluster, `auth/k8s-de-fra`, with a role bound to the ESO service account and the `discordy-voice-read` policy. That policy can read only `kv/discordy/common`, `kv/discordy/voice`, `kv/discordy/platform/ghcr` and `kv/discordy/regions/de-fra`. See [OpenBao bootstrap](../openbao-unseal.md#first-time-bootstrap) for the command pattern.
-4. **Create the region tunnel** and store its token as the GitHub secret `CLOUDFLARE_TUNNEL_TOKEN_DE_FRA`. Then run `secrets-sync` (see [Cloudflare setup → region tunnels](../cloudflare-setup.md#region-tunnels-standalone-clusters)).
+3. **Let ESO authenticate to OpenBao.** Create an OpenBao Kubernetes auth mount for this cluster, `auth/k8s-de-fra`, with a role bound to the ESO service account and the `discordy-voice-read` policy. That policy can read only `kv/discordy/shared` and `kv/discordy/ghcr`, plus the region's own path once gitops has one. See [OpenBao bootstrap](../openbao-unseal.md#first-time-bootstrap) for the command pattern.
+4. **Create the region tunnel** as a locally managed tunnel. Follow [Cloudflare setup → region tunnels](../cloudflare-setup.md#region-tunnels-standalone-clusters). Its credentials reach the cluster only after gitops and the inventory name them, so this step blocks the standalone cluster's voice ingress until then.
 
 ## Step 6: Router and firewall
 
@@ -391,12 +391,13 @@ TUNNEL_ID=<gen-serv tunnel id, or the region tunnel id for standalone>
 curl -s -X POST -H "$AUTH" -H 'Content-Type: application/json' "$CF/zones/$ZONE_ID/dns_records" \
   --data "{\"type\":\"CNAME\",\"name\":\"discordy-rtc-de-fra\",\"content\":\"$TUNNEL_ID.cfargotunnel.com\",\"proxied\":true,\"comment\":\"discordy voice region de-fra (regionctl)\"}" | jq '.success'
 
-# 8.2 Tunnel ingress rule: GET the current config, insert the rule before the catch-all, PUT it back
-curl -s -H "$AUTH" "$CF/accounts/$ACCOUNT_ID/cfd_tunnel/$TUNNEL_ID/configurations" | jq '.result.config' > tunnel.json
-jq '.ingress |= ([{"hostname":"discordy-rtc-de-fra.voics.nl","service":"http://voice-de-fra.voics-voice.svc.cluster.local:4100","originRequest":{"noTLSVerify":false}}] + .)' tunnel.json > tunnel.new.json
-curl -s -X PUT -H "$AUTH" -H 'Content-Type: application/json' \
-  "$CF/accounts/$ACCOUNT_ID/cfd_tunnel/$TUNNEL_ID/configurations" \
-  --data "{\"config\": $(cat tunnel.new.json)}" | jq '.success'
+```
+
+**8.2 Tunnel ingress rule (gitops, not the API).** The tunnel is locally managed, so its ingress rules live in the `cloudflared` ConfigMap in gitops (`infrastructure/controllers/cloudflared/cloudflared.yaml`). Add this rule before the catch-all `http_status:404` rule, in the same PR as step 7, and let Flux apply it:
+
+```yaml
+- hostname: discordy-rtc-de-fra.voics.nl
+  service: http://voice-de-fra.voics-voice.svc.cluster.local:4100
 ```
 
 Notes:
@@ -522,7 +523,7 @@ Use this to remove a region that failed verification, or one that is being decom
    - The router's UDP forward.
    - The WireGuard peer on gen-serv (`/etc/wireguard/wg0.conf`, then reload).
    - The OpenBao auth mount `auth/k8s-<region>`.
-   - The GitHub secret `CLOUDFLARE_TUNNEL_TOKEN_<REGION>`.
+   - The region tunnel, and its credentials secret if one was added to gitops.
    - The entry in [`secrets/inventory.yaml`](../../secrets/inventory.yaml), if region-specific entries were added.
 8. **Update the record** in `gitops/regions/README.md`.
 
@@ -581,4 +582,4 @@ DISCORDY_ENV=production
 LOG_LEVEL=info
 ```
 
-The secret values (`VOICE_TOKEN_SECRET`, `INTERNAL_SERVICE_TOKEN`, `JWT_PUBLIC_KEY`) come from the `voice-secrets` and `common-secrets` ExternalSecrets in the template. They are never written to the overlay.
+The secret values (`VOICE_TOKEN_SECRET`, `INTERNAL_SERVICE_TOKEN`, `JWT_PUBLIC_KEY`) come from the `voice-secrets` ExternalSecret in the template. They are never written to the overlay.
