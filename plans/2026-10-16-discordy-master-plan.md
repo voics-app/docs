@@ -204,7 +204,7 @@ All calls carry the `X-Internal-Token` header. All IDs are strings.
 |---|---|---|---|
 | `discordy.guild.v1` | guild_id | api | GUILD_CREATE, GUILD_UPDATE, GUILD_DELETE, CHANNEL_CREATE, CHANNEL_UPDATE, CHANNEL_DELETE, GUILD_ROLE_CREATE, GUILD_ROLE_UPDATE, GUILD_ROLE_DELETE, GUILD_MEMBER_ADD, GUILD_MEMBER_UPDATE, GUILD_MEMBER_REMOVE, GUILD_BAN_ADD, GUILD_BAN_REMOVE, GUILD_EMOJIS_UPDATE, INVITE_CREATE, INVITE_DELETE, THREAD_CREATE, THREAD_UPDATE, THREAD_DELETE, APPLICATION_COMMAND_PERMISSIONS_UPDATE |
 | `discordy.message.v1` | channel_id | messages | MESSAGE_CREATE, MESSAGE_UPDATE, MESSAGE_DELETE, MESSAGE_DELETE_BULK, MESSAGE_REACTION_ADD, MESSAGE_REACTION_REMOVE, MESSAGE_REACTION_REMOVE_ALL, CHANNEL_PINS_UPDATE, MESSAGE_ACK |
-| `discordy.user.v1` | user_id | api | USER_UPDATE, USER_SETTINGS_UPDATE, RELATIONSHIP_ADD, RELATIONSHIP_REMOVE, CHANNEL_CREATE (DMs, with `target_user_ids`), CHANNEL_RECIPIENT_ADD, CHANNEL_RECIPIENT_REMOVE, SESSIONS_REPLACE |
+| `discordy.user.v1` | user_id | api | USER_UPDATE, USER_SETTINGS_UPDATE, RELATIONSHIP_ADD, RELATIONSHIP_REMOVE, CHANNEL_CREATE (DMs, with `target_user_ids`), CHANNEL_RECIPIENT_ADD, CHANNEL_RECIPIENT_REMOVE, SESSIONS_REPLACE, USER_DEVICES_UPDATE (`{user_id, devices:[{device_id, identity_key_b64}]}`, targeted at the user and every user who shares a DM, group DM or guild with them; drives MLS member/device removal) |
 | `discordy.interaction.v1` | application_id | api | INTERACTION_CREATE (routed to the bot's sessions) |
 | `discordy.telemetry.v1` | node/user | voice, client (via gateway), gateway | VOICE_QUALITY, USAGE_TICK |
 | `discordy.audit.v1` | guild_id | api | AUDIT_LOG_ENTRY_CREATE |
