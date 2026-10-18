@@ -1,0 +1,3 @@
+# Reviewed gitleaks findings (2026-10-18). Each entry is a fingerprint, not a blanket rule.
+# false positive (RFC 6455 sample Sec-WebSocket-Key)
+ef47b01b2ab60cbfe0bad1df1cc947d9dbfdbb09:runbooks/voice-regions/adding-a-region.md:generic-api-key:452
