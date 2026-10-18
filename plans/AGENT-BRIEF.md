@@ -51,3 +51,12 @@ Keep it under 300 words:
 - The branch merged into `develop`.
 - Any deviations from the pinned interfaces, and why.
 - Anything still pending.
+
+## Kanban board (mandatory)
+The board is the org project "Discordy": https://github.com/orgs/discordy-voics/projects/1. Every issue is assigned to @oussamaelhajoui, and each one carries the label `agent:<your-agent-name>`. Use the helper `bash /c/Users/Karma/.discordy/board.sh`:
+- `board.sh list <repo>` shows your repo's issues and their status.
+- `board.sh claim <issue-url> <agent-name>` runs **before** you start an issue. It adds the label, assigns the owner and moves the card to In progress.
+- Keep only **one** issue In progress at a time. Move the issue you'll do next to Ready with `board.sh move <url> ready`.
+- When an issue is implemented and its tests pass but it isn't merged yet, run `board.sh move <url> in-review "<what was verified>"`.
+- When it's merged into develop and pushed, run `board.sh move <url> done "<commit + test results>"`. This also closes the issue.
+- If something you need is missing from the board, open an issue in your repo and add it with `board.sh move <url> backlog`.
