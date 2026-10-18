@@ -1,5 +1,27 @@
 # Local development
 
+## Quick start (recommended)
+
+One script sets up everything on a new machine and starts the stack every day after. It is idempotent: run it as often as you like.
+
+```bash
+git clone --branch develop git@github.com:discordy-voics/gitops.git   # next to the api, messages, gateway, admin, voice, client repos
+cd gitops/local
+./dev.sh            # Windows PowerShell: .\dev.ps1
+```
+
+| Command | What it does |
+|---|---|
+| `./dev.sh` or `./dev.sh up` | Checks prerequisites (Docker running, node >= 22, git), creates `.env` and the JWT keys if missing, detects your LAN IP, picks free ports on first setup, builds missing or outdated service images from each sibling repo's `develop`, starts the stack, waits for health, seeds the dev accounts once, prints the URLs and credentials |
+| `./dev.sh up --rebuild` | Same, but rebuilds every service image |
+| `./dev.sh up --client` | Same, then launches the desktop client against the local stack (needs pnpm) |
+| `./dev.sh status` | Container state and URLs |
+| `./dev.sh logs [service]` | Follow logs |
+| `./dev.sh down` | Stop the stack, keep the data |
+| `./dev.sh reset` | Stop and delete every volume, after you type `reset` to confirm |
+
+Missing sibling repos are cloned (it asks first; `--yes` skips the question). Images are tagged `e2e/<service>:develop` and carry the source commit in the `io.discordy.source-commit` label, so a service is rebuilt only when its repo's `develop` moved. Dev accounts: `alice@discordy.local` and `bob@discordy.local`, password `Discordy-dev-2026!`. The numbered sections below are the manual route, for running services natively.
+
 This guide runs the whole platform on one workstation. The dependencies run in Docker through `gitops/local/compose.yaml`. Each service runs either natively with `make dev`, for fast iteration, or as a container under the `full` profile.
 
 ## Prerequisites
