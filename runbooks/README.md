@@ -13,3 +13,4 @@
 | [Release](release.md) | git-flow releases, hotfixes, Flux deployment, rollback |
 | [Local development](local-development.md) | Running the stack on a workstation |
 | [Cloudflare setup](cloudflare-setup.md) | Tunnel, DNS and Access configuration |
+| [Ops access](ops-access.md) | Ops portal, support tool URLs, IP lock, DPAPI credentials |
