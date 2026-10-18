@@ -16,6 +16,10 @@ This directory holds Discordy's architecture decisions. The records use the [MAD
 | [0010](0010-scylladb-bucketing.md) | ScyllaDB message store with 10-day buckets and request coalescing | accepted |
 | [0011](0011-no-drm-capture-watch-together.md) | No capture of DRM-protected video; offer Watch Together instead | accepted |
 | [0012](0012-search-deferred.md) | Full-text message search is deferred | accepted (deferred) |
+| [0013](0013-search-index-topology.md) | Search index topology for guild message search | proposed |
+| [0014](0014-gateway-compression.md) | Gateway compression: per-connection zstd streaming, opt-in | proposed |
+| [0015](0015-webauthn-second-factor.md) | WebAuthn as a second factor next to TOTP | proposed |
+| [0016](0016-push-backpressure.md) | Push delivery with bounded back-pressure | proposed |
 
 ## Writing a new ADR
 
