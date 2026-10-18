@@ -153,6 +153,7 @@ All calls carry the `X-Internal-Token` header. All IDs are strings.
 | `GET /internal/v1/users/{user_id}/ready` | `{ user, guilds: [GuildFull], private_channels: [Channel], relationships: [Relationship], user_settings }` |
 | `GET /internal/v1/guilds/{guild_id}/state` | `GuildFull` (guild, roles, channels, members, voice_region) |
 | `GET /internal/v1/channels/{channel_id}/access/{user_id}` | `{ "permissions": "<u64 as string>", "guild_id": ...\|null, "channel_type": int, "delivery_mode": "standard"\|"ephemeral"\|"p2p", "recipient_ids": [...] }` (403 if the user is not a member) |
+| `GET /internal/v1/channels/{channel_id}/delivery` | `{ "guild_id": ...|null, "channel_type": int, "delivery_mode": ... }` without a user: used by messages for webhook and bot posts |
 | `GET /internal/v1/admin/stats` | `{ users_total, guilds_total, channels_total, bots_total, signups_24h }` |
 | `GET /internal/v1/admin/users?query=&limit=&after=` | paginated user list |
 | `POST /internal/v1/admin/users/{id}/suspend` with `{reason, until}` | |
@@ -162,7 +163,7 @@ All calls carry the `X-Internal-Token` header. All IDs are strings.
 
 | Endpoint | Returns |
 |---|---|
-| `POST /internal/v1/channels/{id}/messages` with `{author_id, webhook_id?, username?, avatar_url?, interaction_id?, application_id?, content?, embeds?, components?, flags?, message_reference?, attachments?}` | Creates a standard message on behalf of a bot (`author_id` = bot user id), a webhook (`author_id` = `webhook_id`, with `username`/`avatar_url` overrides, as in Discord) or an interaction response (`interaction_id` + `application_id`; `flags & 64` = ephemeral, delivered only to the invoking user). Skips the user permission check because api authorised the call. Returns 409 / 50160 for non-standard delivery modes. Responds with the Message object |
+| `POST /internal/v1/channels/{id}/messages` with `{author_id, webhook_id?, username?, avatar_url?, interaction_id?, application_id?, target_user_ids?, content?, embeds?, components?, flags?, message_reference?, attachments?}` | Creates a standard message on behalf of a bot (`author_id` = bot user id), a webhook (`author_id` = `webhook_id`, with `username`/`avatar_url` overrides, as in Discord) or an interaction response (`interaction_id` + `application_id`; `flags & 64` = ephemeral, delivered only to the invoking user). Skips the user permission check because api authorised the call. Returns 409 / 50160 for non-standard delivery modes. Responds with the Message object |
 | `GET /internal/v1/channels/{id}/last-message-id` | `{ "last_message_id": ... }` |
 | `GET /internal/v1/admin/stats` | `{ messages_24h, messages_by_mode: {standard, ephemeral_relayed, p2p_signaled} }`. Counts only, never content |
 
