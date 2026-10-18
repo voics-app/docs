@@ -162,6 +162,7 @@ All calls carry the `X-Internal-Token` header. All IDs are strings.
 
 | Endpoint | Returns |
 |---|---|
+| `POST /internal/v1/channels/{id}/messages` with `{author_id, webhook_id?, username?, avatar_url?, interaction_id?, application_id?, content?, embeds?, components?, flags?, message_reference?, attachments?}` | Creates a standard message on behalf of a bot (`author_id` = bot user id), a webhook (`author_id` = `webhook_id`, with `username`/`avatar_url` overrides, as in Discord) or an interaction response (`interaction_id` + `application_id`; `flags & 64` = ephemeral, delivered only to the invoking user). Skips the user permission check because api authorised the call. Returns 409 / 50160 for non-standard delivery modes. Responds with the Message object |
 | `GET /internal/v1/channels/{id}/last-message-id` | `{ "last_message_id": ... }` |
 | `GET /internal/v1/admin/stats` | `{ messages_24h, messages_by_mode: {standard, ephemeral_relayed, p2p_signaled} }`. Counts only, never content |
 
