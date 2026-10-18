@@ -153,6 +153,7 @@ All calls carry the `X-Internal-Token` header. All IDs are strings.
 | `GET /internal/v1/users/{user_id}/ready` | `{ user, guilds: [GuildFull], private_channels: [Channel], relationships: [Relationship], user_settings }` |
 | `GET /internal/v1/guilds/{guild_id}/state` | `GuildFull` (guild, roles, channels, members, voice_region) |
 | `GET /internal/v1/channels/{channel_id}/access/{user_id}` | `{ "permissions": "<u64 as string>", "guild_id": ...\|null, "channel_type": int, "delivery_mode": "standard"\|"ephemeral"\|"p2p", "recipient_ids": [...] }` (403 if the user is not a member) |
+| `POST /internal/v1/users/lookup` with `{ "ids": [...] }` | `[User]`: public user fields only (never email); unknown or malformed ids are skipped; at most 100 ids per call. Used by messages to hydrate message authors (60s cache, batched per history page; degrades to `{id}` when unavailable) |
 | `GET /internal/v1/channels/{channel_id}/delivery` | `{ "guild_id": ...|null, "channel_type": int, "delivery_mode": ... }` without a user: used by messages for webhook and bot posts |
 | `GET /internal/v1/admin/stats` | `{ users_total, guilds_total, channels_total, bots_total, signups_24h }` |
 | `GET /internal/v1/admin/users?query=&limit=&after=` | paginated user list |
