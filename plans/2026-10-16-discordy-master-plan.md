@@ -344,7 +344,7 @@ All calls carry the `X-Internal-Token` header. All IDs are strings.
 
 **Object shapes**: follow Discord API v10 field names exactly (User, Guild, Channel, Role, Member, Message, Attachment, Embed, Reaction, Emoji, Invite, Application, ApplicationCommand, Interaction, Webhook, VoiceState, PermissionOverwrite). Extra Discordy fields:
 - Channel: `delivery_mode`, `voice_region`
-- UserSettings: `default_delivery_mode`
+- UserSettings: `default_delivery_mode`, `e2ee_calls_default` (every call the user starts or joins is E2EE; in mixed calls, any participant with it on makes the call E2EE for everyone)
 - Device: `device_id`, `identity_key_b64`
 
 **Channel types** (Discord values): 0 GUILD_TEXT, 1 DM, 2 GUILD_VOICE, 3 GROUP_DM, 4 GUILD_CATEGORY, 5 GUILD_ANNOUNCEMENT, 10/11/12 threads, 13 GUILD_STAGE_VOICE, 15 GUILD_FORUM.
