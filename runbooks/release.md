@@ -12,6 +12,74 @@ Every repository follows the same git-flow and versioning ([spec §13](../specs/
 
 `gitflow-guard` fails a PR to `main` that does not come from `release/*` or `hotfix/*`. It also fails a PR to `develop` that does not come from `feature/*`, `release/*`, `hotfix/*` or `dependabot/*` ([ADR-0007](../adr/0007-github-free-workarounds.md)).
 
+## How changes reach production
+
+**Short answer:** a merge to `main` alone does **not** deploy a service. A **release tag `vX.Y.Z`** does: it builds a stable image, and Flux rolls it out automatically. The website is the exception: it goes live on every merge to `main` as well as on tags.
+
+| Component | Repository | What triggers a deploy | Pipeline | Where it lands |
+|---|---|---|---|---|
+| api, messages, gateway, admin, voice (signaling + SFU) | service repo | tag `vX.Y.Z` on `main` | `ci.yml`: tests, then `docker.yml` builds, scans, signs and pushes `ghcr.io/discordy-voics/<image>:X.Y.Z` | Flux image automation bumps the tag in gitops `main`, and Flux applies it (see [timings](#timings)) |
+| Platform config (manifests, ingress, data layer, observability) | `gitops` | merge to `main` | Flux `GitRepository` polls `main` every minute | the matching Flux Kustomization applies it on the next source revision |
+| Desktop client installer (Windows) | `client` | tag `vX.Y.Z` | `release.yml`: Windows build on a GitHub-hosted runner, GitHub Release assets, then `minio-publish` | `https://discordy-updates.voics.nl/Discordy-Setup-X.Y.Z.exe`, `latest.yml` (installed clients auto-update) and `Discordy-Setup-latest.exe` (the website's Download button) |
+| Marketing website | `website` | merge to `main` **or** tag `v*` | `ci.yml`: build + brand check, then `minio-publish` into bucket `discordy-site` | `https://discordy.voics.nl` |
+| Invite landing page (`/invite/<code>`) | `gitops` (`site/`) | merge to `main` touching `site/**` | `publish-site.yml`: `minio-publish` into `discordy-site` | `https://discordy.voics.nl/invite/<code>` |
+| Docs | `docs` | merge to `main` | release-please and the Notion mirror | GitHub (and Notion) |
+
+What the other branches produce:
+
+- `develop` pushes `X.Y.Z-dev.N` images and `release/*`/`hotfix/*` push `X.Y.Z-rc.N`. The production image policies select **stable** tags only, so none of these reach production. A dev/test environment that follows `-dev.N` is tracked in gitops#27.
+- `feature/*` and pull requests only build and test; nothing is pushed.
+
+### Timings
+
+The figures below cover the time from the moment the release image exists in GHCR.
+
+| Step | Controller | Interval | Where it is set |
+|---|---|---|---|
+| Notice the new tag in GHCR | `ImageRepository` (one per image) | **5 min** | `gitops/apps/image-automation/image-policies.yaml` (`spec.interval`) |
+| Choose it (`semver >=0.1.0`, stable only) | `ImagePolicy` | immediately after the scan | same file (`spec.policy.semver.range`) |
+| Commit the bump to gitops `main` | `ImageUpdateAutomation` `discordy` | **5 min** | `gitops/apps/image-automation/image-update-automation.yaml` |
+| Fetch gitops `main` | `GitRepository` `flux-system` | **1 min** | `gitops/clusters/gen-serv/flux-system/gotk-sync.yaml` |
+| Apply to the cluster | Kustomization `apps` / `regions` | immediately on a new source revision; full re-sync every 10 min (retry 2 min) | `gitops/clusters/gen-serv/apps.yaml`, `regions.yaml` |
+| Infra layers (foundation, controllers, configs, data) | Kustomizations | on a new revision; re-sync every 30 min | `gitops/clusters/gen-serv/infrastructure.yaml`, `configs.yaml` |
+| Pod rollout | Deployment rolling update | about 1 to 2 min (readiness probes) | the service manifests |
+
+End to end, a service release goes live within about **10 minutes of its image being pushed**, plus the CI build itself (about 5 to 15 minutes for Rust and Elixir). Worst case is about 5 + 5 + 1 minutes before the apply starts. Website and invite page deploys take about 2 minutes after the merge (build plus upload). Cloudflare caches assets, but the build adds content hashes to asset URLs and `index.html`, `latest.yml` and `Discordy-Setup-latest.exe` are served with a 5-minute cache.
+
+### Changing the intervals
+
+1. Edit the `interval` in the files named in the table, on a `feature/*` branch of gitops, and merge it through the normal flow. Flux reconfigures itself from git; never `kubectl edit` these objects, because Flux reverts it.
+2. Shorter intervals mean more GHCR API calls. Keep image scans at 1 minute or more, because GHCR rate-limits anonymous and token calls.
+3. For zero-delay deploys, add a Flux `Receiver` (webhook from GitHub or GHCR, exposed through the tunnel). It is not set up yet.
+
+### Deploying now, without waiting
+
+```bash
+export KUBECONFIG=~/.kube/discordy-gen-serv.yaml
+flux reconcile image repository api -n flux-system      # scan GHCR now (per image)
+flux reconcile image update discordy -n flux-system     # commit the bump now
+flux reconcile kustomization apps -n flux-system --with-source
+kubectl -n voics-apps rollout status deploy/api
+flux get images policy -A                               # which version each image follows
+```
+
+Re-publish the website or the invite page by re-running its workflow (`gh workflow run ci.yml -R discordy-voics/website --ref main`, or `publish-site.yml` in gitops). Re-publish an installer with `gh workflow run release.yml -R discordy-voics/client -f tag=vX.Y.Z`.
+
+### How the publish jobs get access
+
+`minio-publish` (in `discordy-voics/.github`) runs on the in-cluster ARC runner (`runs-on: discordy`). It logs in to OpenBao with the runner's Kubernetes service account through the role `publish`, which may only read `kv/discordy/minio`, and uploads over the cluster network. There is no MinIO key in GitHub. The role is created by `gitops/bootstrap/20-openbao.sh` (re-run with `CONFIGURE=true BAO_TOKEN=<root token>` after changing roles). Objects are mirrored with `--overwrite` and never removed, so the website and the invite page can share one bucket.
+
+### When a deploy does not show up
+
+| Symptom | Check |
+|---|---|
+| New tag, but no new image | Did CI on the tag pass? `gh run list -R discordy-voics/<repo> --branch vX.Y.Z` |
+| Image exists, but the policy still shows the old version | `flux get images repository -A`: scan errors, GHCR pull secret `ghcr-pull` |
+| Policy updated, but gitops not bumped | `flux get images update -A`: push errors; image automation is suspended (`flux resume image update discordy`) |
+| gitops bumped, but the pod is old | `flux get kustomizations -A`: a failing dependency (for example `infra-data`) blocks `apps`; `kubectl -n voics-apps describe pod` |
+| Website or installer still old | Was the publish job on the ARC runner green? Is the ARC runner pod up? `kubectl -n voics-system get pods \| grep discordy-` |
+| Users still get the old installer | Cloudflare cache: wait 5 minutes, or purge the URL (the API token needs *Zone: Cache Purge*) |
+
 ## Release order across repositories
 
 Consumers depend on what they consume, so release in dependency order:
@@ -137,12 +205,20 @@ There are two options:
 
 ## Desktop client release
 
-The client follows the same flow, with these differences:
+The client follows the same git-flow. What happens on a tag (`client/.github/workflows/release.yml`):
 
-- Windows (NSIS) and Linux (AppImage/deb) builds run on the self-hosted runner. **macOS (dmg) builds run only on `release/*` and tags**, to save minutes.
-- Release artefacts are uploaded to the MinIO `updates` bucket, using the `MINIO_UPDATES_*` keys, together with `latest.yml`, `latest-mac.yml` and `latest-linux.yml`. They are served at `https://discordy-updates.voics.nl`.
-- **RC builds** are published to the `beta` channel (`beta.yml`). Only the tag build writes `latest*.yml`, so stable users never receive an RC.
-- Installers are **unsigned** for now (spec §10). Windows SmartScreen shows "unknown publisher" until code signing is added.
+1. A **Windows (NSIS)** build runs on a GitHub-hosted `windows-latest` runner, including the native crypto module (Rust). It uses about 2× Linux minutes on the GitHub Free quota, roughly 15 to 30 billed minutes per release.
+2. `Discordy-Setup-X.Y.Z.exe`, its `.blockmap` and `latest.yml` are attached to the GitHub Release.
+3. `minio-publish` uploads them to the `discordy-updates` bucket, served at `https://discordy-updates.voics.nl`, and copies the installer to `Discordy-Setup-latest.exe`. That stable name is the target of the website's Download button. `latest.yml` and the stable name get a 5-minute cache.
+4. Installed clients read `latest.yml` (electron-updater, generic provider `brand.updateFeedHost`), so publishing it rolls the update out.
+
+Not built yet:
+
+- **macOS (dmg) and Linux (AppImage/deb)**: the scripts exist (`pnpm dist:mac`, `pnpm dist:linux`), but CI does not run them yet. The website shows them as "coming soon".
+- **RC/beta channel**: RC builds don't produce installers. The dev/test environment (gitops#27) adds a dev feed.
+- **Code signing**: installers are unsigned (spec §10), so Windows SmartScreen shows "unknown publisher".
+
+A manual build (when CI is unavailable) runs `pnpm dist:win` on Windows and uploads `apps/desktop/release/{Discordy-Setup-X.Y.Z.exe,.blockmap,latest.yml}` to the bucket. 0.2.0 was published this way.
 - **Verify**: install the previous version, start it, and confirm the update prompt arrives and the update installs.
 - **To pull a bad client release**, restore the previous `latest.yml` in the bucket. Clients only update forward, so ship a fixed version quickly.
 
