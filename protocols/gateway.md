@@ -37,6 +37,7 @@ Every gateway frame (both directions). `s` and `t` are only set on DISPATCH (op 
 | 22 | `P2P_SIGNAL` | both | `P2pSignalPayload` | P2P-mode WebRTC signaling. Relayed only, never persisted. |
 | 23 | `VOICE_TELEMETRY` | send | `VoiceTelemetryPayload` | Client voice quality sample, published to discordy.telemetry.v1. |
 | 24 | `WATCH_TOGETHER` | both | `WatchTogetherPayload` | Watch Together playback synchronisation. |
+| 25 | `CALL_DECLINE` | send | `CallDeclinePayload` | Declines the DM call ringing in a channel. The caller's call stops ringing for this user. |
 
 ## Opcode payloads
 
@@ -228,6 +229,9 @@ Discord bit values. User sessions implicitly receive every intent; privileged in
 | `TYPING_START` | `TypingStartEvent` | api | `discordy.message.v1` | A user started typing. |
 | `VOICE_STATE_UPDATE` | `VoiceState` | gateway | — | A user's voice state changed. |
 | `VOICE_SERVER_UPDATE` | `VoiceServerUpdateEvent` | gateway | — | The voice node allocated for a guild or DM call. |
+| `CALL_CREATE` | `Call` | gateway | — | A DM call started (its first participant joined). Sent to the channel's recipients; `ringing` lists the recipients being rung. |
+| `CALL_UPDATE` | `Call` | gateway | — | A DM call's ringing recipients or voice states changed. |
+| `CALL_DELETE` | `CallDeleteEvent` | gateway | — | The last participant left the DM call. |
 | `GUILD_MEMBERS_CHUNK` | `GuildMembersChunkEvent` | gateway | — | Response to REQUEST_GUILD_MEMBERS. |
 | `GUILD_CREATE` | `GuildFull` | api | `discordy.guild.v1` | A guild became available or the user joined one. |
 | `GUILD_UPDATE` | `Guild` | api | `discordy.guild.v1` | A guild was updated. |

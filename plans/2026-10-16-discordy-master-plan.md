@@ -239,8 +239,11 @@ All calls carry the `X-Internal-Token` header. All IDs are strings.
 | 22 | P2P_SIGNAL | ↔ | `{channel_id, to_user_id, to_device_id, from_user_id, from_device_id, kind:"offer"\|"answer"\|"ice"\|"bye", payload:string, identity_sig_b64}` — relayed only, never persisted |
 | 23 | VOICE_TELEMETRY | → | `{channel_id, jitter_ms, loss_pct, rtt_ms, bitrate_kbps}` — published to `discordy.telemetry.v1` |
 | 24 | WATCH_TOGETHER | ↔ | `{channel_id, action:"load"\|"play"\|"pause"\|"seek", url?, position_ms, at_server_ms}` |
+| 25 | CALL_DECLINE | → | `{channel_id}`: declines the DM call ringing in that channel; a no-op when the user is not ringing |
 
-**Dispatch events emitted by the gateway itself**: READY, RESUMED, PRESENCE_UPDATE, TYPING_START, VOICE_STATE_UPDATE, VOICE_SERVER_UPDATE `{token, guild_id|null, channel_id, endpoint, region}`, GUILD_MEMBERS_CHUNK, and E2EE inbox replay after READY.
+**Dispatch events emitted by the gateway itself**: READY, RESUMED, PRESENCE_UPDATE, TYPING_START, VOICE_STATE_UPDATE, VOICE_SERVER_UPDATE `{token, guild_id|null, channel_id, endpoint, region}`, CALL_CREATE / CALL_UPDATE `Call {channel_id, message_id:null, region, ringing:[user_id], voice_states:[VoiceState]}`, CALL_DELETE `{channel_id, message_id:null}`, GUILD_MEMBERS_CHUNK, and E2EE inbox replay after READY.
+
+**DM call ringing**: the first join to a DM or group DM creates the call (CALL_CREATE to the recipients, `ringing` = the other recipients). A ringing user stops ringing when they join, send CALL_DECLINE, or after 30 s. Later changes send CALL_UPDATE; the last leave sends CALL_DELETE. After READY, the gateway replays CALL_CREATE for each active call the user rings for or takes part in. These are gateway-generated, so they are not on a P6 topic.
 
 **Typing**: `POST /api/v1/channels/{id}/typing`. The api publishes TYPING_START to `discordy.message.v1`.
 
