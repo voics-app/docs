@@ -39,7 +39,7 @@ Chosen option: **1**.
 
 - Good, because it has no extra cost, and Flux makes the cluster reproducible from git.
 - Good, because additional nodes or regions can join the same cluster (see the [adding-a-region runbook](../runbooks/voice-regions/adding-a-region.md)).
-- Bad, because the cluster is tight on memory. Raising the VM to 16 GB is recommended before the v0.1.0 release.
+- Bad, because the cluster is tight on memory. The VM was raised to 12 GB (see the update below).
 - Bad, because the control plane is a single node and a single VM. This is accepted for v1, and [backup and restore](../runbooks/backup-restore.md) covers recovery.
 
 ### Confirmation
@@ -63,3 +63,11 @@ Chosen option: **1**.
 
 - Good, because it is simple, and the same tooling already runs local development.
 - Bad, because it has no reconciliation, rolling updates, External Secrets Operator or Headlamp, and it is not GitOps.
+
+## Update 2026-10-19: what running it taught us
+
+- **Datastore.** dqlite (the microk8s default) was replaced by **etcd** (`ha-cluster` disabled; gitops#20). etcd must fsync in under 10 ms, but the VM's main disk is a PERC 6/i HDD RAID (lvmthin `tb`) that manages about 13 MB/s with flushes. Lease renewals timed out, and kubelite (apiserver, scheduler, controller-manager and kubelet in one process) exited on `leaderelection lost`. The etcd data now lives on a separate 16 GB disk on the SSD pool (`local-lvm`, `cache=none`) mounted at `/var/snap/microk8s/common/var/run/etcd` (`gitops/bootstrap/15-etcd-disk.sh`). fsync is about 5 ms, and there have been no restarts since.
+- **CPU type.** The Proxmox VM must use CPU type **`host`**. ScyllaDB needs PCLMUL, which the default `qemu64`/`kvm64` model hides.
+- **Memory.** The VM has **12 GB**. ScyllaDB runs with `--memory 768M --reserve-memory 128M` inside a 1 Gi limit; seastar's default 1.5 GB reserve cannot fit. ingress-nginx runs 2 workers (one per CPU thread overran its limit on the 12-thread host CPU). Budgets are checked by `gitops/scripts/memory-budget.sh`.
+- **Reproducibility.** Flux rebuilds the cluster contents from git, but the VM itself and the bootstrap order are still manual. One-command provisioning (Terraform for Proxmox, Hetzner and AWS) is tracked in gitops#28, and a dev/test environment in gitops#27.
+

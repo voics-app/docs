@@ -28,10 +28,10 @@ Every service needs credentials: database passwords, JWT keys, `INTERNAL_SERVICE
 
 Chosen option: **1**.
 
-1. **Entry point:** the owner sets values once, as GitHub org secrets or as secrets of the `production` environment.
+1. **Entry point:** the owner sets values once, as secrets of the `production` environment of the `gitops` repository. On GitHub Free, private repositories cannot read organisation secrets, so org secrets are **not** used ([ADR-0007](0007-github-free-workarounds.md)).
 2. **Sync to OpenBao:** the `secrets-sync` workflow in `gitops` runs on the self-hosted ARC runner labelled `discordy`, so OpenBao is never exposed outside the cluster. It writes each value to `kv/discordy/<service>`.
 3. **Sync to Kubernetes:** External Secrets Operator reads OpenBao through a `ClusterSecretStore` and materialises one Kubernetes Secret per app, through an `ExternalSecret`.
-4. **Unseal material:** the OpenBao unseal keys and the root token are stored in 1Password and nowhere else.
+4. **Unseal material:** the OpenBao unseal keys and the root token are stored in one owner-only key store: Windows DPAPI files (in use) or 1Password ([OpenBao runbook](../runbooks/openbao-unseal.md)).
 5. **Inventory:** [`secrets/inventory.yaml`](../secrets/inventory.yaml) lists every secret with its purpose, consumers, GitHub name, OpenBao path, owner and rotation policy. A CI check in `gitops` fails when an `ExternalSecret` references a key that is missing from the inventory.
 
 ### Consequences
