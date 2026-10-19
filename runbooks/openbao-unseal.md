@@ -9,12 +9,21 @@ OpenBao stores every runtime secret at `kv/discordy/...` ([ADR-0006](../adr/0006
 | | |
 |---|---|
 | Unseal scheme | Shamir, **5 key shares, threshold 3** |
-| Where the keys live | 1Password, vault **Discordy**, items `OpenBao unseal key 1` … `OpenBao unseal key 5`, and nowhere else |
-| Root token | 1Password item `OpenBao root token`. Revoked after use; regenerate as needed. |
+| Where the keys live | The key store chosen by `bootstrap/20-openbao.sh`: **`KEYSTORE=dpapi`** (in use on gen-serv) keeps them as DPAPI files in `%USERPROFILE%\.discordy\openbao\` on the owner's Windows account (`OpenBao unseal key 1..5.dpapi`, `OpenBao root token.dpapi`); `KEYSTORE=op` keeps them in 1Password vault **Discordy** |
+| Root token | Same key store. Needed only for maintenance (re-running `configure` with `CONFIGURE=true BAO_TOKEN=...`). |
+| Kubernetes auth roles | `external-secrets` (ESO, read `kv/discordy/*`), `secrets-sync` (ARC runner, write `kv/discordy/*`), `publish` (ARC runner, read only `kv/discordy/minio`, for the website/installer upload jobs) |
 | Namespace / pod | `voics-system` / `openbao-0` (Raft storage, single replica) |
 | Related | [Secret rotation](secret-rotation.md) · [Secrets inventory](../secrets/README.md) · [Backup and restore](backup-restore.md#openbao) |
 
 ## Routine unseal
+
+**Quick path (after every node reboot or `microk8s` restart):** from a gitops checkout on the owner's PC run
+
+```bash
+KUBECONFIG=~/.kube/discordy-gen-serv.yaml KUBECTL=kubectl KEYSTORE=dpapi bash bootstrap/20-openbao.sh
+```
+
+It waits for `openbao-0`, applies 3 key shares from the key store and prints `OpenBao unsealed`. If it says `cannot reach OpenBao`, the pod is still restarting; run it again a minute later. Then check `kubectl get clustersecretstore openbao` is `Valid` (restart `deploy/external-secrets` in `voics-system` if not). The manual steps below do the same by hand.
 
 ### 1. Confirm it is sealed
 

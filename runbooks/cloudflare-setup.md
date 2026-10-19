@@ -125,24 +125,29 @@ Check these, but don't change them if they would affect `voics.nl`. All are zone
 
 ## Cloudflare Access
 
-Access protects `discordy-admin.voics.nl` and `discordy-headlamp.voics.nl`. admin-bff additionally verifies the `Cf-Access-Jwt-Assertion` header against the team JWKS and checks `ADMIN_ALLOWED_EMAILS`, as a second gate.
+Zero Trust is enabled on the account with team **`holy-haze-2d7b`** (`https://holy-haze-2d7b.cloudflareaccess.com`), Free plan. Access sits in front of every operator host, **on top of** the ingress IP lock (owner IP only):
+
+`discordy-admin`, `discordy-headlamp`, `discordy-ops`, `discordy-db`, `discordy-grafana`, `discordy-minio`, `discordy-redpanda`, `discordy-openbao` (all `.voics.nl`).
+
+The public hosts (`discordy.voics.nl`, `discordy-api`, `discordy-gateway`, `discordy-cdn`, `discordy-updates`) are never put behind Access.
+
+**Set up or update it** with the script, which is idempotent and matches apps by domain:
 
 ```bash
-for host in discordy-admin discordy-headlamp; do
-  APP=$(curl -s -X POST -H "$AUTH" -H 'Content-Type: application/json' "$CF/accounts/$ACCOUNT_ID/access/apps" \
-    --data "{\"name\":\"$host\",\"domain\":\"$host.voics.nl\",\"type\":\"self_hosted\",\"session_duration\":\"12h\",\"app_launcher_visible\":true}")
-  APP_ID=$(echo "$APP" | jq -r .result.id)
-  echo "$host aud=$(echo "$APP" | jq -r .result.aud)"
-  curl -s -X POST -H "$AUTH" -H 'Content-Type: application/json' "$CF/accounts/$ACCOUNT_ID/access/apps/$APP_ID/policies" \
-    --data '{"name":"platform admins","decision":"allow","include":[{"email":{"email":"<owner email>"}}],"precedence":1}' | jq .success
-done
+OWNER_EMAIL=<owner email> ACCESS_ONLY=true CLOUDFLARE_API_TOKEN=... bootstrap/40-cloudflare.sh   # in gitops
 ```
 
-Then:
+The script:
 
-1. Put the `aud` tag of `discordy-admin` and the team domain (`<team>.cloudflareaccess.com`) into the admin-bff config in gitops. These are identifiers, not secrets.
-2. Make sure `ADMIN_ALLOWED_EMAILS` lists the same emails as the Access policy.
-3. **Verify**: open `https://discordy-admin.voics.nl` in a private window. The Access login must appear before any admin page.
+- adds the **One-time PIN** login method if the account has none;
+- creates or updates one self-hosted app per `HOST_*` key in the cluster-config, with a single allow policy for `OWNER_EMAIL`;
+- sets the session to **168 h** (one PIN per week per host; override with `ACCESS_SESSION_DURATION`).
+
+The API token needs **Access: Apps and Policies (Edit)** and **Access: Organizations, Identity Providers and Groups (Edit)**. Enabling Zero Trust itself (choosing a team name, accepting the Free plan) can only be done by the owner in the dashboard.
+
+admin-bff also verifies the `Cf-Access-Jwt-Assertion` header against the team JWKS and checks `ADMIN_ALLOWED_EMAILS`, as a second gate. Its config lives in `gitops/apps/admin/production/kustomization.yaml`: `CF_ACCESS_TEAM_DOMAIN=holy-haze-2d7b`, plus `CF_ACCESS_AUD`, the audience tag of the `discordy-admin.voics.nl` app (identifiers, not secrets). If the admin app is recreated, copy its new `aud` there.
+
+**Verify**: in a private window, `https://discordy-ops.voics.nl` must redirect to `holy-haze-2d7b.cloudflareaccess.com`, and the PIN mail must arrive.
 
 ## Region tunnels (standalone clusters)
 

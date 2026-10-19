@@ -55,6 +55,6 @@ CI ([`.github/workflows/`](.github/workflows/)) runs markdownlint, the secrets-i
 
 ## Pending owner actions
 
-- **Notion mirror (WS10.4)**: the `notion-sync` workflow and the Notion page tree are created by the coordinator. It needs the org secret `NOTION_TOKEN` (see the [inventory](secrets/README.md#notion-token)).
+- **Notion mirror (WS10.4)**: the `notion-sync` workflow and the Notion page tree are created by the coordinator. It needs a `NOTION_TOKEN` secret on the docs repository (GitHub Free: private repos cannot read org secrets) (see the [inventory](secrets/README.md#notion-token)).
 - **P2 addition**: `TURN_STATIC_AUTH_SECRET`, the coturn TURN REST secret, is implied by the P2P design but isn't pinned yet. It is listed in the inventory with a note.
 - **Protocol references** are hand-written from P3–P9. Regenerate them from `contracts` once it publishes `v0.1.0`.
