@@ -13,6 +13,7 @@ These rules apply to **every** repository in `discordy-voics`. The goal is a cod
 7. [Pull requests](#pull-requests)
 8. [Configuration and secrets](#configuration-and-secrets)
 9. [Documentation duties](#documentation-duties)
+10. [Definition of Done](#definition-of-done)
 
 ## Clean Code rules
 
@@ -238,3 +239,18 @@ release-please derives the version and the changelog from these messages, so a w
 | A secret | [`secrets/inventory.yaml`](secrets/inventory.yaml) |
 | An operational procedure | The runbook in [`runbooks/`](runbooks/README.md) |
 | A repository's local setup | That repository's README and [local-development.md](runbooks/local-development.md) |
+| An operator tool, host or login | [`runbooks/ops-access.md`](runbooks/ops-access.md), the ops portal (`gitops/infrastructure/controllers/ops-portal`), [`runbooks/cloudflare-setup.md`](runbooks/cloudflare-setup.md) host list |
+| Platform, cluster or pipeline behaviour | [`runbooks/release.md`](runbooks/release.md), [`runbooks/environments.md`](runbooks/environments.md), the relevant ADR |
+
+## Definition of Done
+
+An issue is **done** only when all of these apply. The issue and PR templates (`discordy-voics/.github`) carry the same checklist, and the closing comment says how it was verified.
+
+1. **Merged** to `develop` through a PR with green CI (lint, tests, scan).
+2. **Tested**: tests added or updated; behaviour verified. Use live/e2e checks for calls, message delivery and deployments.
+3. **Documented**: this repository is updated per [Documentation duties](#documentation-duties): runbooks, ADRs, specs, service catalog, secrets inventory. So are the README of the changed repository and, for operator tools, the ops portal page.
+4. **Reproducible (platform and CI/CD items)**: everything a new environment needs is in code. That means Terraform (`gitops/infra/terraform`), bootstrap scripts and `env.sh` stages, `cluster-config` and the environment overlays (production **and** dev), the Cloudflare host lists (`bootstrap/40-cloudflare.sh`), the tunnel ingress, the secrets inventory and the memory budget. Nothing is changed by hand on a cluster unless it is also in git.
+5. **Board**: the card is moved to Done.
+
+Example: adding an ops tool such as Scylla web means manifests, `HOST_*` in `cluster-config` for every environment, the tunnel route, the Access host list, the ops portal entry, `ops-access.md`, and the `cloudflare-setup.md` host list.
+
