@@ -66,13 +66,13 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 | Purpose | Standard messages: CRUD, history, reactions, pins, read states, attachments. Request coalescing; consistent-hash routing on `channel_id`. |
 | Repo / image | `discordy-voics/messages` / `ghcr.io/discordy-voics/messages` |
 | Tech | Rust, axum 0.8, scylla driver |
-| Ports | 8082: public (ingress routes `/api/v1/channels/*/messages*` here) and internal |
+| Ports | 8082: public (ingress routes `/api/v1/channels/*/messages*` and the CDN host's `/attachments/*` signed downloads here) and internal |
 | Owns data | ScyllaDB keyspace `discordy` (messages, reactions, pins, read_states, channel_last_message); MinIO bucket `discordy-attachments` |
 | Publishes | `discordy.message.v1` (keyed by `channel_id`) |
 | Depends on | ScyllaDB, Redpanda, MinIO, api (`/internal/v1/channels/{id}/access/{user}` with a 5 s cache; bot token introspection with a 60 s cache) |
 | Called by | client, bots, api, gateway, admin-bff |
 | Snowflake workers | 64–127 |
-| Env vars | common + `SCYLLA_NODES`, `SCYLLA_KEYSPACE`, `API_INTERNAL_URL`, `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY` 🔒, `MINIO_SECRET_KEY` 🔒, `MINIO_BUCKET_ATTACHMENTS`, `CDN_PUBLIC_URL` |
+| Env vars | common + `SCYLLA_NODES`, `SCYLLA_KEYSPACE`, `API_INTERNAL_URL`, `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY` 🔒, `MINIO_SECRET_KEY` 🔒, `MINIO_BUCKET_ATTACHMENTS`, `CDN_PUBLIC_URL`, `ATTACHMENT_SIGNING_KEY` 🔒, `ATTACHMENT_URL_TTL_SECONDS` |
 | SLOs | Availability 99.5 %; history p95 < 100 ms; send p95 < 200 ms; send-to-dispatch p95 < 500 ms (with the gateway) |
 | Runbooks | [backup-restore](../runbooks/backup-restore.md#scylladb), [release](../runbooks/release.md) |
 

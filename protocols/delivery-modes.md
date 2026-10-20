@@ -27,7 +27,7 @@ What each message delivery mode promises, where the data lives and what survives
 - Private modes never fall back to plaintext: with no usable crypto module a send fails loudly.
 - Switching a chat back to Standard takes effect immediately; the `messages` service re-checks a delivery mode conflict against fresh data because its access cache lives for 5 seconds.
 - Group DMs can only lose members (a member leaves). There is no API to add a member to an existing group DM; adding a member is covered on a guild Ephemeral channel instead.
-- Attachment downloads from the CDN use unsigned URLs while the attachments bucket is private, so Standard and Ephemeral attachment bytes currently answer 403 on a stock stack. This needs an owner decision (anonymous read of the `attachments/` prefix, like Discord's CDN, or presigned download URLs); it is tracked in docs#10. P2P attachments are unaffected.
+- Attachment downloads use signed, expiring CDN URLs (`?ex=&is=&hm=`, 24 h, [ADR 0017](../adr/0017-signed-attachment-download-urls.md)) for Standard and Ephemeral alike; the bucket stays private and the messages service verifies the signature and streams the bytes. A 403 or 410 means the link is invalid or expired: refetch the message for a fresh one. P2P attachments never use the CDN.
 - An Ephemeral send in a guild channel addresses the members that can view the channel (the internal access endpoint lists them); the gateway relay rejects any recipient outside that list and the client shows the rejection on the channel.
 
 ## Verification

@@ -20,6 +20,7 @@ This directory holds Discordy's architecture decisions. The records use the [MAD
 | [0014](0014-gateway-compression.md) | Gateway compression: per-connection zstd streaming, opt-in | proposed |
 | [0015](0015-webauthn-second-factor.md) | WebAuthn as a second factor next to TOTP | proposed |
 | [0016](0016-push-backpressure.md) | Push delivery with bounded back-pressure | proposed |
+| [0017](0017-signed-attachment-download-urls.md) | Signed, expiring attachment download URLs | proposed |
 
 ## Writing a new ADR
 
