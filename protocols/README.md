@@ -8,3 +8,4 @@ These pages are the human-readable view of the wire protocols. They are written 
 | [Voice](voice.md) | Voice allocation, etcd discovery, voice WebSocket opcodes, SFU control protocol, voice token |
 | [Events](events.md) | Redpanda envelope, topics, keys, producers, gateway routing |
 | [REST](rest.md) | Public `/api/v1` and internal `/internal/v1` endpoints, auth tokens, errors, rate limits, Snowflakes |
+| [Delivery mode guarantees](delivery-modes.md) | Per mode: who can read, where data lives, what survives restart, offline recipients and removed members |

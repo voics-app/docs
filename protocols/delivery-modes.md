@@ -1,0 +1,35 @@
+# Delivery mode guarantees
+
+What each message delivery mode promises, where the data lives and what survives a restart or an offline recipient. Decision record: [ADR-0003](../adr/0003-delivery-modes.md). Every row below is covered by a live test in `client/apps/desktop/tests/live/` (see [Verification](#verification)).
+
+## Summary
+
+| | Standard | Ephemeral | P2P |
+|---|---|---|---|
+| Who can read | Participants and the server operator (plaintext) | Only the devices in the MLS group; the gateway sees ciphertext and metadata | Only the two peers; the gateway sees SDP/ICE signalling only |
+| Where content lives | ScyllaDB (server history) | Each device's encrypted local store. Ciphertext sits in the gateway inbox only until the device ACKs it (hard TTL 7 days) | Each device's encrypted local store. Never on a server |
+| Recipient offline | Delivered from history when they open the chat | Held in the inbox and replayed when the device reconnects, then deleted on ACK | The send fails with "Peer offline"; nothing is queued, the peer never gets it |
+| Several devices of the recipient | All see it (history + live) | Every device in the group gets its own inbox entry | Every online device of the peer gets it; offline devices miss it |
+| Sender's other devices | See it | See it (they are group members) | Do **not** see it (the sender dials the peer's devices only) |
+| Group DM | Normal | One MLS group per chat; each send reaches every member device | Mesh: the sender dials every member device (max 10 members) |
+| Member leaves or is removed | Server stops delivering | Remaining devices commit an MLS Remove; the new epoch rotates all secrets, so the removed member cannot read later messages | The removed member is no longer dialled |
+| New device after the group exists | Sees full history | Gets a Welcome on the next send; sees messages from then on, never older ones | Sees nothing older (nothing was stored) |
+| After app restart | History from the server plus nothing lost | History restored from the encrypted local store; nothing is replayed from the server (entries were ACKed) | History restored from the encrypted local store on both sides |
+| Edit | Yes | No (control not offered) | No (control not offered) |
+| Reactions | Yes | No (control not offered) | No (control not offered) |
+| Delete | For everyone | No: the UI answers "Messages in private chats cannot be deleted after sending" | Same as Ephemeral |
+| Attachments | Yes (CDN) | Yes: AES-256-GCM on the device, ciphertext on the CDN, key inside the encrypted message | Yes: encrypted and streamed over the data channel; the peer must be online |
+| Mode switch in the same chat | Messages keep the mode they were sent in; history from different modes interleaves by time | same | same |
+
+## Notes and limits
+
+- The strictest participant preference wins in a DM or group DM (P2P over Ephemeral over Standard). Guild channels can be Standard or Ephemeral (at most 100 viewers); P2P is DMs and group DMs only.
+- Private modes never fall back to plaintext: with no usable crypto module a send fails loudly.
+- Switching a chat back to Standard takes effect immediately; the `messages` service re-checks a delivery mode conflict against fresh data because its access cache lives for 5 seconds.
+- Group DMs can only lose members (a member leaves). There is no API to add a member to an existing group DM; adding a member is covered on a guild Ephemeral channel instead.
+- Attachment downloads from the CDN use unsigned URLs while the attachments bucket is private, so Standard and Ephemeral attachment bytes currently answer 403 on a stock stack. This needs an owner decision (anonymous read of the `attachments/` prefix, like Discord's CDN, or presigned download URLs); it is tracked in docs#10. P2P attachments are unaffected.
+- An Ephemeral send in a guild channel addresses the members that can view the channel (the internal access endpoint lists them); the gateway relay rejects any recipient outside that list and the client shows the rejection on the channel.
+
+## Verification
+
+The suite is a release gate (see [release runbook](../runbooks/release.md#delivery-mode-live-suite)): `npx playwright test -c tests/live/playwright.live.config.ts matrix-*.spec.ts delivery-modes.spec.ts` from `client/apps/desktop` against the local stack.
