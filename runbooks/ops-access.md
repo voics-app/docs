@@ -22,12 +22,12 @@ How the owner reaches the operator tools of the gen-serv cluster, and how that a
 | Scylla web (ScyllaDB: messages) | https://discordy-scylla.voics.nl | none (Scylla runs without auth) | read/write: rows, CQL console, import/export |
 | MinIO console | https://discordy-minio.voics.nl | MinIO root user + password | root |
 | Redpanda Console | https://discordy-redpanda.voics.nl | none | full |
-| OpenBao UI | https://discordy-openbao.voics.nl | Username method, user `owner` (created by `~/.discordy/openbao-admin-token.sh`) | policy `owner-admin` (everything) |
+| OpenBao UI | https://discordy-openbao.voics.nl | Username method, user `owner` (created by `gitops/bootstrap/22-openbao-owner-admin.sh`) | policy `owner-admin` (everything) |
 | Admin panel | https://discordy-admin.voics.nl | none beyond Access; admin-bff also checks `ADMIN_ALLOWED_EMAILS` | platform admin |
 
 The owner asked for full admin rights on every tool (2026-10-20). The Kubernetes Dashboard (and the microk8s `dashboard` addon built on it) was **retired by the Kubernetes project in January 2026**; Headlamp is its successor, and its Flux plugin shows Kustomizations, HelmReleases, sources and image automation, with reconcile and suspend actions.
 
-**OpenBao admin**: the bootstrap root token is revoked by design, and OpenBao ≥ 2.5.3 refuses unauthenticated `generate-root` (listener `disable_unauthed_generate_root_endpoints` defaults to `true`). `~/.discordy/openbao-admin-token.sh` (owner PC) temporarily turns that off, generates a root token from 3 unseal keys, creates the `owner-admin` policy and userpass user `owner`, revokes the root token and restores the config.
+**OpenBao admin**: the bootstrap root token is revoked by design, and OpenBao ≥ 2.5.3 refuses unauthenticated `generate-root` (listener `disable_unauthed_generate_root_endpoints` defaults to `true`). `gitops/bootstrap/22-openbao-owner-admin.sh` (run from the owner PC; a copy lives at `~/.discordy/openbao-admin-token.sh`) temporarily turns that off, generates a root token from 3 unseal keys, creates the `owner-admin` policy and userpass user `owner`, revokes the root token and restores the config.
 
 ## Where the credentials are
 

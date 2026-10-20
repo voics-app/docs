@@ -10,7 +10,7 @@ OpenBao stores every runtime secret at `kv/discordy/...` ([ADR-0006](../adr/0006
 |---|---|
 | Unseal scheme | Shamir, **5 key shares, threshold 3** |
 | Where the keys live | The key store chosen by `bootstrap/20-openbao.sh`: **`KEYSTORE=dpapi`** (in use on gen-serv) keeps them as DPAPI files in `%USERPROFILE%\.discordy\openbao\` on the owner's Windows account (`OpenBao unseal key 1..5.dpapi`, `OpenBao root token.dpapi`); `KEYSTORE=op` keeps them in 1Password vault **Discordy** |
-| Root token | Same key store, but **revoked** after the first bootstrap. OpenBao 2.x refuses unauthenticated `generate-root`, so a new root token can't be minted without an existing privileged token. Prefer Kubernetes RBAC or new auth roles applied while a token exists; plan an admin policy/token for maintenance (docs#10). |
+| Root token | Same key store, but **revoked** after the first bootstrap. OpenBao 2.x refuses unauthenticated `generate-root`, so a new root token can't be minted without an existing privileged token. Prefer Kubernetes RBAC or new auth roles applied while a token exists; for admin work use the `owner` userpass login (`owner-admin` policy) created by `gitops/bootstrap/22-openbao-owner-admin.sh`. |
 | Kubernetes auth roles | `external-secrets` (ESO, read `kv/discordy/*`), `secrets-sync` (ARC runner, write `kv/discordy/*`) |
 | Namespace / pod | `voics-system` / `openbao-0` (Raft storage, single replica) |
 | Related | [Secret rotation](secret-rotation.md) · [Secrets inventory](../secrets/README.md) · [Backup and restore](backup-restore.md#openbao) |
