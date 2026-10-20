@@ -79,4 +79,4 @@ One runner handles one job at a time and needs about 2 vCPU, 6 to 8 GB RAM and 4
 | Docker build fails with permissions | The runner needs the host Docker socket; use the scripts instead of starting containers by hand |
 | Registration fails | `gh auth status` needs `admin:org` |
 
-More: [Release, On-demand runner](../runbooks/release.md#on-demand-runner-on-the-owners-pc).
+More: [Release, On-demand runner](../runbooks/release.md).
