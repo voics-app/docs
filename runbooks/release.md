@@ -236,6 +236,7 @@ Not built yet:
 - **Code signing**: installers are unsigned (spec §10), so Windows SmartScreen shows "unknown publisher".
 
 A manual build (when CI is unavailable) runs `pnpm dist:win` on Windows and uploads `apps/desktop/release/{Discordy-Setup-X.Y.Z.exe,.blockmap,latest.yml}` to the bucket. 0.2.0 was published this way.
+
 - **Verify**: install the previous version, start it, and confirm the update prompt arrives and the update installs.
 - **To pull a bad client release**, restore the previous `latest.yml` in the bucket. Clients only update forward, so ship a fixed version quickly.
 
