@@ -30,6 +30,17 @@ What the other branches produce:
 - `develop` pushes `X.Y.Z-dev.N` images and `release/*`/`hotfix/*` push `X.Y.Z-rc.N`. The production image policies select **stable** tags only, so none of these reach production. The dev/test environment follows `-dev.N` (see [Dev/test environment and promotion](#devtest-environment-and-promotion)).
 - `feature/*` and pull requests only build and test; nothing is pushed.
 
+### Delivery mode live suite
+
+Before tagging a release that touches the client, gateway relay, `messages` or the device/key-package endpoints, run the live delivery matrix against the local stack ([guarantees](../protocols/delivery-modes.md)):
+
+```bash
+cd client/apps/desktop && npx electron-vite build
+npx playwright test -c tests/live/playwright.live.config.ts delivery-modes.spec.ts matrix-offline.spec.ts matrix-multidevice.spec.ts matrix-group.spec.ts matrix-guild.spec.ts matrix-switching.spec.ts matrix-features.spec.ts
+```
+
+It covers offline replay, multi-device, group DMs, member leave/remove, new devices, mode switching, ACK clean-up, restart behaviour and per-mode attachment/edit/delete/reaction support. The suite creates its own throwaway users. It needs the full stack from `gitops/local` (`./dev.sh up`).
+
 ### Timings
 
 The figures below cover the time from the moment the release image exists in GHCR.
