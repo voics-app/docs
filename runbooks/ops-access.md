@@ -13,20 +13,25 @@ How the owner reaches the operator tools of the gen-serv cluster, and how that a
 
 ## Tools
 
-| Tool | URL | Login after Access |
-|---|---|---|
-| Ops portal | https://discordy-ops.voics.nl | none |
-| Headlamp (Kubernetes UI) | https://discordy-headlamp.voics.nl | read-only token: `kubectl -n voics-system create token headlamp-admin --duration=168h` (role `view`; Secrets are not readable) |
-| Grafana | https://discordy-grafana.voics.nl | `admin` + password |
-| pgweb (Postgres, read-only role `discordy_ops_ro`) | https://discordy-db.voics.nl | none |
-| MinIO console | https://discordy-minio.voics.nl | MinIO root user + password |
-| Redpanda Console | https://discordy-redpanda.voics.nl | none |
-| OpenBao UI | https://discordy-openbao.voics.nl | Token method, root token (maintenance only) |
-| Admin panel | https://discordy-admin.voics.nl | none beyond Access; admin-bff also checks `ADMIN_ALLOWED_EMAILS` |
+| Tool | URL | Login after Access | Rights |
+|---|---|---|---|
+| Ops portal | https://discordy-ops.voics.nl | none | - |
+| Headlamp (Kubernetes UI + **Flux plugin**) | https://discordy-headlamp.voics.nl | token: `kubectl -n voics-system create token headlamp-admin --duration=720h` | **cluster-admin** |
+| Grafana | https://discordy-grafana.voics.nl | `admin` + password | admin |
+| pgweb (PostgreSQL: users, servers, channels, roles, invites) | https://discordy-db.voics.nl | none | **superuser**, read/write, every database |
+| Scylla web (ScyllaDB: messages) | https://discordy-scylla.voics.nl | none (Scylla runs without auth) | read/write: rows, CQL console, import/export |
+| MinIO console | https://discordy-minio.voics.nl | MinIO root user + password | root |
+| Redpanda Console | https://discordy-redpanda.voics.nl | none | full |
+| OpenBao UI | https://discordy-openbao.voics.nl | Username method, user `owner` (created by `~/.discordy/openbao-admin-token.sh`) | policy `owner-admin` (everything) |
+| Admin panel | https://discordy-admin.voics.nl | none beyond Access; admin-bff also checks `ADMIN_ALLOWED_EMAILS` | platform admin |
+
+The owner asked for full admin rights on every tool (2026-10-20). The Kubernetes Dashboard (and the microk8s `dashboard` addon built on it) was **retired by the Kubernetes project in January 2026**; Headlamp is its successor, and its Flux plugin shows Kustomizations, HelmReleases, sources and image automation, with reconcile and suspend actions.
+
+**OpenBao admin**: the bootstrap root token is revoked by design, and OpenBao ≥ 2.5.3 refuses unauthenticated `generate-root` (listener `disable_unauthed_generate_root_endpoints` defaults to `true`). `~/.discordy/openbao-admin-token.sh` (owner PC) temporarily turns that off, generates a root token from 3 unseal keys, creates the `owner-admin` policy and userpass user `owner`, revokes the root token and restores the config.
 
 ## Where the credentials are
 
-- **Plaintext, on the VM:** `~/.ops-secrets/credentials.txt` in the `karma` home folder on gen-serv (folder `700`, file `600`). It holds every login above, including a Headlamp token valid for 7 days. The owner asked for it on 2026-10-20 for hassle-free access. Regenerate it after the Headlamp token expires or after a secret rotation.
+- **Plaintext, on the VM:** `~/.ops-secrets/credentials.txt` in the `karma` home folder on gen-serv (folder `700`, file `600`). It holds every login above, including a cluster-admin Headlamp token valid for 30 days, the PostgreSQL superuser and (once created) the OpenBao owner login. The owner asked for it on 2026-10-20 for hassle-free access. Regenerate it after the Headlamp token expires or after a secret rotation.
 - **Encrypted, on the owner's PC:** DPAPI files in `%USERPROFILE%\.discordy\ops\` (`pgweb`, `grafana`, `minio-user`, `minio-password`) and `%USERPROFILE%\.discordy\openbao\` (unseal keys, root token). Only the owner's Windows account can decrypt them:
 
   ```powershell

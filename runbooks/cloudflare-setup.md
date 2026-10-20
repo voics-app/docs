@@ -127,7 +127,7 @@ Check these, but don't change them if they would affect `voics.nl`. All are zone
 
 Zero Trust is enabled on the account with team **`holy-haze-2d7b`** (`https://holy-haze-2d7b.cloudflareaccess.com`), Free plan. Access sits in front of every operator host, **on top of** the ingress IP lock (owner IP only):
 
-`discordy-admin`, `discordy-headlamp`, `discordy-ops`, `discordy-db`, `discordy-grafana`, `discordy-minio`, `discordy-redpanda`, `discordy-openbao` (all `.voics.nl`).
+`discordy-admin`, `discordy-headlamp`, `discordy-ops`, `discordy-db`, `discordy-scylla`, `discordy-grafana`, `discordy-minio`, `discordy-redpanda`, `discordy-openbao` (all `.voics.nl`).
 
 The public hosts (`discordy.voics.nl`, `discordy-api`, `discordy-gateway`, `discordy-cdn`, `discordy-updates`) are never put behind Access.
 
