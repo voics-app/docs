@@ -5,6 +5,7 @@ This catalog lists every deployable unit in Discordy. Ports, env vars, topics an
 Each production service:
 
 - Exposes `GET /healthz`, `GET /readyz` and `GET /metrics`.
+- Is scraped by VictoriaMetrics under **its own job name**, which the admin health page groups by (`count by (job) (up)`): `api`, `messages`, `gateway`, `voice-signaling` (port 4100), `sfu` (port 4102) and `admin-bff`. On the cluster these jobs live in `gitops/infrastructure/controllers/victoria-metrics/helmrelease.yaml` (`server.scrape.extraScrapeConfigs`), and the pods set `prometheus.io/scrape: "false"` so the generic `kubernetes-pods` job does not count them twice. Locally they live in `gitops/local/victoriametrics/scrape.yml`. A new service needs a job here too, and its name must match `PLATFORM_SERVICES` in `admin/bff/src/domain/service_health.rs`.
 - Logs JSON to stdout.
 - Exports OpenTelemetry data when `OTEL_EXPORTER_OTLP_ENDPOINT` is set.
 
