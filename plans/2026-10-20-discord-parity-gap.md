@@ -308,3 +308,277 @@ Cross-cutting rules:
 - Clyde/AI features and Discord-run safety partnerships: Not part of the self-hosted product.
 
 No issues were created for these.
+
+
+## Interaction-level gaps (second pass)
+
+Date: 2026-10-20. The first pass listed features; this pass walks the client surface by surface (`client/apps/desktop/src/renderer/interface/**`, plus `src/main/*` for OS integration) and compares each small interaction with the Discord desktop client. Status comes from reading the code, not from running the app. User context menus everywhere, roles in menus and popouts, and mod actions from chat are being built under [client#80](https://github.com/discordy-voics/client/issues/80) and are not repeated here.
+
+Legend: I = Implemented, P = Partial, M = Missing. "Issue" is the new or existing issue that owns the gap.
+
+New issues from this pass: client#81 to client#98 and api#53 (19 issues: 4 P0, 10 P1, 5 P2; list in the summary at the end).
+
+### Server rail
+
+| Interaction | Status | Notes | Issue |
+|---|---|---|---|
+| Hover tooltip with server name | I | `Tooltip` in `ServerRail.tsx` | - |
+| Unread pill and mention badge | I | `rail-pip`, `rail-badge` | - |
+| In-call indicator on the server | I | `rail-call` dot | - |
+| Home button badge for DMs | P | counts mentions only, not unread DMs | [client#91](https://github.com/discordy-voics/client/issues/91) |
+| Drag to reorder | P | no drop indicator, auto-scroll or keyboard reorder; order is local | [client#91](https://github.com/discordy-voics/client/issues/91), [client#58](https://github.com/discordy-voics/client/issues/58) |
+| Drag onto another server to make a folder | M | no folders | [client#58](https://github.com/discordy-voics/client/issues/58) |
+| Muted server dimming, no pill | M | only channel mutes exist | [client#91](https://github.com/discordy-voics/client/issues/91), [client#50](https://github.com/discordy-voics/client/issues/50) |
+| Menu: Mark as read, Invite, Server settings, Create channel/category, Leave/Delete | I | `GuildMenu.tsx` | - |
+| Menu: Mute server with durations, Notification settings | M | | [client#50](https://github.com/discordy-voics/client/issues/50) |
+| Menu: Hide muted channels, Privacy settings, Copy server ID, Collapse all | M | | [client#91](https://github.com/discordy-voics/client/issues/91) |
+| Menu: Edit server profile | M | | [api#43](https://github.com/discordy-voics/api/issues/43) |
+| Create and Join buttons | I | | - |
+
+### Channel list
+
+| Interaction | Status | Notes | Issue |
+|---|---|---|---|
+| Right-click channel: Mark as read, Mute (toggle), Copy ID, Edit, Create, Delete | I | `channelMenu.tsx` | - |
+| Mute durations, Notification settings | M | local boolean only | [client#50](https://github.com/discordy-voics/client/issues/50) |
+| Invite, Copy link, Duplicate channel in menu | M | | [client#83](https://github.com/discordy-voics/client/issues/83) |
+| Right-click category | M | no `onContextMenu` on `category-head` | [client#83](https://github.com/discordy-voics/client/issues/83) |
+| Collapse categories | P | collapses fully; unread channels are hidden too | [client#83](https://github.com/discordy-voics/client/issues/83) |
+| Collapse all categories | M | | [client#83](https://github.com/discordy-voics/client/issues/83) |
+| Hover actions (invite, edit) | P | gear hidden when the user lacks invite permission | [client#83](https://github.com/discordy-voics/client/issues/83) |
+| Drag channels and categories | M | API exists, no UI | [client#59](https://github.com/discordy-voics/client/issues/59) |
+| Unread dot and bold, mention count | I | | - |
+| Muted channel dimmed | I | `is-muted` | - |
+| Lock, age-restricted, rules icons | M | only mode icons (ephemeral, p2p) | [client#83](https://github.com/discordy-voics/client/issues/83) |
+| Announcement and forum icons | I | `ICONS` map | - |
+| Floating "New mentions" pill | M | | [client#83](https://github.com/discordy-voics/client/issues/83) |
+| Voice row: connected users with speaking ring | I | | - |
+| Voice row: mute, deafen, camera icons, LIVE badge | P | letters `M`, `V`, text LIVE; no deafen | [client#92](https://github.com/discordy-voics/client/issues/92) |
+| Voice row: user limit display and enforcement | M | `user_limit` in port, no UI | [client#92](https://github.com/discordy-voics/client/issues/92) |
+| Voice row: click user opens profile | M | | [client#92](https://github.com/discordy-voics/client/issues/92) |
+| Voice row: right-click user | M | | [client#80](https://github.com/discordy-voics/client/issues/80) |
+| Drag users between voice channels (move members) | M | route exists (api#24) | [client#92](https://github.com/discordy-voics/client/issues/92) |
+| Voice channel Open chat button | M | | [client#92](https://github.com/discordy-voics/client/issues/92) |
+| Voice channel status line | M | needs API | [api#53](https://github.com/discordy-voics/api/issues/53), [client#92](https://github.com/discordy-voics/client/issues/92) |
+| Click voice channel to join | I | | - |
+
+### Chat: messages
+
+| Interaction | Status | Notes | Issue |
+|---|---|---|---|
+| Hover toolbar: react, reply, edit, more | I | `MessageItem.tsx` | - |
+| Toolbar quick reactions, Forward, Shift extras | M | | [client#81](https://github.com/discordy-voics/client/issues/81) |
+| Toolbar on keyboard focus | M | JS hover only | [client#81](https://github.com/discordy-voics/client/issues/81) |
+| Message menu: Reply, Edit, Pin, Create thread, Copy text, Copy ID, Delete | I | | - |
+| Message menu: Add reaction entry | M | | [client#81](https://github.com/discordy-voics/client/issues/81) |
+| Message menu: Copy link, Forward, Mark unread, Speak, Report, Apps | M | | [client#56](https://github.com/discordy-voics/client/issues/56), [client#48](https://github.com/discordy-voics/client/issues/48), [messages#13](https://github.com/discordy-voics/messages/issues/13), [client#79](https://github.com/discordy-voics/client/issues/79), [client#77](https://github.com/discordy-voics/client/issues/77) |
+| Shift-click delete without confirm | M | | [client#56](https://github.com/discordy-voics/client/issues/56) |
+| Contextual menus on links, images, emoji, selection | M | generic menu everywhere | [client#81](https://github.com/discordy-voics/client/issues/81) |
+| Cut/copy/paste/spellcheck in text fields | M | no `context-menu` handler in main | [client#82](https://github.com/discordy-voics/client/issues/82) |
+| Reaction chips toggle | I | | - |
+| Reaction hover shows who reacted | M | | [client#55](https://github.com/discordy-voics/client/issues/55) |
+| Click avatar or name opens profile | P | modal dialog, not anchored popout | [client#52](https://github.com/discordy-voics/client/issues/52) |
+| Right-click message author | M | | [client#80](https://github.com/discordy-voics/client/issues/80) |
+| Click user mention | I | opens profile | - |
+| Click channel mention | I | | - |
+| Click role mention | P | rendered, no action or colour | [client#86](https://github.com/discordy-voics/client/issues/86) |
+| Jump to replied message | M | | [client#48](https://github.com/discordy-voics/client/issues/48) |
+| Reply preview text and deleted state | P | no @, generic missing text | [client#86](https://github.com/discordy-voics/client/issues/86) |
+| "New" divider | I | | - |
+| "N new messages" bar, mark as read with Esc | M | Esc keybind is a no-op | [client#48](https://github.com/discordy-voics/client/issues/48), [client#84](https://github.com/discordy-voics/client/issues/84) |
+| Jump to present | I | | - |
+| Typing indicator with names | P | up to two names | [client#88](https://github.com/discordy-voics/client/issues/88) |
+| Timestamp: Today/Yesterday, hover full date | M | short locale date, no tooltip | [client#86](https://github.com/discordy-voics/client/issues/86) |
+| (edited) tooltip | M | | [client#86](https://github.com/discordy-voics/client/issues/86), [client#56](https://github.com/discordy-voics/client/issues/56) |
+| Link preview and embed dismiss | P | bot embeds only | [messages#12](https://github.com/discordy-voics/messages/issues/12), [client#56](https://github.com/discordy-voics/client/issues/56) |
+| Image lightbox, copy image, spoiler files | M | | [client#54](https://github.com/discordy-voics/client/issues/54) |
+| Drag-drop upload overlay | I | | - |
+| Paste images | I | | - |
+| @everyone highlight and mention highlight | I | | - |
+| Role-mention highlight for the viewer | M | `mentionsMe` ignores roles | [client#84](https://github.com/discordy-voics/client/issues/84) |
+| Jumbo emoji for emoji-only messages | M | | [client#86](https://github.com/discordy-voics/client/issues/86) |
+| APP tag next to bot names | P | BOT tag on avatar only | [client#86](https://github.com/discordy-voics/client/issues/86) |
+| Invite link card | M | | [client#86](https://github.com/discordy-voics/client/issues/86) |
+| System messages: join, pin | P | plain text, no actions, no menu | [client#87](https://github.com/discordy-voics/client/issues/87) |
+| System messages: call, thread, group DM events, wave | M | "did something" | [client#87](https://github.com/discordy-voics/client/issues/87) |
+| Message grouping, date dividers | I | | - |
+| Failed send: retry and discard | I | | - |
+| Edit in place with Esc and Enter hints | I | `MessageEditor.tsx` | - |
+
+### Composer
+
+| Interaction | Status | Notes | Issue |
+|---|---|---|---|
+| Emoji button and picker | I | | - |
+| GIF and sticker buttons | M | | [api#32](https://github.com/discordy-voics/api/issues/32), [api#33](https://github.com/discordy-voics/api/issues/33) |
+| Slash command picker | I | | - |
+| @user, @role, #channel autocomplete | I | | - |
+| :emoji: autocomplete | M | | [client#49](https://github.com/discordy-voics/client/issues/49) |
+| @here suggestion | M | only @everyone | [client#88](https://github.com/discordy-voics/client/issues/88) |
+| Up arrow edits last message | M | | [client#49](https://github.com/discordy-voics/client/issues/49) |
+| Esc cancels reply | I | | - |
+| Shift+Enter newline | I | | - |
+| Character counter, slowmode indicator, drafts | M | | [client#49](https://github.com/discordy-voics/client/issues/49) |
+| Upload with spoiler and description | M | | [client#54](https://github.com/discordy-voics/client/issues/54) |
+| Plus menu (upload, thread, poll, apps) | M | direct attach only | [client#88](https://github.com/discordy-voics/client/issues/88) |
+| Selection format toolbar | M | shortcut wrapping only | [client#88](https://github.com/discordy-voics/client/issues/88) |
+| Send with Ctrl+Enter option | M | | [client#88](https://github.com/discordy-voics/client/issues/88), [client#89](https://github.com/discordy-voics/client/issues/89) |
+| Paste long text as file | M | | [client#88](https://github.com/discordy-voics/client/issues/88) |
+| No-permission placeholder | I | | - |
+
+### Chat header and panels
+
+| Interaction | Status | Notes | Issue |
+|---|---|---|---|
+| Topic shown | P | truncated, tooltip only | [client#93](https://github.com/discordy-voics/client/issues/93) |
+| Pins button and panel | P | no Jump, no Unpin, no attachments | [client#93](https://github.com/discordy-voics/client/issues/93) |
+| Notification bell | M | | [client#93](https://github.com/discordy-voics/client/issues/93), [client#50](https://github.com/discordy-voics/client/issues/50) |
+| Threads button and list | M | | [client#93](https://github.com/discordy-voics/client/issues/93), [api#34](https://github.com/discordy-voics/api/issues/34) |
+| Member list toggle | I | | - |
+| Search box | M | | [client#47](https://github.com/discordy-voics/client/issues/47) |
+| DM header: voice call | I | | - |
+| DM header: video call, add friends, profile panel | M | | [client#93](https://github.com/discordy-voics/client/issues/93) |
+
+### Member list
+
+| Interaction | Status | Notes | Issue |
+|---|---|---|---|
+| Groups by hoisted role with counts, online and offline | I | `buildMemberSections` | - |
+| Activity or status text under the name | P | activity only; custom status is never broadcast | [client#85](https://github.com/discordy-voics/client/issues/85) |
+| Owner crown | M | | [client#97](https://github.com/discordy-voics/client/issues/97) |
+| Bot tag | P | on avatar | [client#97](https://github.com/discordy-voics/client/issues/97) |
+| Voice indicator, collapsible groups, role icons | M | | [client#97](https://github.com/discordy-voics/client/issues/97) |
+| Hover card | M | Discord has none on the list; click opens the popout | [client#52](https://github.com/discordy-voics/client/issues/52) |
+| Search members | M | | [client#71](https://github.com/discordy-voics/client/issues/71) |
+| Right-click member | I | roles in menu: client#80 | [client#80](https://github.com/discordy-voics/client/issues/80) |
+
+### Profile popout and full profile
+
+| Interaction | Status | Notes | Issue |
+|---|---|---|---|
+| Banner | P | accent colour only, no image | [api#43](https://github.com/discordy-voics/api/issues/43) |
+| Status text and custom status | M | | [client#85](https://github.com/discordy-voics/client/issues/85) |
+| About me | I | plain text | - |
+| Member since (server) | I | | - |
+| Discord account creation date | M | | [client#52](https://github.com/discordy-voics/client/issues/52) |
+| Roles list | P | read only | [client#80](https://github.com/discordy-voics/client/issues/80) |
+| Note, mutual servers and friends, message box | M | | [client#52](https://github.com/discordy-voics/client/issues/52) |
+| Connections | M | | [api#46](https://github.com/discordy-voics/api/issues/46) |
+| Anchored popout instead of modal | M | | [client#52](https://github.com/discordy-voics/client/issues/52) |
+
+### User area and voice panel
+
+| Interaction | Status | Notes | Issue |
+|---|---|---|---|
+| Mute and deafen toggles with states | I | | - |
+| Device quick menus beside mute and deafen | M | | [client#94](https://github.com/discordy-voics/client/issues/94) |
+| Keybind in tooltips | M | | [client#94](https://github.com/discordy-voics/client/issues/94) |
+| Settings gear | I | | - |
+| Avatar menu: status and custom status | P | menu offset hard coded; no clear-after or emoji | [client#85](https://github.com/discordy-voics/client/issues/85) |
+| Switch accounts | M | | [client#75](https://github.com/discordy-voics/client/issues/75) |
+| Voice panel: state, channel, disconnect, camera, share | I | `VoiceDock.tsx` | - |
+| RTC connection details popover | P | one line of ping and loss | [client#94](https://github.com/discordy-voics/client/issues/94) |
+| Noise suppression quick toggle | M | | [client#94](https://github.com/discordy-voics/client/issues/94) |
+| Soundboard and activities buttons | M | | [voice#10](https://github.com/discordy-voics/voice/issues/10), [api#50](https://github.com/discordy-voics/api/issues/50) |
+
+### Voice and call view
+
+| Interaction | Status | Notes | Issue |
+|---|---|---|---|
+| Tile right-click menu (volume, mod actions) | I | | - |
+| Pin or focus a tile | P | focus button; no persisted layout | [client#57](https://github.com/discordy-voics/client/issues/57) |
+| Pop-out window | M | | [client#57](https://github.com/discordy-voics/client/issues/57) |
+| Picture in picture | I | tile tool | - |
+| Grid and speaker layouts | I | | - |
+| Per-user volume | I | | - |
+| Stream preview, Watch Stream opt-in, Stop watching | M | auto-attached | [client#95](https://github.com/discordy-voics/client/issues/95) |
+| Viewer count for the streamer | M | | [client#95](https://github.com/discordy-voics/client/issues/95) |
+| Invite, Add to call, hide self-view | M | | [client#95](https://github.com/discordy-voics/client/issues/95) |
+| Speaking ring | I | | - |
+| Mute and deafen badges on tiles | I | | - |
+
+### Direct messages and friends
+
+| Interaction | Status | Notes | Issue |
+|---|---|---|---|
+| DM list right-click | M | | [client#51](https://github.com/discordy-voics/client/issues/51) |
+| Close DM X on hover | M | | [client#51](https://github.com/discordy-voics/client/issues/51), [client#96](https://github.com/discordy-voics/client/issues/96) |
+| Group DM add, remove, rename | M | | [api#29](https://github.com/discordy-voics/api/issues/29), [client#51](https://github.com/discordy-voics/client/issues/51) |
+| Message requests | M | | [api#41](https://github.com/discordy-voics/api/issues/41) |
+| Friends tabs Online, All, Pending, Blocked, Add friend | I | | - |
+| Friend row context menu, search, call | M | | [client#72](https://github.com/discordy-voics/client/issues/72) |
+| Active Now column | M | | [client#96](https://github.com/discordy-voics/client/issues/96) |
+| DM sorted by recent activity | I | | - |
+
+### Settings
+
+| Interaction | Status | Notes | Issue |
+|---|---|---|---|
+| My Account | P | read-only fields | [client#53](https://github.com/discordy-voics/client/issues/53) |
+| Profile | P | | [api#43](https://github.com/discordy-voics/api/issues/43) |
+| Privacy and delivery (E2EE) | I | | - |
+| Devices | P | E2EE devices only | [api#42](https://github.com/discordy-voics/api/issues/42) |
+| Authorized Apps, Connections | M | | [client#69](https://github.com/discordy-voics/client/issues/69), [api#46](https://github.com/discordy-voics/api/issues/46) |
+| Appearance | I | | - |
+| Accessibility, Language, Streamer mode | M | | [client#65](https://github.com/discordy-voics/client/issues/65), [client#64](https://github.com/discordy-voics/client/issues/64), [client#74](https://github.com/discordy-voics/client/issues/74) |
+| Voice and video | I | | - |
+| Chat tab | M | | [client#89](https://github.com/discordy-voics/client/issues/89) |
+| Notifications | P | global switches only | [client#50](https://github.com/discordy-voics/client/issues/50), [client#84](https://github.com/discordy-voics/client/issues/84) |
+| Keybinds | P | 8 actions; mark-read is a no-op | [client#67](https://github.com/discordy-voics/client/issues/67), [client#84](https://github.com/discordy-voics/client/issues/84) |
+| Advanced and developer mode | M | copy IDs always shown | [client#89](https://github.com/discordy-voics/client/issues/89) |
+| Settings search, Log out in nav | M | | [client#89](https://github.com/discordy-voics/client/issues/89) |
+| Unsaved changes bar | P | channel settings only | [client#89](https://github.com/discordy-voics/client/issues/89) |
+| Server: Overview, Roles, Emoji, Members, Invites, Bans, Audit log | I | | - |
+| Server: Stickers, Soundboard | M | | [api#33](https://github.com/discordy-voics/api/issues/33), [voice#10](https://github.com/discordy-voics/voice/issues/10) |
+| Server: Widget, Server Profile | M | | [client#98](https://github.com/discordy-voics/client/issues/98), [api#53](https://github.com/discordy-voics/api/issues/53) |
+| Server: Template, Custom invite link | M | | [api#44](https://github.com/discordy-voics/api/issues/44), [api#37](https://github.com/discordy-voics/api/issues/37) |
+| Server: Integrations and webhooks | M | | [client#61](https://github.com/discordy-voics/client/issues/61) |
+| Server: Safety, AutoMod, Community, Onboarding | M | | [api#38](https://github.com/discordy-voics/api/issues/38), [api#39](https://github.com/discordy-voics/api/issues/39), [api#45](https://github.com/discordy-voics/api/issues/45), [api#40](https://github.com/discordy-voics/api/issues/40) |
+| Server: Insights | M | | [api#53](https://github.com/discordy-voics/api/issues/53) |
+| Server: Delete Server in nav | M | menu only | [client#98](https://github.com/discordy-voics/client/issues/98) |
+
+### Global
+
+| Interaction | Status | Notes | Issue |
+|---|---|---|---|
+| Ctrl+K switcher | P | no prefixes, no recents or unread ranking | [client#90](https://github.com/discordy-voics/client/issues/90) |
+| Prev/next channel and server shortcuts | P | voice skipped, no unread jumping, no history | [client#90](https://github.com/discordy-voics/client/issues/90) |
+| Desktop notification toast with click-through | I | | - |
+| Notify on every message in a non-muted channel | M | mentions and DMs only | [client#84](https://github.com/discordy-voics/client/issues/84) |
+| Message sounds in the app | M | | [client#84](https://github.com/discordy-voics/client/issues/84) |
+| Windows taskbar badge | M | `setBadgeCount` is a no-op on Windows | [client#84](https://github.com/discordy-voics/client/issues/84) |
+| Unread count in window title | M | | [client#84](https://github.com/discordy-voics/client/issues/84) |
+| Tray icon unread state | M | static icon | [client#84](https://github.com/discordy-voics/client/issues/84) |
+| Tray menu, single instance, deep links | I | | - |
+
+### Summary of this pass
+
+Counts are taken from the tables above.
+
+Interactions reviewed: 173. Implemented 53, Partial 29, Missing 91. Gaps (Partial + Missing) 120 were grouped into 19 new issues: 4 P0, 10 P1, 5 P2.
+
+New issues (all `type:feature`, with `ws:` and `priority:` labels; P0 are on the board in Ready, the rest in Backlog):
+
+| Priority | Issue | Scope |
+|---|---|---|
+| P0 | [client#81](https://github.com/discordy-voics/client/issues/81) | message hover toolbar, quick reactions, contextual menus |
+| P0 | [client#82](https://github.com/discordy-voics/client/issues/82) | native text-field context menu |
+| P0 | [client#83](https://github.com/discordy-voics/client/issues/83) | channel and category menus, mention indicators, collapse behaviour |
+| P0 | [client#84](https://github.com/discordy-voics/client/issues/84) | unread and mention surfaces (taskbar, tray, title, sounds, rules, Esc) |
+| P1 | [client#85](https://github.com/discordy-voics/client/issues/85) | custom status visible to others |
+| P1 | [client#86](https://github.com/discordy-voics/client/issues/86) | message rendering details |
+| P1 | [client#87](https://github.com/discordy-voics/client/issues/87) | system messages |
+| P1 | [client#89](https://github.com/discordy-voics/client/issues/89) | settings structure (Chat, Advanced, search, unsaved bar) |
+| P1 | [client#90](https://github.com/discordy-voics/client/issues/90) | navigation shortcuts and switcher |
+| P1 | [client#91](https://github.com/discordy-voics/client/issues/91) | server rail and server menu details |
+| P1 | [client#92](https://github.com/discordy-voics/client/issues/92) | voice entries in the channel list |
+| P1 | [client#93](https://github.com/discordy-voics/client/issues/93) | chat header interactions |
+| P1 | [client#94](https://github.com/discordy-voics/client/issues/94) | user area and voice panel |
+| P1 | [client#95](https://github.com/discordy-voics/client/issues/95) | call view interactions |
+| P2 | [client#88](https://github.com/discordy-voics/client/issues/88) | composer details |
+| P2 | [client#96](https://github.com/discordy-voics/client/issues/96) | DM list and Friends page details |
+| P2 | [client#97](https://github.com/discordy-voics/client/issues/97) | member list details |
+| P2 | [client#98](https://github.com/discordy-voics/client/issues/98) | server settings navigation |
+| P2 | [api#53](https://github.com/discordy-voics/api/issues/53) | voice channel status, Server Insights, widget endpoints |
+
+Existing issues extended with a cross-reference comment: client#49, #50, #56, #59.
