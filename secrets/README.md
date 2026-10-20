@@ -23,6 +23,7 @@ Every secret on the Discordy platform is listed here. The source is [`inventory.
 | [OpenBao unseal key shares](#openbao-unseal-keys) | OpenBao | platform admin | not in GitHub | on-compromise |
 | [OpenBao root token](#openbao-root-token) | OpenBao | platform admin | not in GitHub | on-use |
 | [JWT signing key pair (Ed25519)](#jwt-signing-key) | Authentication and service-to-service | api (private), messages, gateway, voice-signaling, admin-bff (public) | `API_JWT_PRIVATE_KEY`, `SHARED_JWT_PUBLIC_KEY` (env:production) | 180d |
+| [Attachment download signing key](#attachment-signing-key) | Authentication and service-to-service | messages | `MESSAGES_ATTACHMENT_SIGNING_KEY` (env:production) | 365d |
 | [Internal service token](#internal-service-token) | Authentication and service-to-service | api, messages, gateway, voice-signaling, admin-bff | `SHARED_INTERNAL_SERVICE_TOKEN` (env:production) | 90d |
 | [Voice token secret (HS256)](#voice-token-secret) | Authentication and service-to-service | gateway, voice-signaling | `SHARED_VOICE_TOKEN_SECRET` (env:production) | 90d |
 | [Erlang distribution cookie](#release-cookie) | Runtime | gateway | `GATEWAY_RELEASE_COOKIE` (env:production) | 180d |
@@ -129,6 +130,23 @@ Every secret on the Discordy platform is listed here. The source is [`inventory.
 | Rotation | 180d — [secret-rotation.md#jwt-signing-key](../runbooks/secret-rotation.md#jwt-signing-key) |
 | Generate | openssl genpkey -algorithm ed25519 -out jwt.pem && openssl pkey -in jwt.pem -pubout -out jwt.pub.pem |
 | Notes | The public key is not confidential, but it travels with the pair so the two stay consistent. Only api receives the private key. |
+
+<a id="attachment-signing-key"></a>
+
+### Attachment download signing key
+
+| Field | Value |
+|---|---|
+| Purpose | HMAC-SHA256 key that signs the expiring attachment download URLs (ex/is/hm) issued and verified by messages (ADR 0017). |
+| Consumers | messages |
+| Env vars | `ATTACHMENT_SIGNING_KEY` |
+| GitHub secret | `MESSAGES_ATTACHMENT_SIGNING_KEY` (env:production) |
+| OpenBao | `discordy/messages` → `ATTACHMENT_SIGNING_KEY` (from `MESSAGES_ATTACHMENT_SIGNING_KEY`) |
+| Kubernetes Secret | `voics-apps/messages-secrets` |
+| Owner | @oussamaelhajoui |
+| Rotation | 365d — [secret-rotation.md#attachment-signing-key](../runbooks/secret-rotation.md#attachment-signing-key) |
+| Generate | openssl rand -hex 32 |
+| Notes | Dev reads kv/discordy-dev/messages with its own value. Rotating invalidates outstanding links; clients refresh by refetching messages. The local compose stack generates its own into local/.env. |
 
 <a id="internal-service-token"></a>
 

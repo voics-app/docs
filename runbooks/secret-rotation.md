@@ -108,6 +108,15 @@ There is one shared value, sent as `X-Internal-Token`. During the rollout, pods 
 3. Restart **all consumers in one command** (the same command as for the JWT key).
 4. **Verify**: the gateway READY works (it calls api's internal `/ready`), and the admin Overview loads (admin-bff calls the internal stats endpoints).
 
+## Attachment signing key
+
+Signs attachment download URLs. Links issued under the old key stop working at the restart; clients recover by refetching the message.
+
+1. Set the new value: `openssl rand -hex 32 | gh secret set MESSAGES_ATTACHMENT_SIGNING_KEY --repo discordy-voics/gitops --env production`, then run `secrets-sync`.
+2. Force-sync `messages-secrets` in `voics-apps`.
+3. Restart the messages deployment.
+4. **Verify**: open a channel with an attachment (the history call returns fresh links) and download it.
+
 ## Voice token secret
 
 This HS256 secret is shared by the gateway (signer) and **every voice node in every region** (verifiers). Voice tokens live 60 seconds.
