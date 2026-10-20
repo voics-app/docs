@@ -67,7 +67,7 @@ Re-publish the website or the invite page by re-running its workflow (`gh workfl
 
 ### How the publish jobs get access
 
-`minio-publish` (in `discordy-voics/.github`) runs on the in-cluster ARC runner (`runs-on: discordy`). It logs in to OpenBao with the runner's Kubernetes service account through the role `publish`, which may only read `kv/discordy/minio`, and uploads over the cluster network. There is no MinIO key in GitHub. The role is created by `gitops/bootstrap/20-openbao.sh` (re-run with `CONFIGURE=true BAO_TOKEN=<root token>` after changing roles). Objects are mirrored with `--overwrite` and never removed, so the website and the invite page can share one bucket.
+`minio-publish` (in `discordy-voics/.github`) runs on the in-cluster ARC runner (`runs-on: discordy`). The runner's service account `voics-system/discordy-runner` may `get` exactly one Secret, `voics-data/minio`, through the Role `discordy-runner-publish` (`gitops/infrastructure/controllers/actions-runner-controller/runner-scale-set/publish-rbac.yaml`). The workflow reads the key from the Kubernetes API and uploads over the cluster network, so there is no MinIO key in GitHub. Objects are mirrored with `--overwrite` and never removed, so the website and the invite page can share one bucket.
 
 ### When a deploy does not show up
 
