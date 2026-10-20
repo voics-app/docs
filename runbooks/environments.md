@@ -188,10 +188,12 @@ Decide first:
 1. **Protect the existing OpenBao keys.** `20-openbao.sh` stores new unseal keys under the names `OpenBao unseal key N` and `OpenBao root token`. With the DPAPI store a new init **overwrites** the files, and with 1Password it adds duplicates. If you will restore an OpenBao snapshot ([OpenBao backup](backup-restore.md#openbao)), keep the old keys: do **not** run the `openbao` stage's init; follow [OpenBao unseal](openbao-unseal.md) to restore the snapshot instead. If you will re-initialise and rely on GitHub as the source of truth, copy the old key files aside first.
 2. **Machine.** In `infra/terraform/envs/gen-serv`, fill in `terraform.tfvars` from your notes (`qm config 107` of a surviving copy, or the table above) and set `run_bootstrap = true`. Drop the lost VM from the state: `terraform state rm 'module.node'` if it is still in there.
 3. **Bring-up:**
+
    ```bash
    git checkout main && git pull
    CONFIRM_PRODUCTION=gen-serv ./env.sh up gen-serv
    ```
+
    The guard `CONFIRM_PRODUCTION` exists so nobody applies production by accident.
    - `provision` creates the VM and prepares the node (CPU `host`, etcd disk, etcd datastore).
    - `flux` reinstalls Flux; the layers reconcile (`infra-configs` waits for OpenBao).

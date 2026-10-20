@@ -4,7 +4,7 @@ How the owner reaches the operator tools of the gen-serv cluster, and how that a
 
 ## Start here
 
-**https://discordy-ops.voics.nl** is the ops portal: one page that links every tool below and explains how to log in to each.
+**<https://discordy-ops.voics.nl>** is the ops portal: one page that links every tool below and explains how to log in to each.
 
 ## Two gates in front of every operator host
 
@@ -15,15 +15,15 @@ How the owner reaches the operator tools of the gen-serv cluster, and how that a
 
 | Tool | URL | Login after Access | Rights |
 |---|---|---|---|
-| Ops portal | https://discordy-ops.voics.nl | none | - |
-| Headlamp (Kubernetes UI + **Flux plugin**) | https://discordy-headlamp.voics.nl | token: `kubectl -n voics-system create token headlamp-admin --duration=720h` | **cluster-admin** |
-| Grafana | https://discordy-grafana.voics.nl | `admin` + password | admin |
-| pgweb (PostgreSQL: users, servers, channels, roles, invites) | https://discordy-db.voics.nl | none | **superuser**, read/write, every database |
-| Scylla web (ScyllaDB: messages) | https://discordy-scylla.voics.nl | none (Scylla runs without auth) | read/write: rows, CQL console, import/export |
-| MinIO console | https://discordy-minio.voics.nl | MinIO root user + password | root |
-| Redpanda Console | https://discordy-redpanda.voics.nl | none | full |
-| OpenBao UI | https://discordy-openbao.voics.nl | Username method, user `owner` (created by `gitops/bootstrap/22-openbao-owner-admin.sh`) | policy `owner-admin` (everything) |
-| Admin panel | https://discordy-admin.voics.nl | none beyond Access; admin-bff also checks `ADMIN_ALLOWED_EMAILS` | platform admin |
+| Ops portal | <https://discordy-ops.voics.nl> | none | - |
+| Headlamp (Kubernetes UI + **Flux plugin**) | <https://discordy-headlamp.voics.nl> | token: `kubectl -n voics-system create token headlamp-admin --duration=720h` | **cluster-admin** |
+| Grafana | <https://discordy-grafana.voics.nl> | `admin` + password | admin |
+| pgweb (PostgreSQL: users, servers, channels, roles, invites) | <https://discordy-db.voics.nl> | none | **superuser**, read/write, every database |
+| Scylla web (ScyllaDB: messages) | <https://discordy-scylla.voics.nl> | none (Scylla runs without auth) | read/write: rows, CQL console, import/export |
+| MinIO console | <https://discordy-minio.voics.nl> | MinIO root user + password | root |
+| Redpanda Console | <https://discordy-redpanda.voics.nl> | none | full |
+| OpenBao UI | <https://discordy-openbao.voics.nl> | Username method, user `owner` (created by `gitops/bootstrap/22-openbao-owner-admin.sh`) | policy `owner-admin` (everything) |
+| Admin panel | <https://discordy-admin.voics.nl> | none beyond Access; admin-bff also checks `ADMIN_ALLOWED_EMAILS` | platform admin |
 
 The owner asked for full admin rights on every tool (2026-10-20). The Kubernetes Dashboard (and the microk8s `dashboard` addon built on it) was **retired by the Kubernetes project in January 2026**; Headlamp is its successor, and its Flux plugin shows Kustomizations, HelmReleases, sources and image automation, with reconcile and suspend actions.
 

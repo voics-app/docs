@@ -253,4 +253,3 @@ An issue is **done** only when all of these apply. The issue and PR templates (`
 5. **Board**: the card is moved to Done.
 
 Example: adding an ops tool such as Scylla web means manifests, `HOST_*` in `cluster-config` for every environment, the tunnel route, the Access host list, the ops portal entry, `ops-access.md`, and the `cloudflare-setup.md` host list.
-
