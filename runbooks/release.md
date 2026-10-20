@@ -80,6 +80,21 @@ Re-publish the website or the invite page by re-running its workflow (`gh workfl
 
 `minio-publish` (in `discordy-voics/.github`) runs on the in-cluster ARC runner (`runs-on: discordy`). The runner's service account `voics-system/discordy-runner` may `get` exactly one Secret, `voics-data/minio`, through the Role `discordy-runner-publish` (`gitops/infrastructure/controllers/actions-runner-controller/runner-scale-set/publish-rbac.yaml`). The workflow reads the key from the Kubernetes API and uploads over the cluster network, so there is no MinIO key in GitHub. Objects are mirrored with `--overwrite` and never removed, so the website and the invite page can share one bucket.
 
+### On-demand runner on the owner's PC
+
+When the GitHub-hosted minutes run low (GitHub Free quota), CI can temporarily run on the owner's PC. GitHub-hosted `ubuntu-latest` stays the default; this is not permanent infrastructure.
+
+```bash
+cd .github && scripts/pc-runner.sh up      # start the runner container (label karma-pc), set CI_RUNNER=karma-pc in every repo
+scripts/pc-runner.sh status                # container, GitHub status, CI_RUNNER per repo
+scripts/pc-runner.sh down                  # unset CI_RUNNER everywhere, deregister and remove the runner
+```
+
+- **How it works**: the shared workflows' default `runs-on` (`ubuntu-latest`) follows the caller repository variable `CI_RUNNER` when it is set. Jobs that name a runner explicitly keep it: `discordy` (in-cluster ARC: secrets-sync, minio-publish) and `windows-latest` (installer build).
+- **The container**: it is `ghcr.io/actions/actions-runner:2.338.0` on Docker Desktop, with the host Docker socket for image builds and the base packages `ubuntu-latest` ships (`libatomic1`, build tools, cmake, clang, jq). It has no restart policy.
+- **Before shutting the PC down, run `down`**. Otherwise jobs queue for `karma-pc` until it is back.
+- **Needs**: `gh` with `admin:org` (registration tokens).
+
 ### When a deploy does not show up
 
 | Symptom | Check |
