@@ -27,7 +27,7 @@ Every repository follows the same git-flow and versioning ([spec §13](../specs/
 
 What the other branches produce:
 
-- `develop` pushes `X.Y.Z-dev.N` images and `release/*`/`hotfix/*` push `X.Y.Z-rc.N`. The production image policies select **stable** tags only, so none of these reach production. A dev/test environment that follows `-dev.N` is tracked in gitops#27.
+- `develop` pushes `X.Y.Z-dev.N` images and `release/*`/`hotfix/*` push `X.Y.Z-rc.N`. The production image policies select **stable** tags only, so none of these reach production. The dev/test environment follows `-dev.N` (see [Dev/test environment and promotion](#devtest-environment-and-promotion)).
 - `feature/*` and pull requests only build and test; nothing is pushed.
 
 ### Timings
@@ -79,6 +79,23 @@ Re-publish the website or the invite page by re-running its workflow (`gh workfl
 | gitops bumped, but the pod is old | `flux get kustomizations -A`: a failing dependency (for example `infra-data`) blocks `apps`; `kubectl -n voics-apps describe pod` |
 | Website or installer still old | Was the publish job on the ARC runner green? Is the ARC runner pod up? `kubectl -n voics-system get pods \| grep discordy-` |
 | Users still get the old installer | Cloudflare cache: wait 5 minutes, or purge the URL (the API token needs *Zone: Cache Purge*) |
+
+## Dev/test environment and promotion
+
+The dev/test environment ([Environments](environments.md#devtest-environment)) runs the whole suite from `develop` on its own VM, on `discordy-dev*.voics.nl`. It is how a change is tried end to end before a release.
+
+| Step | What happens | Where |
+|---|---|---|
+| 1. Merge a feature PR into `develop` | the repository's CI builds and pushes `X.Y.Z-dev.N` (services) or publishes the dev build (website, client dev channel) | service repos, `website`, `client` |
+| 2. Dev image policies pick the new tag | `ImageRepository` and `ImagePolicy` `<name>-dev` (every 5 min, tags `X.Y.Z-dev.N` only) | `gitops/apps/image-automation-dev` |
+| 3. Dev automation commits the tag to gitops `develop` | `ImageUpdateAutomation` `discordy-dev` (every 5 min) | dev cluster |
+| 4. Flux applies it | `clusters/dev` watches `develop` (every minute); Kustomization `apps` / `regions` | dev cluster |
+| 5. Try it | log in with the seeded demo users ([password](environments.md#devtest-environment)), run the smoke checks | `discordy-dev.voics.nl` |
+| 6. Release | the [standard release](#standard-release) cuts `release/X.Y.Z`, merges to `main` and tags; production's policies select stable `X.Y.Z` only | production |
+
+Dev and production never share images, secrets or state: production's image policies still accept stable tags only (`semver >=0.1.0` excludes prereleases), dev's accept only `-dev.N`. Timings of the dev path: **not measured yet**; by the intervals above, a merged image should reach the dev hosts within about 10 minutes of being pushed, the same arithmetic as production's [timings](#timings).
+
+Gitops changes follow the same path: a merge to `develop` is applied to dev (`clusters/dev` watches `develop`), a merge to `main` to production (`clusters/gen-serv` watches `main`). Check a platform change on dev before the release PR.
 
 ## Release order across repositories
 
@@ -215,7 +232,7 @@ The client follows the same git-flow. What happens on a tag (`client/.github/wor
 Not built yet:
 
 - **macOS (dmg) and Linux (AppImage/deb)**: the scripts exist (`pnpm dist:mac`, `pnpm dist:linux`), but CI does not run them yet. The website shows them as "coming soon".
-- **RC/beta channel**: RC builds don't produce installers. The dev/test environment (gitops#27) adds a dev feed.
+- **RC/beta channel**: RC builds don't produce installers. The dev/test environment has a dev updates host (`discordy-dev-updates.voics.nl`) for an optional dev installer channel; the client workflow that publishes to it is not built yet.
 - **Code signing**: installers are unsigned (spec §10), so Windows SmartScreen shows "unknown publisher".
 
 A manual build (when CI is unavailable) runs `pnpm dist:win` on Windows and uploads `apps/desktop/release/{Discordy-Setup-X.Y.Z.exe,.blockmap,latest.yml}` to the bucket. 0.2.0 was published this way.
