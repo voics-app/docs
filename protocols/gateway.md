@@ -265,6 +265,8 @@ Discord bit values. User sessions implicitly receive every intent; privileged in
 | `MESSAGE_ACK` | `MessageAckEvent` | messages | `discordy.message.v1` | The user's read state advanced on another device. |
 | `USER_UPDATE` | `User` | api | `discordy.user.v1` | The current user was updated. |
 | `USER_SETTINGS_UPDATE` | `UserSettings` | api | `discordy.user.v1` | The current user's settings changed. |
+| `USER_GUILD_SETTINGS_UPDATE` | `GuildNotificationSettings` | api | `discordy.user.v1` | The current user's notification settings for a guild or their DMs changed (sent to that user only). |
+| `USER_NOTE_UPDATE` | `UserNoteUpdateEvent` | api | `discordy.user.v1` | The current user's private note about a user changed (sent to the author only). |
 | `RELATIONSHIP_ADD` | `Relationship` | api | `discordy.user.v1` | A relationship was created or changed. |
 | `RELATIONSHIP_REMOVE` | `RelationshipRemoveEvent` | api | `discordy.user.v1` | A relationship was removed. |
 | `CHANNEL_RECIPIENT_ADD` | `ChannelRecipientEvent` | api | `discordy.user.v1` | A user was added to a group DM. |
@@ -286,6 +288,8 @@ READY: the internal ready state plus session details.
 | `private_channels` | `array of Channel` |  |
 | `relationships` | `array of Relationship` |  |
 | `user_settings` | `UserSettings` |  |
+| `user_guild_settings` | `array of GuildNotificationSettings` | Stored notification settings of the user's guilds and DMs (`guild_id` null). Guilds without a row use the defaults. |
+| `notes` | `map of string` | The user's private notes keyed by the noted user's id. |
 | `v` | `integer` | Gateway version (1). |
 | `session_id` | `string` |  |
 | `resume_gateway_url` | `string` |  |
@@ -548,6 +552,30 @@ MESSAGE_ACK dispatch (read-state sync across the user's devices).
 | `message_id` | `Snowflake` |  |
 | `mention_count` | `integer` |  |
 | `version?` | `integer` |  |
+
+### UserNoteUpdateEvent
+
+USER_NOTE_UPDATE dispatch, sent to the author's sessions only. An empty note means the note was removed.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `id` | `Snowflake` | The user the note is about. |
+| `note` | `string` |  |
+
+### GuildNotificationSettings
+
+Payload of USER_GUILD_SETTINGS_UPDATE and the `user_guild_settings` entries of READY. See the [notification settings spec](../specs/2026-10-20-notification-settings-and-notes.md).
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `guild_id` | `Snowflake or null` | null for direct messages and group DMs. |
+| `message_notifications` | `0, 1, 2 or null` | all, only @mentions, nothing; null inherits. |
+| `suppress_everyone` | `boolean` |  |
+| `suppress_roles` | `boolean` |  |
+| `muted` | `boolean` |  |
+| `mute_config` | `{end_time} or null` | `end_time` null means until turned off. |
+| `hide_muted_channels` | `boolean` |  |
+| `channel_overrides` | `array` | `{channel_id, message_notifications, muted, mute_config}`; only non-default overrides. |
 
 ### RelationshipRemoveEvent
 

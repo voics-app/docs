@@ -80,6 +80,11 @@ Errors use the envelope `{ "code": int, "message": string, "errors"?: object }`.
 | `PATCH` | `/users/@me/settings` | api | `ModifyUserSettingsRequest` | `UserSettings` | Modify the current user's settings (including default_delivery_mode) |
 | `GET` | `/users/@me/channels` | api | — | `array of Channel` | List DMs and group DMs |
 | `POST` | `/users/@me/channels` | api | `CreateDmRequest` | `Channel` | Open a DM or create a group DM |
+| `GET` | `/users/@me/guilds/{guild_id}/settings` | api | — | `GuildNotificationSettings` | Get the current user's notification settings for a guild (`@me` for DMs) |
+| `PATCH` | `/users/@me/guilds/{guild_id}/settings` | api | `ModifyGuildNotificationSettingsRequest` | `GuildNotificationSettings` | Modify them (partial) |
+| `GET` | `/users/@me/notes/{user_id}` | api | — | `UserNote` | Get the private note about a user (404 when none) |
+| `PUT` | `/users/@me/notes/{user_id}` | api | `PutNoteRequest` | 204 No Content | Set the note (empty deletes) |
+| `DELETE` | `/users/@me/notes/{user_id}` | api | — | 204 No Content | Delete the note |
 | `GET` | `/users/@me/relationships` | api | — | `array of Relationship` | List relationships |
 | `GET` | `/users/@me/relationships/{user_id}` | api | — | `Relationship` | Get the relationship with a user |
 | `PUT` | `/users/@me/relationships/{user_id}` | api | `PutRelationshipRequest` | 204 No Content | Send or accept a friend request, or block a user |
