@@ -69,3 +69,7 @@ Secret values are never written to git, issues, PRs, logs or Notion. Docs descri
 - Existing DNS records are never edited; Discordy adds new one-level records only ([Cloudflare setup](../runbooks/cloudflare-setup.md)).
 - Production gen-serv is adopted into Terraform by import only; `destroy` is never run against it ([Environments and IaC](06-environments-and-iac.md)).
 - No payments and no capture of DRM-protected video ([ADR-0011](../adr/0011-no-drm-capture-watch-together.md)).
+
+## Local hooks and the slim CI gate
+
+GitHub-hosted minutes are budgeted (about 15 USD a month), so tests live in git hooks. Each repository has a committed `lefthook.yml`: `make hooks` installs a pre-push hook that runs the repository's lint and unit tests. On a pull request CI runs only lint/format, build/typecheck and unit tests (docs-only changes skip it), with a concurrency group that cancels superseded runs. Integration tests (testcontainers), the image build with Trivy, SBOM and cosign, and `cargo audit` run on develop, main, release/hotfix branches and tags (and a weekly scheduled run for audit), on the self-hosted `vm-runner` where a repository uses it.
