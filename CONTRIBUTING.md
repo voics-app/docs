@@ -256,4 +256,4 @@ Example: adding an ops tool such as Scylla web means manifests, `HOST_*` in `clu
 
 ### Local checks first
 
-Every repository ships a `lefthook.yml` pre-push hook (lint plus fast unit tests). Install [lefthook](https://lefthook.dev/installation/) once and run `make hooks` (`lefthook install` where there is no Makefile) in each clone. Pull-request CI only repeats the slim gate (format/lint, build/typecheck, unit tests); integration tests, image build, Trivy, SBOM, signing and `cargo audit` run on develop, main, release branches and tags. A change is not done until the pre-push hook passes locally.
+Every repository ships a `lefthook.yml` pre-push hook (lint plus fast unit tests). Install [lefthook](https://github.com/evilmartians/lefthook) once and run `make hooks` (`lefthook install` where there is no Makefile) in each clone. Pull-request CI only repeats the slim gate (format/lint, build/typecheck, unit tests); integration tests, image build, Trivy, SBOM, signing and `cargo audit` run on develop, main, release branches and tags. A change is not done until the pre-push hook passes locally.
