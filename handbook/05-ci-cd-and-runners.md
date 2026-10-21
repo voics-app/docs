@@ -90,6 +90,15 @@ scripts/runner.sh down              # remove the runners (switches back to GitHu
 
 On a Linux VM the runners use host networking, so integration tests (testcontainers) reach their containers on `localhost`.
 
+### Several VMs
+
+Every machine names its runners `<label>-<machine id>-N` (for example `vm-runner-3f9a1c-1`), so names never collide, even when two VMs share a hostname. The label decides which jobs a runner takes:
+
+- **One pool** (recommended): use the same label on every VM, for example `scripts/runner.sh up --label vm-pool --count 3` on each, then `scripts/runner.sh use vm-pool` once. Jobs go to whichever runner is free.
+- **Separate VMs**: keep the default label `vm-<hostname>` (give the VMs different hostnames), and `use` picks one.
+
+`down` on a VM removes only that VM's runners. It switches CI back to GitHub only when no other runner with the label is still online.
+
 ### Use a VM: managed from the PC over SSH
 
 ```bash
