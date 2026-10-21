@@ -90,6 +90,18 @@ scripts/runner.sh down              # remove the runners (switches back to GitHu
 
 On a Linux VM the runners use host networking, so integration tests (testcontainers) reach their containers on `localhost`.
 
+### Which repos run where (split)
+
+| Runners | Repos | Cost |
+|---|---|---|
+| Self-hosted VM (`vm-runner`) | api, messages, gateway, voice, client (heavy Rust/Docker builds) | free |
+| GitHub-hosted `ubuntu-latest` | docs, website, contracts, gitops, .github, bots-sdk, admin (light jobs) | GitHub minutes, $15/month budget (org Settings → Billing → Budgets) |
+| GitHub-hosted `windows-latest` | client installer, on release tags only | about $0.30 per release |
+
+`runner.sh up` and `use <label>` switch only the heavy repos; `use github` resets all. Change the set with `SELF_HOSTED_REPOS="api messages" scripts/runner.sh up`.
+
+The runner VM's Proxmox CPU type must be `host`. ScyllaDB needs SSE4.2 and PCLMUL, which `x86-64-v2-AES` and qemu64 lack, and the Scylla integration tests skip themselves without it.
+
 ### Several VMs
 
 Every machine names its runners `<label>-<machine id>-N` (for example `vm-runner-3f9a1c-1`), so names never collide, even when two VMs share a hostname. The label decides which jobs a runner takes:
