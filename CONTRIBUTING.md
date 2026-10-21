@@ -250,7 +250,8 @@ An issue is **done** only when all of these apply. The issue and PR templates (`
 2. **Tested**: tests added or updated; behaviour verified. Use live/e2e checks for calls, message delivery and deployments.
 3. **Documented**: this repository is updated per [Documentation duties](#documentation-duties): runbooks, ADRs, specs, service catalog, secrets inventory. So are the README of the changed repository and, for operator tools, the ops portal page.
 4. **Reproducible (platform and CI/CD items)**: everything a new environment needs is in code. That means Terraform (`gitops/infra/terraform`), bootstrap scripts and `env.sh` stages, `cluster-config` and the environment overlays (production **and** dev), the Cloudflare host lists (`bootstrap/40-cloudflare.sh`), the tunnel ingress, the secrets inventory and the memory budget. Nothing is changed by hand on a cluster unless it is also in git.
-5. **Board**: the card is moved to Done.
+5. **Images and releases**: every published container image on GHCR has a correct title (`org.opencontainers.image.title`), a human-readable description and source link (OCI annotations on the index and manifest, which is what GHCR shows), and semver tags. A release `vX.Y.Z` publishes `X.Y.Z`, `X.Y` and `latest`; develop publishes `X.Y.(Z+1)-dev.N`, after the latest release tag; release and hotfix branches publish `-rc.N`. The shared `docker.yml` does this when the caller passes `image-name` and `description`.
+6. **Board**: the card is moved to Done.
 
 Example: adding an ops tool such as Scylla web means manifests, `HOST_*` in `cluster-config` for every environment, the tunnel route, the Access host list, the ops portal entry, `ops-access.md`, and the `cloudflare-setup.md` host list.
 
