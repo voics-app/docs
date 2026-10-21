@@ -9,6 +9,7 @@ accept = ["200..=299", "429"]
 exclude_path = ['node_modules', '(^|/)specs/', '(^|/)plans/']
 exclude = [
   '^https://github\.com/discordy-voics/',
+  '^https://github\.com/orgs/discordy-voics/',
   '^https://ghcr\.io/',
   '^https?://([a-z0-9-]+\.)?voics\.nl',
   '^https?://192\.168\.',

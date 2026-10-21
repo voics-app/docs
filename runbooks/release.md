@@ -80,20 +80,23 @@ Re-publish the website or the invite page by re-running its workflow (`gh workfl
 
 `minio-publish` (in `discordy-voics/.github`) runs on the in-cluster ARC runner (`runs-on: discordy`). The runner's service account `voics-system/discordy-runner` may `get` exactly one Secret, `voics-data/minio`, through the Role `discordy-runner-publish` (`gitops/infrastructure/controllers/actions-runner-controller/runner-scale-set/publish-rbac.yaml`). The workflow reads the key from the Kubernetes API and uploads over the cluster network, so there is no MinIO key in GitHub. Objects are mirrored with `--overwrite` and never removed, so the website and the invite page can share one bucket.
 
-### On-demand runner on the owner's PC
+### CI runners: GitHub-hosted, owner PC or a VM
 
-When the GitHub-hosted minutes run low (GitHub Free quota), CI can temporarily run on the owner's PC. GitHub-hosted `ubuntu-latest` stays the default; this is not permanent infrastructure.
+GitHub-hosted `ubuntu-latest` is the default. When the GitHub Free minutes run low, switch all repositories to self-hosted runners and back. The full reference (resources, how a runner is built) is in the [`.github` README → CI runners](https://github.com/discordy-voics/.github#ci-runners). Run the commands from the `.github` repository:
 
 ```bash
-cd .github && scripts/pc-runner.sh up      # start the runner container (label karma-pc), set CI_RUNNER=karma-pc in every repo
-scripts/pc-runner.sh status                # container, GitHub status, CI_RUNNER per repo
-scripts/pc-runner.sh down                  # unset CI_RUNNER everywhere, deregister and remove the runner
+scripts/runner.sh up                                   # 3 runners on this PC (label karma-pc) and switch to them
+scripts/runner-vm-bootstrap.sh user@vm                 # once per fresh Ubuntu/Debian VM: install Docker
+scripts/runner.sh up --host user@vm --count 3          # 3 runners on the VM (label vm-<host>)
+scripts/runner.sh use vm-<host>                        # send jobs to the VM
+scripts/runner.sh use github                           # back to GitHub-hosted runners
+scripts/runner.sh status                               # active CI_RUNNER and online runners
+scripts/runner.sh down [--host user@vm]                # remove runners (switches back if they were active)
 ```
 
-- **How it works**: the shared workflows' default `runs-on` (`ubuntu-latest`) follows the caller repository variable `CI_RUNNER` when it is set. Jobs that name a runner explicitly keep it: `discordy` (in-cluster ARC: secrets-sync, minio-publish) and `windows-latest` (installer build).
-- **The container**: it is `ghcr.io/actions/actions-runner:2.338.0` on Docker Desktop, with the host Docker socket for image builds and the base packages `ubuntu-latest` ships (`libatomic1`, build tools, cmake, clang, jq). It has no restart policy.
-- **Before shutting the PC down, run `down`**. Otherwise jobs queue for `karma-pc` until it is back.
-- **Needs**: `gh` with `admin:org` (registration tokens).
+- **Switching**: the shared workflows' default `runs-on` follows the repository variable `CI_RUNNER`. Jobs that name a runner explicitly keep it: `discordy` (in-cluster ARC) and `windows-latest` (the installer).
+- **Resources per runner** (one job at a time): 2 vCPU, 6–8 GB RAM and about 40 GB disk. A VM for 3 runners needs 6–8 vCPU, 16–24 GB RAM and 150 GB disk.
+- **No restart policy**: run `down` or `use github` before turning the PC or VM off. Otherwise jobs wait for the missing runner.
 
 ### When a deploy does not show up
 

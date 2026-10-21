@@ -1,0 +1,40 @@
+name: notion-sync
+
+# Mirrors the Markdown in this repository into the Discordy Notion space
+# (Home > Home Lab > Discordy). Idempotent; see README "Notion mirror".
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Plan only, change nothing in Notion
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: notion-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # "Last updated" comes from git history
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Sync to Notion
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          args=()
+          if [ "$DRY_RUN" = "true" ]; then args+=(--dry-run); fi
+          node scripts/notion-sync/index.mjs "${args[@]}"

@@ -8,6 +8,7 @@ Architecture, decisions, references and runbooks for **Discordy**, a Discord-equ
 
 | If you want to… | Read |
 |---|---|
+| Learn how everything works and where to find it | [Handbook](handbook/01-how-discordy-works.md) |
 | Understand the product and architecture | [Design specification](specs/2026-10-16-voics-platform-design.md) |
 | See the implementation plan and pinned interfaces | [Master plan](plans/2026-10-16-discordy-master-plan.md) |
 | See the diagrams | [C4 model](c4/README.md): [context](c4/rendered/structurizr-C1-SystemContext.svg) · [containers](c4/rendered/structurizr-C2-Containers.svg) · [deployment](c4/rendered/structurizr-Deployment-gen-serv.svg) |
@@ -22,6 +23,7 @@ Architecture, decisions, references and runbooks for **Discordy**, a Discord-equ
 ## Repository layout
 
 ```text
+handbook/     how Discordy works, per-application guides, how we work, runners, regions, branding, client release
 specs/        design specification (owned by the coordinator)
 plans/        master implementation plan (owned by the coordinator)
 c4/           Structurizr workspace.dsl, PlantUML code diagrams, rendered SVG/PNG
@@ -53,8 +55,42 @@ make secrets-render
 
 CI ([`.github/workflows/`](.github/workflows/)) runs markdownlint, the secrets-inventory check and the link check on every PR. The `c4` workflow validates the workspace and fails on stale renders. On `develop` and `main` it re-renders and commits.
 
+## Notion mirror
+
+The Markdown in this repository is mirrored to Notion under **Home, Home Lab, Discordy** (page id `3fb99f29-12a4-81cb-b018-ebda0f0072e8`). Git stays the source of truth: edit the Markdown, never the Notion pages, because the next sync overwrites them.
+
+### What you get in Notion
+
+- A dashboard (the Discordy page): hero, handbook links, ops quick links, a synced "Where to find X" FAQ, toggles for common tasks and a last-synced stamp.
+- Databases with properties and one page per document: **Handbook**, **Runbooks**, **ADRs**, **Services**, **Ops tools & URLs**, **Environments**, **Guides & references**, **Specs & plans** and **Protocols**. Relations link ADRs to the ones they supersede and services to what they depend on.
+- Markdown is converted to Notion blocks (headings, lists, tables, code with language, callouts for blockquotes, images). Relative links point at the matching Notion page, or at GitHub for files that are not mirrored.
+
+### How it works (`scripts/notion-sync/`, Node 24, no dependencies)
+
+1. It reads the repository, builds one row per document and keeps the stable key (the repository path) in the hidden property **Source path** of each Notion page.
+2. A **Content hash** property makes it idempotent: unchanged pages are skipped, changed pages are rewritten, pages whose source disappeared are archived. A second run changes nothing.
+3. It never writes secrets: any line that looks like a token is replaced by a notice and reported as a warning.
+4. It throttles to about 3 requests per second and retries on 429.
+
+### Run it
+
+- Automatically: the `notion-sync` workflow runs on every push to `main`, and on demand (Actions, notion-sync, Run workflow; tick *dry run* to only plan). It uses the repository secret `NOTION_TOKEN` and `runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}`.
+- Locally, with the token in the environment (never commit it):
+
+  ```bash
+  export NOTION_TOKEN=...                      # internal integration shared with the Discordy page
+  node scripts/notion-sync/index.mjs --dry-run # plan only
+  node scripts/notion-sync/index.mjs           # sync
+  node scripts/notion-sync/index.mjs --prune-root  # one time: also remove unmanaged blocks and pages under the Discordy page
+  ```
+
+- Rotating the token: [secret rotation](runbooks/secret-rotation.md#notion-token). The integration must stay shared with the Discordy page.
+
+### Views
+
+The Notion API cannot create filtered or sorted database views, so those are saved in Notion itself and survive syncs.
+
 ## Pending owner actions
 
-- **Notion mirror (WS10.4)**: the `notion-sync` workflow and the Notion page tree are created by the coordinator. It needs a `NOTION_TOKEN` secret on the docs repository (GitHub Free: private repos cannot read org secrets) (see the [inventory](secrets/README.md#notion-token)).
 - **P2 addition**: `TURN_STATIC_AUTH_SECRET`, the coturn TURN REST secret, is implied by the P2P design but isn't pinned yet. It is listed in the inventory with a note.
 - **Protocol references** are hand-written from P3–P9. Regenerate them from `contracts` once it publishes `v0.1.0`.

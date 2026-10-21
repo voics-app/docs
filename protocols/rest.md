@@ -59,6 +59,11 @@ Errors use the envelope `{ "code": int, "message": string, "errors"?: object }`.
 | `POST` | `/auth/login` | api | `LoginRequest` | `AuthResponse` | Log in with email and password (and TOTP when 2FA is enabled) |
 | `POST` | `/auth/refresh` | api | `RefreshRequest` | `AuthResponse` | Rotate a refresh token |
 | `POST` | `/auth/logout` | api | — | 204 No Content | Revoke the current session |
+| `POST` | `/auth/mfa/totp` | api | `MfaLoginRequest` | `AuthResponse` | Complete a login with a TOTP or backup code |
+| `POST` | `/auth/forgot-password` | api | `ForgotPasswordRequest` | 204 No Content | Email a password reset token |
+| `POST` | `/auth/reset-password` | api | `ResetPasswordRequest` | 204 No Content | Set a new password with a reset token |
+| `POST` | `/auth/verify-email` | api | `VerifyEmailRequest` | 204 No Content | Verify an email address with an emailed token |
+| `POST` | `/auth/resend-verification` | api | — | 204 No Content | Resend the verification email |
 
 ### Devices
 
@@ -75,16 +80,22 @@ Errors use the envelope `{ "code": int, "message": string, "errors"?: object }`.
 | --- | --- | --- | --- | --- | --- |
 | `GET` | `/users/@me` | api | — | `User` | Get the current user |
 | `PATCH` | `/users/@me` | api | `ModifyCurrentUserRequest` | `User` | Modify the current user |
+| `POST` | `/users/@me/disable` | api | `PasswordConfirmationRequest` | 204 No Content | Disable the account |
+| `POST` | `/users/@me/delete` | api | `PasswordConfirmationRequest` | 204 No Content | Schedule account deletion |
+| `POST` | `/users/@me/mfa/totp/enable` | api | `PasswordConfirmationRequest` | `TotpEnrollmentResponse` | Start TOTP enrolment |
+| `POST` | `/users/@me/mfa/totp/verify` | api | `VerifyTotpRequest` | `BackupCodesResponse` | Confirm TOTP enrolment |
+| `POST` | `/users/@me/mfa/totp/disable` | api | `DisableTotpRequest` | 204 No Content | Disable TOTP |
+| `POST` | `/users/@me/mfa/codes-verification` | api | `BackupCodesVerificationRequest` | `BackupCodesResponse` | List or regenerate backup codes |
 | `GET` | `/users/{user_id}` | api | — | `User` | Get a user |
 | `GET` | `/users/@me/settings` | api | — | `UserSettings` | Get the current user's settings |
 | `PATCH` | `/users/@me/settings` | api | `ModifyUserSettingsRequest` | `UserSettings` | Modify the current user's settings (including default_delivery_mode) |
+| `GET` | `/users/@me/guilds/{guild_id}/settings` | api | — | `GuildNotificationSettings` | Get the current user's notification settings for a guild (or `@me` for DMs) |
+| `PATCH` | `/users/@me/guilds/{guild_id}/settings` | api | `ModifyGuildNotificationSettingsRequest` | `GuildNotificationSettings` | Modify the current user's notification settings for a guild (or `@me` for DMs) |
+| `GET` | `/users/@me/notes/{user_id}` | api | — | `UserNote` | Get the current user's private note about a user (404 when none) |
+| `PUT` | `/users/@me/notes/{user_id}` | api | `PutNoteRequest` | 204 No Content | Set the current user's private note about a user (empty deletes it) |
+| `DELETE` | `/users/@me/notes/{user_id}` | api | — | 204 No Content | Delete the current user's private note about a user |
 | `GET` | `/users/@me/channels` | api | — | `array of Channel` | List DMs and group DMs |
 | `POST` | `/users/@me/channels` | api | `CreateDmRequest` | `Channel` | Open a DM or create a group DM |
-| `GET` | `/users/@me/guilds/{guild_id}/settings` | api | — | `GuildNotificationSettings` | Get the current user's notification settings for a guild (`@me` for DMs) |
-| `PATCH` | `/users/@me/guilds/{guild_id}/settings` | api | `ModifyGuildNotificationSettingsRequest` | `GuildNotificationSettings` | Modify them (partial) |
-| `GET` | `/users/@me/notes/{user_id}` | api | — | `UserNote` | Get the private note about a user (404 when none) |
-| `PUT` | `/users/@me/notes/{user_id}` | api | `PutNoteRequest` | 204 No Content | Set the note (empty deletes) |
-| `DELETE` | `/users/@me/notes/{user_id}` | api | — | 204 No Content | Delete the note |
 | `GET` | `/users/@me/relationships` | api | — | `array of Relationship` | List relationships |
 | `GET` | `/users/@me/relationships/{user_id}` | api | — | `Relationship` | Get the relationship with a user |
 | `PUT` | `/users/@me/relationships/{user_id}` | api | `PutRelationshipRequest` | 204 No Content | Send or accept a friend request, or block a user |
@@ -438,6 +449,18 @@ A guild ban.
 | `reason` | `?string` |  |
 | `user` | `User` |  |
 
+### Call
+
+A DM or group DM call: its voice states and the recipients still ringing for it. Carried by CALL_CREATE and CALL_UPDATE.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `channel_id` | `Snowflake` |  |
+| `message_id` | `null` | Always null: a call is not attached to a message. |
+| `region` | `string` | Voice region the call is served from. |
+| `ringing` | `array of Snowflake` | Recipients who have not joined or declined yet. |
+| `voice_states` | `array of VoiceState` | The VoiceState of every participant. |
+
 ### Channel
 
 A guild channel, DM, group DM or thread. `delivery_mode` and `voice_region` are Discordy extras.
@@ -452,6 +475,7 @@ A guild channel, DM, group DM or thread. `delivery_mode` and `voice_region` are 
 | `name?` | `?string` |  |
 | `topic?` | `?string` |  |
 | `nsfw?` | `boolean` |  |
+| `text_chat_enabled?` | `boolean` | Voice channels only: whether members can send messages to the channel chat. Defaults to true. |
 | `last_message_id?` | `?Snowflake` |  |
 | `bitrate?` | `integer` |  |
 | `user_limit?` | `integer` |  |
@@ -493,6 +517,15 @@ A channel mentioned in a message.
 | `guild_id` | `Snowflake` |  |
 | `type` | `integer` |  |
 | `name` | `string` |  |
+
+### ChannelNotificationOverride
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `channel_id` | `Snowflake` |  |
+| `message_notifications` | `0 or 1 or 2 or null` | 0 all messages, 1 only @mentions, 2 nothing. null inherits (the guild level for a channel override, the guild's default_message_notifications for the guild). |
+| `muted` | `boolean` |  |
+| `mute_config` | `?MuteConfig` |  |
 
 ### CustomStatus
 
@@ -755,6 +788,21 @@ A member of a guild.
 | `permissions?` | `PermissionBitset` | Total permissions in the interaction channel; only in interaction payloads. |
 | `communication_disabled_until?` | `?string (date-time)` |  |
 
+### GuildNotificationSettings
+
+The current user's notification settings for one guild, or for their DMs when guild_id is null (Discord's user guild settings). A channel override beats the guild level, which beats the guild's default_message_notifications. A muted guild mutes all its channels. Private to the user, synced to every session.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `guild_id` | `?Snowflake` | null for direct messages and group DMs. |
+| `message_notifications` | `0 or 1 or 2 or null` | 0 all messages, 1 only @mentions, 2 nothing. null inherits (the guild level for a channel override, the guild's default_message_notifications for the guild). |
+| `suppress_everyone` | `boolean` | Suppress @everyone and @here. |
+| `suppress_roles` | `boolean` | Suppress all role @mentions. |
+| `muted` | `boolean` |  |
+| `mute_config` | `?MuteConfig` | Present while muted. |
+| `hide_muted_channels` | `boolean` |  |
+| `channel_overrides` | `array of ChannelNotificationOverride` | Only channels with a non-default override. |
+
 ### InstallParams
 
 Default scopes and permissions for the bot invite.
@@ -945,6 +993,14 @@ Reference to another message (reply, forward, crosspost).
 | `channel_id?` | `Snowflake` |  |
 | `guild_id?` | `Snowflake` |  |
 | `fail_if_not_exists?` | `boolean` |  |
+
+### MuteConfig
+
+When a mute ends. end_time null means until turned off; an end_time in the past means the mute has expired and is ignored.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `end_time` | `?string (date-time)` |  |
 
 ### PartialChannel
 
@@ -1155,6 +1211,16 @@ A Discordy user (Discord v10 User object).
 | `flags?` | `integer` |  |
 | `public_flags?` | `integer` |  |
 
+### UserNote
+
+A private note the current user wrote about another user. Visible only to its author.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `user_id` | `Snowflake` | The author (the current user). |
+| `note_user_id` | `Snowflake` | The user the note is about. |
+| `note` | `string` |  |
+
 ### UserSettings
 
 Account-wide settings of the current user. `default_delivery_mode` is a Discordy extra.
@@ -1166,6 +1232,7 @@ Account-wide settings of the current user. `default_delivery_mode` is a Discordy
 | `status` | `"online" or "idle" or "dnd" or "invisible"` |  |
 | `custom_status` | `?CustomStatus` |  |
 | `default_delivery_mode` | `DeliveryMode` | Default delivery mode for DMs and group DMs without a per-chat override. |
+| `e2ee_calls_default` | `boolean` | When true, every call the user starts or joins is end-to-end encrypted (DMs, group DMs, voice channels, Go Live). A call is E2EE for everyone when any participant has this set. |
 | `developer_mode` | `boolean` |  |
 | `message_display_compact` | `boolean` |  |
 | `accent_color?` | `?integer` |  |
@@ -1287,6 +1354,23 @@ Tokens returned by register, login and refresh.
 | `access_token` | `string` | EdDSA JWT, 15 minutes. |
 | `refresh_token` | `string` | Rotated on every use. |
 | `user` | `User` |  |
+
+### BackupCodesResponse
+
+Backup codes. Codes are stored hashed, so plaintext appears only when generated or regenerated.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `backup_codes` | `array of object` |  |
+
+### BackupCodesVerificationRequest
+
+POST /users/@me/mfa/codes-verification body.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `password` | `string` |  |
+| `regenerate?` | `boolean` | Replaces every backup code and returns the new plaintext codes once. |
 
 ### BulkDeleteRequest
 
@@ -1477,6 +1561,15 @@ The caller's per-chat override and the resulting effective mode.
 | `mode` | `?DeliveryMode` |  |
 | `effective_mode` | `DeliveryMode` |  |
 
+### DisableTotpRequest
+
+POST /users/@me/mfa/totp/disable body.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `password` | `string` |  |
+| `code` | `string` | Current TOTP code or an unused backup code. |
+
 ### EditMessageRequest
 
 PATCH /channels/{id}/messages/{mid} body.
@@ -1529,6 +1622,14 @@ POST /webhooks/{id}/{token} body (execute or interaction follow-up).
 | `flags?` | `integer` |  |
 | `thread_name?` | `string` |  |
 
+### ForgotPasswordRequest
+
+POST /auth/forgot-password body.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `email` | `string (email)` |  |
+
 ### InteractionCallbackData
 
 Message, autocomplete or modal data.
@@ -1563,7 +1664,26 @@ POST /auth/login body.
 | --- | --- | --- |
 | `email` | `string (email)` |  |
 | `password` | `string` |  |
-| `totp?` | `string` | Required when 2FA is enabled. |
+| `totp?` | `string` | TOTP code or backup code. When 2FA is enabled and this is absent the api answers 401 with code 60008 and a ticket for POST /auth/mfa/totp. |
+
+### MfaLoginRequest
+
+POST /auth/mfa/totp body: completes a login that answered 60008.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `ticket` | `string` | Single-use ticket returned with error 60008; valid for 5 minutes. |
+| `code` | `string` | Six-digit TOTP code or a backup code such as `abcde-fghij`. |
+
+### MfaRequiredResponse
+
+401 body of POST /auth/login when the password is right but 2FA is enabled and no code was sent.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `code` | `60008` |  |
+| `message` | `string` |  |
+| `ticket` | `string` | Present to POST /auth/mfa/totp together with a code. |
 
 ### ModifyApplicationRequest
 
@@ -1592,6 +1712,7 @@ PATCH /channels/{id} body (partial). Changing delivery_mode requires MANAGE_CHAN
 | `position?` | `?integer` |  |
 | `topic?` | `?string` |  |
 | `nsfw?` | `boolean` |  |
+| `text_chat_enabled?` | `boolean` | Voice channels only. Managers with MANAGE_CHANNELS switch the channel chat on or off. |
 | `rate_limit_per_user?` | `?integer` |  |
 | `bitrate?` | `?integer` |  |
 | `user_limit?` | `?integer` |  |
@@ -1608,7 +1729,7 @@ PATCH /channels/{id} body (partial). Changing delivery_mode requires MANAGE_CHAN
 
 ### ModifyCurrentUserRequest
 
-PATCH /users/@me body.
+PATCH /users/@me body. `username`, `email` and `new_password` require the current `password`; an email change takes effect once the new address is verified.
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -1617,6 +1738,9 @@ PATCH /users/@me body.
 | `avatar?` | `?string` | Data URI image. |
 | `banner?` | `?string` |  |
 | `accent_color?` | `?integer` |  |
+| `password?` | `string` | Current password; required with username, email or new_password. |
+| `new_password?` | `string` |  |
+| `email?` | `string (email)` |  |
 
 ### ModifyEmojiRequest
 
@@ -1626,6 +1750,20 @@ PATCH /guilds/{id}/emojis/{eid} body.
 | --- | --- | --- |
 | `name?` | `string` |  |
 | `roles?` | `?array of Snowflake` |  |
+
+### ModifyGuildNotificationSettingsRequest
+
+PATCH /users/@me/guilds/{guild_id|@me}/settings body (partial). Muting with muted true and no mute_config mutes until turned off; muted false clears the mute. channel_overrides entries are merged per channel_id (omitted fields keep their value); an entry left with no level and no mute is deleted.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `message_notifications?` | `0 or 1 or 2 or 3 or null` | 0 all, 1 mentions, 2 nothing; null or 3 inherits. |
+| `suppress_everyone?` | `boolean` |  |
+| `suppress_roles?` | `boolean` |  |
+| `muted?` | `boolean` |  |
+| `mute_config?` | `?object` |  |
+| `hide_muted_channels?` | `boolean` |  |
+| `channel_overrides?` | `array of object` |  |
 
 ### ModifyGuildRequest
 
@@ -1661,7 +1799,7 @@ PATCH /guilds/{id}/members/{uid} body.
 | `roles?` | `array of Snowflake` |  |
 | `mute?` | `boolean` |  |
 | `deaf?` | `boolean` |  |
-| `channel_id?` | `?Snowflake` | Move to a voice channel, or null to disconnect. |
+| `channel_id?` | `?Snowflake` | Move to a voice channel of the guild, or null to disconnect. Needs MOVE_MEMBERS (and CONNECT on the target channel); ignored when the member is not in voice. |
 | `communication_disabled_until?` | `?string (date-time)` |  |
 | `flags?` | `integer` |  |
 
@@ -1676,6 +1814,7 @@ PATCH /users/@me/settings body (partial).
 | `status?` | `"online" or "idle" or "dnd" or "invisible"` |  |
 | `custom_status?` | `?CustomStatus` |  |
 | `default_delivery_mode?` | `DeliveryMode` |  |
+| `e2ee_calls_default?` | `boolean` | When true, every call the user starts or joins is end-to-end encrypted (DMs, group DMs, voice channels, Go Live). A call is E2EE for everyone when any participant has this set. |
 | `developer_mode?` | `boolean` |  |
 | `message_display_compact?` | `boolean` |  |
 | `accent_color?` | `?integer` |  |
@@ -1733,6 +1872,14 @@ A guild the user can add the bot to.
 | `icon` | `?string` |  |
 | `permissions` | `PermissionBitset` |  |
 
+### PasswordConfirmationRequest
+
+Body of POST /users/@me/disable, /users/@me/delete and /users/@me/mfa/totp/enable: the current password re-authenticates the caller.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `password` | `string` |  |
+
 ### PublicDevice
 
 A device's public identity, as listed by GET /users/{id}/devices.
@@ -1741,6 +1888,14 @@ A device's public identity, as listed by GET /users/{id}/devices.
 | --- | --- | --- |
 | `device_id` | `Snowflake` |  |
 | `identity_key_b64` | `string` |  |
+
+### PutNoteRequest
+
+PUT /users/@me/notes/{user_id} body. An empty or missing note deletes the note.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `note?` | `?string` |  |
 
 ### PutRelationshipRequest
 
@@ -1776,6 +1931,15 @@ POST /applications/{id}/bot/reset-token response. The token is shown once.
 | --- | --- | --- |
 | `token` | `string` |  |
 
+### ResetPasswordRequest
+
+POST /auth/reset-password body.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `token` | `string` | Token from the reset email. |
+| `password` | `string` |  |
+
 ### RoleRequest
 
 POST /guilds/{id}/roles and PATCH /guilds/{id}/roles/{rid} body.
@@ -1799,6 +1963,15 @@ PUT /users/@me/channels/{id}/delivery-mode body.
 | --- | --- | --- |
 | `mode` | `?DeliveryMode` | Null clears the per-chat override. |
 
+### TotpEnrollmentResponse
+
+A pending TOTP secret; 2FA is not active until POST /users/@me/mfa/totp/verify.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `secret` | `string` | Base32 secret for manual entry. |
+| `otpauth_uri` | `string` | `otpauth://totp/...` URI to render as a QR code. |
+
 ### UploadKeyPackagesRequest
 
 POST /devices/{id}/key-packages body.
@@ -1806,3 +1979,19 @@ POST /devices/{id}/key-packages body.
 | Field | Type | Description |
 | --- | --- | --- |
 | `packages` | `array of string` |  |
+
+### VerifyEmailRequest
+
+POST /auth/verify-email body.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `token` | `string` | Token from the verification email. |
+
+### VerifyTotpRequest
+
+POST /users/@me/mfa/totp/verify body.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `code` | `string` |  |
