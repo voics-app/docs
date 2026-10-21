@@ -94,3 +94,7 @@ The Notion API cannot create filtered or sorted database views, so those are sav
 
 - **P2 addition**: `TURN_STATIC_AUTH_SECRET`, the coturn TURN REST secret, is implied by the P2P design but isn't pinned yet. It is listed in the inventory with a note.
 - **Protocol references** are hand-written from P3–P9. Regenerate them from `contracts` once it publishes `v0.1.0`.
+
+## Git hooks
+
+Tests run locally, not in CI. Install [lefthook](https://lefthook.dev/installation/) once and run `make hooks` (or `lefthook install`) to enable the pre-push hook in `lefthook.yml`: it runs this repository's lint and unit tests before every push. CI repeats only the slim gate on pull requests. Skip once with `LEFTHOOK=0 git push`.

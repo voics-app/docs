@@ -27,3 +27,8 @@ render: ## Render every C4 view to c4/rendered (Docker)
 	bash scripts/render-c4.sh
 
 check: lint links validate-c4 ## Everything CI runs
+
+# Install the pre-push hook (lint + unit tests, see lefthook.yml).
+.PHONY: hooks
+hooks:
+	lefthook install
