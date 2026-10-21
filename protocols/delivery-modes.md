@@ -34,3 +34,13 @@ What each message delivery mode promises, where the data lives and what survives
 ## Verification
 
 The suite is a release gate (see [release runbook](../runbooks/release.md#delivery-mode-live-suite)): `npx playwright test -c tests/live/playwright.live.config.ts matrix-*.spec.ts delivery-modes.spec.ts` from `client/apps/desktop` against the local stack.
+
+## Group DM membership changes (api#29, client#51)
+
+Group DMs are managed with `PUT/DELETE /channels/{id}/recipients/{user_id}` (any member adds, up to 10 members; the owner removes; `@me` leaves and moves ownership to a remaining member), `PATCH /channels/{id}` (name, icon) and `DELETE /channels/{id}` (leave). api dispatches `CHANNEL_CREATE` to a new member, `CHANNEL_UPDATE` to the others, `CHANNEL_RECIPIENT_ADD` / `CHANNEL_RECIPIENT_REMOVE` to the remaining members and `CHANNEL_DELETE` to a removed member. In Standard mode api also posts system messages (types 1 RECIPIENT_ADD, 2 RECIPIENT_REMOVE, 4 CHANNEL_NAME_CHANGE, 5 CHANNEL_ICON_CHANGE) through the messages internal create endpoint (`type`, `target_user_id`); Ephemeral and P2P groups get none because messages never stores their traffic.
+
+MLS in Ephemeral mode stays client-driven and api never sees it:
+
+- Add: the client that called `PUT` commits an MLS Add for the new member's devices (`EphemeralService.syncMembership`) and relays the commit to existing devices and the welcome to the new ones, without waiting for the next send. A channel without an MLS group yet is left alone; its first send creates it with every device present.
+- Remove and leave: every remaining device reacts to `CHANNEL_RECIPIENT_REMOVE` with `reconcileMembership`; the elected committer (lowest identity key, widened per retry) issues the MLS Remove commit, rotating the epoch so the removed devices cannot read later messages.
+- Close DM (hide until a new message) is device-local state for now; there is no server-side hidden flag.
