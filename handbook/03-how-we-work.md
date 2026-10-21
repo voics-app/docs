@@ -42,7 +42,7 @@ Issues are created from the forms in the `.github` repository: **bug report**, *
 |---|---|---|---|
 | api, messages, gateway, voice, admin | CI with integration tests; image `X.Y.(Z+1)-dev.N` on GHCR | CI | Stable image `X.Y.Z`, `X.Y`, `latest`; Flux image automation rolls it out to production in about 10 minutes |
 | client (desktop) | CI | **Publishes a new Windows installer**: the version is computed automatically, then `latest.yml` (auto-update for installed clients), `Discordy-Setup-X.Y.Z.exe` and `Discordy-Setup-latest.exe` (website button) | The same, with the tag's version |
-| website | CI (build and brand check) | **Deploys to https://discordy.voics.nl** | Deploys too |
+| website | CI (build and brand check) | **Deploys to <https://discordy.voics.nl>** | Deploys too |
 | gitops | CI (validate) | **Flux applies it to the cluster** within a minute or two; `secrets-sync` runs when `secrets/inventory.yaml` changes; the invite page is published when `site/**` changes | Release marker only |
 | docs | CI (markdownlint, links) | **Notion sync** (Home → Home Lab → Discordy) | Release marker only |
 | contracts | CI (validate, codegen check) | CI | Consumers can pin the version |
