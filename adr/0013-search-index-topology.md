@@ -1,6 +1,6 @@
 # 0013 — Search index topology for guild message search
 
-- Status: proposed. Applies when [ADR-0012](0012-search-deferred.md) is revisited.
+- Status: superseded by [ADR-0018](0018-message-search-postgres-fts.md). Was: proposed, applies when ADR-0012 is revisited.
 - Date: 2026-10-18
 - Deciders: @oussamaelhajoui (pending)
 - Technical story: [docs#9](https://github.com/discordy-voics/docs/issues/9), [messages#10](https://github.com/discordy-voics/messages/issues/10)

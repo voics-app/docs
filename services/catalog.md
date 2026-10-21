@@ -63,17 +63,18 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 
 | | |
 |---|---|
-| Purpose | Standard messages: CRUD, history, reactions, pins, read states, attachments (alt text, spoiler flag), link unfurling (OpenGraph/oEmbed, SSRF-guarded, [ADR 0019](../adr/0019-link-unfurling-and-media-proxy.md)) and the embed media proxy. Needs outbound internet on 80/443. Request coalescing; consistent-hash routing on `channel_id`. |
+| Purpose | Standard messages: CRUD, history, reactions, pins, read states, attachments (alt text, spoiler flag), full-text search ([ADR-0018](../adr/0018-message-search-postgres-fts.md)), link unfurling (OpenGraph/oEmbed, SSRF-guarded, [ADR 0019](../adr/0019-link-unfurling-and-media-proxy.md)) and the embed media proxy. Needs outbound internet on 80/443. Request coalescing; consistent-hash routing on `channel_id`. |
 | Repo / image | `discordy-voics/messages` / `ghcr.io/discordy-voics/messages` |
 | Tech | Rust, axum 0.8, scylla driver |
-| Ports | 8082: public (ingress routes `/api/v1/channels/*/messages*` and the CDN host's `/attachments/*` signed downloads and `/external/*` signed media proxy here) and internal |
-| Owns data | ScyllaDB keyspace `discordy` (messages, reactions, pins, read_states, channel_last_message); MinIO bucket `discordy-attachments` |
+| Ports | 8082: public (ingress routes `/api/v1/channels/*/messages*`, `/api/v1/guilds/*/messages/search` and the CDN host's `/attachments/*` signed downloads and `/external/*` signed media proxy here) and internal |
+| Owns data | ScyllaDB keyspace `discordy` (messages, reactions, pins, read_states, channel_last_message); MinIO bucket `discordy-attachments`; Postgres database `discordy_search` (`search_messages` index, `search_offsets`, `search_state`; rebuildable, text not stored) |
 | Publishes | `discordy.message.v1` (keyed by `channel_id`) |
-| Depends on | ScyllaDB, Redpanda, MinIO, api (`/internal/v1/channels/{id}/access/{user}` with a 5 s cache; bot token introspection with a 60 s cache) |
+| Consumes | `discordy.message.v1` (all partitions, own offsets in Postgres) to keep the search index current |
+| Depends on | ScyllaDB, Redpanda, MinIO, Postgres (search, optional), api (`/internal/v1/channels/{id}/access/{user}` with a 5 s cache; bot token introspection with a 60 s cache) |
 | Called by | client, bots, api, gateway, admin-bff |
 | Snowflake workers | 64–127 |
-| Env vars | common + `SCYLLA_NODES`, `SCYLLA_KEYSPACE`, `API_INTERNAL_URL`, `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY` 🔒, `MINIO_SECRET_KEY` 🔒, `MINIO_BUCKET_ATTACHMENTS`, `CDN_PUBLIC_URL`, `ATTACHMENT_SIGNING_KEY` 🔒, `ATTACHMENT_URL_TTL_SECONDS` |
-| SLOs | Availability 99.5 %; history p95 < 100 ms; send p95 < 200 ms; send-to-dispatch p95 < 500 ms (with the gateway) |
+| Env vars | common + `SCYLLA_NODES`, `SCYLLA_KEYSPACE`, `API_INTERNAL_URL`, `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY` 🔒, `MINIO_SECRET_KEY` 🔒, `MINIO_BUCKET_ATTACHMENTS`, `CDN_PUBLIC_URL`, `ATTACHMENT_SIGNING_KEY` 🔒, `ATTACHMENT_URL_TTL_SECONDS`, `SEARCH_DATABASE_URL` 🔒 (search is disabled when unset), `SEARCH_BACKFILL_ON_START` |
+| SLOs | Availability 99.5 %; search p95 < 300 ms; history p95 < 100 ms; send p95 < 200 ms; send-to-dispatch p95 < 500 ms (with the gateway) |
 | Runbooks | [backup-restore](../runbooks/backup-restore.md#scylladb), [release](../runbooks/release.md) |
 
 ## gateway
@@ -173,7 +174,7 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 
 | Component | Namespace | Ports | Used by | Runbook |
 |---|---|---|---|---|
-| Postgres 17 (CloudNativePG) | `voics-data` | 5432 | api, admin-bff | [backup-restore](../runbooks/backup-restore.md#postgres) |
+| Postgres 17 (CloudNativePG) | `voics-data` | 5432 | api, admin-bff, messages (search index) | [backup-restore](../runbooks/backup-restore.md#postgres) |
 | ScyllaDB (developer mode) | `voics-data` | 9042 | messages | [backup-restore](../runbooks/backup-restore.md#scylladb) |
 | Redpanda | `voics-data` | 9092 internal, 19092 external, 9644 admin | api, messages, gateway, voice, admin-bff | [backup-restore](../runbooks/backup-restore.md#redpanda) |
 | Valkey 8 (AOF) | `voics-data` | 6379 | api, gateway | [backup-restore](../runbooks/backup-restore.md#valkey) |

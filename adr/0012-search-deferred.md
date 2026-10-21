@@ -1,6 +1,6 @@
 # 0012 — Full-text message search is deferred
 
-- Status: accepted (deferred). Revisit when the VM reaches 16 GB or a second node joins.
+- Status: superseded by [ADR-0018](0018-message-search-postgres-fts.md) (the owner requested search). Was: accepted (deferred), revisit when the VM reaches 16 GB or a second node joins.
 - Date: 2026-10-16
 - Deciders: @oussamaelhajoui
 - Technical story: [spec §1 non-goals](../specs/2026-10-16-voics-platform-design.md#non-goals)

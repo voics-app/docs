@@ -173,6 +173,8 @@ Errors use the envelope `{ "code": int, "message": string, "errors"?: object }`.
 | --- | --- | --- | --- | --- | --- |
 | `GET` | `/channels/{channel_id}/messages` | messages | — | `array of Message` | Get channel message history |
 | `POST` | `/channels/{channel_id}/messages` | messages | `CreateMessageRequest` | `Message` | Send a standard-mode message |
+| `GET` | `/guilds/{guild_id}/messages/search` | messages | — | `MessageSearchResponse` | Search guild messages |
+| `GET` | `/channels/{channel_id}/messages/search` | messages | — | `MessageSearchResponse` | Search channel messages |
 | `GET` | `/channels/{channel_id}/messages/{message_id}` | messages | — | `Message` | Get a message |
 | `PATCH` | `/channels/{channel_id}/messages/{message_id}` | messages | `EditMessageRequest` | `Message` | Edit a message |
 | `DELETE` | `/channels/{channel_id}/messages/{message_id}` | messages | — | 204 No Content | Delete a message |
