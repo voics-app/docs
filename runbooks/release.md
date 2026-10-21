@@ -20,7 +20,7 @@ Every repository follows the same git-flow and versioning ([spec §13](../specs/
 |---|---|---|---|---|
 | api, messages, gateway, admin, voice (signaling + SFU) | service repo | tag `vX.Y.Z` on `main` | `ci.yml`: tests, then `docker.yml` builds, scans, signs and pushes `ghcr.io/discordy-voics/<image>:X.Y.Z` | Flux image automation bumps the tag in gitops `main`, and Flux applies it (see [timings](#timings)) |
 | Platform config (manifests, ingress, data layer, observability) | `gitops` | merge to `main` | Flux `GitRepository` polls `main` every minute | the matching Flux Kustomization applies it on the next source revision |
-| Desktop client installer (Windows) | `client` | tag `vX.Y.Z` | `release.yml`: Windows build on a GitHub-hosted runner, GitHub Release assets, then `minio-publish` | `https://discordy-updates.voics.nl/Discordy-Setup-X.Y.Z.exe`, `latest.yml` (installed clients auto-update) and `Discordy-Setup-latest.exe` (the website's Download button) |
+| Desktop client installer (Windows) | `client` | merge to `main` or tag `vX.Y.Z` | `release.yml`: Windows build on a GitHub-hosted runner, GitHub Release assets, then `minio-publish` | `https://discordy-updates.voics.nl/Discordy-Setup-X.Y.Z.exe`, `latest.yml` (installed clients auto-update) and `Discordy-Setup-latest.exe` (the website's Download button) |
 | Marketing website | `website` | merge to `main` **or** tag `v*` | `ci.yml`: build + brand check, then `minio-publish` into bucket `discordy-site` | `https://discordy.voics.nl` |
 | Invite landing page (`/invite/<code>`) | `gitops` (`site/`) | merge to `main` touching `site/**` | `publish-site.yml`: `minio-publish` into `discordy-site` | `https://discordy.voics.nl/invite/<code>` |
 | Docs | `docs` | merge to `main` | release-please and the Notion mirror | GitHub (and Notion) |
@@ -74,7 +74,7 @@ kubectl -n voics-apps rollout status deploy/api
 flux get images policy -A                               # which version each image follows
 ```
 
-Re-publish the website or the invite page by re-running its workflow (`gh workflow run ci.yml -R discordy-voics/website --ref main`, or `publish-site.yml` in gitops). Re-publish an installer with `gh workflow run release.yml -R discordy-voics/client -f tag=vX.Y.Z`.
+Re-publish the website or the invite page by re-running its workflow (`gh workflow run ci.yml -R discordy-voics/website --ref main`, or `publish-site.yml` in gitops). Publish a new installer build with `gh workflow run release.yml -R discordy-voics/client --ref main` (it publishes the next patch version; an already published version is never overwritten).
 
 ### How the publish jobs get access
 
@@ -251,7 +251,9 @@ There are two options:
 
 ## Desktop client release
 
-The client follows the same git-flow. What happens on a tag (`client/.github/workflows/release.yml`):
+The client follows the same git-flow. `client/.github/workflows/release.yml` runs on every **merge to `main`** (a release in our git-flow), on a `v*` tag and on manual dispatch (use `main`). `develop` never publishes. What happens:
+
+0. The version is decided by `scripts/release-version.mjs` against the version the feed serves now (`latest.yml`): on `main`, `apps/desktop/package.json` when it is higher (the release branch bumped it), otherwise the published patch + 1; on a tag, exactly the tag, and the run **fails** if the tag is not higher than what is published (electron-updater needs a strictly increasing semver). A run that cannot read the feed fails rather than guess. The release `vX.Y.Z` is tagged by the workflow itself.
 
 1. A **Windows (NSIS)** build runs on a GitHub-hosted `windows-latest` runner, including the native crypto module (Rust). It uses about 2× Linux minutes on the GitHub Free quota, roughly 15 to 30 billed minutes per release.
 2. `Discordy-Setup-X.Y.Z.exe`, its `.blockmap` and `latest.yml` are attached to the GitHub Release.
