@@ -1,4 +1,4 @@
-# 0018 — Link unfurling and the embed media proxy
+# 0019 — Link unfurling and the embed media proxy
 
 - Status: proposed
 - Date: 2026-10-21
