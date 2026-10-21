@@ -27,6 +27,7 @@ Every secret on the Discordy platform is listed here. The source is [`inventory.
 | [Internal service token](#internal-service-token) | Authentication and service-to-service | api, messages, gateway, voice-signaling, admin-bff | `SHARED_INTERNAL_SERVICE_TOKEN` (env:production) | 90d |
 | [Voice token secret (HS256)](#voice-token-secret) | Authentication and service-to-service | gateway, voice-signaling | `SHARED_VOICE_TOKEN_SECRET` (env:production) | 90d |
 | [Erlang distribution cookie](#release-cookie) | Runtime | gateway | `GATEWAY_RELEASE_COOKIE` (env:production) | 180d |
+| [SMTP credentials](#smtp-credentials) | Runtime | api | `SMTP_USERNAME`, `SMTP_PASSWORD` (env:production) | on-change |
 | [Admin allowlist](#admin-allowed-emails) | Authentication and service-to-service | admin-bff | `ADMIN_ALLOWED_EMAILS` (env:production) | on-change |
 | [coturn static auth secret](#coturn-static-auth-secret) | Runtime | coturn, gateway | `COTURN_STATIC_AUTH_SECRET` (env:production) | 180d |
 | [Postgres password for api (DB discordy)](#postgres-app) | Databases | api, CloudNativePG | `POSTGRES_APP_PASSWORD` (env:production) | 90d |
@@ -215,6 +216,23 @@ Every secret on the Discordy platform is listed here. The source is [`inventory.
 | Owner | @oussamaelhajoui |
 | Rotation | 180d — [secret-rotation.md#release-cookie](../runbooks/secret-rotation.md#release-cookie) |
 | Generate | openssl rand -hex 32 |
+
+<a id="smtp-credentials"></a>
+
+### SMTP credentials
+
+| Field | Value |
+|---|---|
+| Purpose | Login for the mail server the api sends account emails through (verification, password reset, security notices). Without them the api uses the log transport and sends nothing. |
+| Consumers | api |
+| Env vars | `SMTP_USERNAME`, `SMTP_PASSWORD` |
+| GitHub secret | `SMTP_USERNAME`, `SMTP_PASSWORD` (env:production) |
+| OpenBao | `discordy/smtp` → `SMTP_USERNAME` (from `SMTP_USERNAME`); `discordy/smtp` → `SMTP_PASSWORD` (from `SMTP_PASSWORD`) |
+| Kubernetes Secret | `voics-apps/api-smtp` |
+| Owner | @oussamaelhajoui |
+| Rotation | on-change — [secret-rotation.md](../runbooks/secret-rotation.md) |
+| Generate | Issued by the mail provider (SMTP user and password or app password) |
+| Notes | Owner action, tracked on docs#10. Also set SMTP_HOST, SMTP_PORT, SMTP_TLS and MAIL_FROM in the api ConfigMap and flip MAIL_TRANSPORT to smtp. The api-smtp secret is mounted optionally, so the api runs without it. |
 
 <a id="coturn-static-auth-secret"></a>
 
