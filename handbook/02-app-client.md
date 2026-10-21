@@ -40,3 +40,12 @@ pnpm test:e2e        # Playwright against the real Electron app and a fake backe
 ```
 
 Releases and the auto-updater are explained in [Desktop client release and auto-update](09-desktop-client-release.md). Renaming the app is a `brand.json` edit.
+
+## Sounds
+
+The desktop client plays short sound effects and the call ringtone. All of them are synthesized with Web Audio (original, no audio files, no licensing), through one shared `AudioContext` that is resumed on use and routed to the selected output device at the output volume.
+
+- Sounds: you join a call, you disconnect, someone joins your call, someone leaves your call, mute, unmute, deafen, undeafen. Which sound a state change triggers lives in `domain/sounds.ts` (`voiceTransitionSounds`); people already in the channel when you join are not announced.
+- Ringtone: an incoming DM or group call rings in a loop until it is answered, declined or times out; the caller hears a quieter ringback. The ringtone and volume are chosen in Settings, Notifications.
+- Settings, Notifications: "Notification sounds" is the master switch; each sound has its own switch and a Preview button (stored in the device prefs as `soundToggles`, a missing entry means on). Do Not Disturb silences the effects; an incoming call still rings, because it is addressed to you and the prompt is shown anyway.
+- The main window sets `autoplayPolicy: no-user-gesture-required`: a context created without user activation stays suspended (silent), which is why a freshly started app did not ring (client#126).
