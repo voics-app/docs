@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   markdownlint:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
@@ -30,7 +30,7 @@ jobs:
         run: pnpm run secrets:check
 
   links:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v5
       - name: Link check (lychee)
