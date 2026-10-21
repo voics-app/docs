@@ -55,16 +55,56 @@ scripts/runner.sh down                    # deregister, remove, switch back to G
 
 Run `down` before shutting the PC off: the containers have no restart policy, so after a reboot they are gone and queued jobs would wait for `karma-pc`.
 
-### Use a VM
+### Use a VM: set up on the VM itself (easiest)
+
+On a fresh Ubuntu/Debian VM, logged in as your normal user. **Never run these scripts with `sudo`**; the bootstrap asks for your sudo password itself.
 
 ```bash
-scripts/runner-vm-bootstrap.sh user@vm      # once: installs Docker Engine, adds the user to the docker group, log limits
+# 1. Tools (once)
+sudo apt-get update && sudo apt-get install -y git gh jq
+
+# 2. Log in to GitHub and allow runner registration (once; prints a code, open https://github.com/login/device on any device)
+gh auth login                       # GitHub.com, SSH, upload your SSH key, login with a web browser
+gh auth refresh -s admin:org        # runner registration tokens need admin:org
+
+# 3. Get the scripts (first time), or update them (every time after)
+git clone git@github.com:discordy-voics/.github.git ~/.github
+cd ~/.github && git pull
+
+# 4. Install Docker (once), then make the docker group active
+scripts/runner-vm-bootstrap.sh      # no argument = this machine
+newgrp docker                       # or log out and back in
+
+# 5. Start the runners: 3 parallel jobs, label vm-<hostname>, switches every repo's CI to this VM
+scripts/runner.sh up
+scripts/runner.sh status            # vm-<hostname>-1..3 should be online
+```
+
+Stop or switch later, on the VM:
+
+```bash
+scripts/runner.sh use github        # jobs back to GitHub-hosted (runners keep running)
+scripts/runner.sh use vm-<hostname> # jobs to this VM again
+scripts/runner.sh down              # remove the runners (switches back to GitHub if they were active)
+```
+
+On a Linux VM the runners use host networking, so integration tests (testcontainers) reach their containers on `localhost`.
+
+### Use a VM: managed from the PC over SSH
+
+```bash
+ssh-copy-id user@vm                         # once: your SSH key on the VM
+scripts/runner-vm-bootstrap.sh user@vm      # once: installs Docker (asks for the VM sudo password)
 scripts/runner.sh up --host user@vm --count 3
-scripts/runner.sh use vm-<host>             # send every repo's jobs there
+scripts/runner.sh use vm-<ip-with-dashes>   # send every repo's jobs there
 scripts/runner.sh use github                # and back
 ```
 
-`--host` runs Docker over SSH, so the VM needs SSH access and nothing else. Requirements on your side: `gh` with `admin:org` (registration tokens), Docker and `jq`.
+`--host` runs Docker over SSH. Requirements on the PC: `gh` with `admin:org`, Docker CLI and `jq`.
+
+### When a VM dies
+
+Its runners stay registered as offline, and jobs queue for its label. Fix: set up the new VM as above (`up` switches `CI_RUNNER` to it), or run `scripts/runner.sh use github`. Remove the dead registrations under GitHub → org Settings → Actions → Runners, or wait for GitHub to drop them after 14 days.
 
 ### Resources
 
@@ -77,6 +117,8 @@ One runner handles one job at a time and needs about 2 vCPU, 6 to 8 GB RAM and 4
 | Jobs queue forever | `CI_RUNNER` points at a label with no online runner: `runner.sh status`, then `up` or `use github` |
 | `libatomic` or compiler errors | The runner image is minimal; `up` installs the base packages, re-run it |
 | Docker build fails with permissions | The runner needs the host Docker socket; use the scripts instead of starting containers by hand |
-| Registration fails | `gh auth status` needs `admin:org` |
+| Registration fails | `gh auth status` needs `admin:org`: `gh auth refresh -s admin:org` |
+| `Permission denied` running a script | `git pull` (scripts are executable since v0.5.4) or run it as `bash scripts/<name>.sh` |
+| `Permission denied (publickey)` or `sudo: a terminal is required` | You ran the bootstrap with `sudo`, or against the VM's own IP; on the VM run `scripts/runner-vm-bootstrap.sh` with no argument and no sudo |
 
 More: [Release, On-demand runner](../runbooks/release.md).
