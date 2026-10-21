@@ -46,7 +46,7 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 
 | | |
 |---|---|
-| Purpose | Auth, users, devices and MLS key packages, relationships, per-guild notification settings and private user notes, guilds, channels, roles and permissions, invites, applications and bots, slash commands, interactions, webhooks, admin endpoints. Transactional outbox to Redpanda. |
+| Purpose | Auth (login, email verification, password recovery, TOTP two-factor with backup codes), account disable and delete, users, devices and MLS key packages, relationships, per-guild notification settings and private user notes, guilds, channels, roles and permissions, invites, applications and bots, slash commands, interactions, webhooks, admin endpoints. Transactional outbox to Redpanda. |
 | Repo / image | `discordy-voics/api` / `ghcr.io/discordy-voics/api` |
 | Tech | Rust, axum 0.8, sqlx, Postgres 17 |
 | Ports | 8080: public `/api/v1/*` (via `discordy-api.voics.nl`) and internal `/internal/v1/*` (cluster only) |
@@ -55,7 +55,7 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 | Depends on | Postgres, Valkey, Redpanda, MinIO, messages (internal) |
 | Called by | client, bots, messages, gateway, admin-bff |
 | Snowflake workers | 0–63 |
-| Env vars | common + `DATABASE_URL` 🔒, `VALKEY_URL` 🔒, `JWT_PRIVATE_KEY` 🔒, `PUBLIC_API_URL`, `PUBLIC_GATEWAY_URL`, `CDN_PUBLIC_URL`, `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY` 🔒, `MINIO_SECRET_KEY` 🔒, `MINIO_BUCKET_ASSETS`, `MESSAGES_INTERNAL_URL` |
+| Env vars | common + `DATABASE_URL` 🔒, `VALKEY_URL` 🔒, `JWT_PRIVATE_KEY` 🔒, `PUBLIC_API_URL`, `PUBLIC_GATEWAY_URL`, `CDN_PUBLIC_URL`, `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY` 🔒, `MINIO_SECRET_KEY` 🔒, `MINIO_BUCKET_ASSETS`, `MESSAGES_INTERNAL_URL`, `MAIL_TRANSPORT` (`log` or `smtp`), `SMTP_HOST`, `SMTP_PORT`, `SMTP_TLS`, `SMTP_USERNAME` 🔒, `SMTP_PASSWORD` 🔒, `MAIL_FROM`, `APP_LINK_BASE`, `ACCOUNT_DELETION_RETENTION_DAYS`, `ACCOUNT_PURGE_INTERVAL_SECS` (see [account security](../specs/2026-10-21-account-security-and-mfa.md)) |
 | SLOs | Availability 99.5 %; p95 latency < 150 ms for reads and < 300 ms for writes; outbox publish lag p99 < 2 s |
 | Runbooks | [backup-restore](../runbooks/backup-restore.md), [secret-rotation](../runbooks/secret-rotation.md) (JWT keys, DB password), [release](../runbooks/release.md) |
 
