@@ -28,6 +28,28 @@ Issues are created from the forms in the `.github` repository: **bug report**, *
 | `main` | | | Released code; tag `vX.Y.Z` |
 | `hotfix/X.Y.Z` | `main` | `main` and `develop` | Urgent production fix |
 
+### What each branch is for
+
+- **`main`**: released code only. Whatever is on `main` is, or is about to be, in production. A merge into `main` comes from `release/*` or `hotfix/*` and is followed by a `vX.Y.Z` tag.
+- **`develop`**: the integration branch. All finished features land here first. It is what the dev environment runs (gitops#27) and what develop images (`X.Y.(Z+1)-dev.N`) are built from. It is never published to users.
+- **`feature/<ws>-<topic>`**: one issue's work. It opens a PR into `develop`, runs only the slim CI gate, and publishes nothing.
+- **`release/X.Y.Z`**: stabilising a release (fixes only), producing `-rc.N` images, then merged into `main` and back into `develop`.
+- **`hotfix/X.Y.Z`**: an urgent fix branched from `main`, merged into `main` and `develop`.
+
+### What a merge or tag triggers, per repository
+
+| Repository | Merge to `develop` | Merge to `main` | Tag `vX.Y.Z` |
+|---|---|---|---|
+| api, messages, gateway, voice, admin | CI with integration tests; image `X.Y.(Z+1)-dev.N` on GHCR | CI | Stable image `X.Y.Z`, `X.Y`, `latest`; Flux image automation rolls it out to production in about 10 minutes |
+| client (desktop) | CI | **Publishes a new Windows installer**: the version is computed automatically, then `latest.yml` (auto-update for installed clients), `Discordy-Setup-X.Y.Z.exe` and `Discordy-Setup-latest.exe` (website button) | The same, with the tag's version |
+| website | CI (build and brand check) | **Deploys to https://discordy.voics.nl** | Deploys too |
+| gitops | CI (validate) | **Flux applies it to the cluster** within a minute or two; `secrets-sync` runs when `secrets/inventory.yaml` changes; the invite page is published when `site/**` changes | Release marker only |
+| docs | CI (markdownlint, links) | **Notion sync** (Home → Home Lab → Discordy) | Release marker only |
+| contracts | CI (validate, codegen check) | CI | Consumers can pin the version |
+| .github (shared workflows) | CI | Callers use `@main`, so a merge **changes CI for every repository** | Version marker |
+
+Releases are cut by merging `develop` into `main` (a merge commit) and pushing an annotated tag `vX.Y.Z`. `main` is then merged back into `develop`. release-please is no longer the source of versions: develop images take their version from the latest tag, and the client takes its version from the published update feed.
+
 Never commit to `main` or `develop` directly. The `gitflow-guard` check rejects PRs from the wrong branch type ([ADR-0007](../adr/0007-github-free-workarounds.md)). Commits follow Conventional Commits (`feat(scope): summary`).
 
 ## Definition of Done
@@ -57,7 +79,7 @@ Most work is done by autonomous agents, each owning one repository or workstream
 
 ## Releases and versioning
 
-Semantic versions, one per repository, cut by release-please from Conventional Commits. A merge to `main` of a service repo does not deploy by itself; the release tag `vX.Y.Z` builds the stable image and Flux rolls it out. The table of what triggers what, with timings, is in [Release](../runbooks/release.md#how-changes-reach-production). The standard release is: cut `release/X.Y.Z`, stabilise, merge into `main`, let release-please tag, back-merge into `develop`.
+Semantic versions, one per repository, cut as `vX.Y.Z` git tags (see the table above). A merge to `main` of a service repo does not deploy by itself; the release tag `vX.Y.Z` builds the stable image and Flux rolls it out. The table of what triggers what, with timings, is in [Release](../runbooks/release.md#how-changes-reach-production). The standard release is: cut `release/X.Y.Z` (or merge `develop` directly for small releases), stabilise, merge into `main`, tag `vX.Y.Z`, back-merge into `develop`.
 
 ## Secrets rule
 

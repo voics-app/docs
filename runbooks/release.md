@@ -5,9 +5,9 @@ Every repository follows the same git-flow and versioning ([spec §13](../specs/
 | Branch | Purpose | Image / version |
 |---|---|---|
 | `feature/*` | Work in progress, merged into `develop` with `--no-ff` | CI only, nothing pushed |
-| `develop` | Integration | `X.Y.Z-dev.N` |
+| `develop` | Integration | `X.Y.(Z+1)-dev.N` (after the latest `vX.Y.Z` tag) |
 | `release/X.Y.Z` | Stabilisation | `X.Y.Z-rc.N` |
-| `main` | Released code only | `X.Y.Z`, `X.Y` and `latest` (release-please tag `vX.Y.Z`) |
+| `main` | Released code only | `X.Y.Z`, `X.Y` and `latest` (git tag `vX.Y.Z`); the client publishes its installer on every merge to `main` |
 | `hotfix/X.Y.Z` | Urgent fix based on `main` | `X.Y.Z-rc.N`, then `X.Y.Z` |
 
 `gitflow-guard` fails a PR to `main` that does not come from `release/*` or `hotfix/*`. It also fails a PR to `develop` that does not come from `feature/*`, `release/*`, `hotfix/*` or `dependabot/*` ([ADR-0007](../adr/0007-github-free-workarounds.md)).
