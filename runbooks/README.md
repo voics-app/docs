@@ -2,6 +2,7 @@
 
 | Runbook | Use it when |
 |---|---|
+| [Incident 2026-10-22: gateway never ready](incident-2026-10-22-gateway-etcd.md) | Gateway 0.3.0/0.4.0 never ready (eetcd already_started); cause, fix, prevention |
 | [Adding a voice region](voice-regions/adding-a-region.md) | Bringing up a new region or another node in a region |
 | [Draining a voice node or region](voice-regions/draining-a-region.md) | Maintenance, decommissioning, moving calls |
 | [Voice failover](voice-regions/failover.md) | SFU, node, region, etcd or tunnel failures |
