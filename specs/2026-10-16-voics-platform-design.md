@@ -33,7 +33,7 @@
 ### Non-goals
 - Payments and monetisation.
 - Capturing DRM-protected video (Netflix etc.). That is circumvention of copy protection; **Watch Together** is offered instead.
-- Full-text message search in v1. It needs an Elasticsearch-class engine and more RAM than the VM has; tracked as ADR-0012 (deferred).
+- Full-text message search in v1. It needs an Elasticsearch-class engine and more RAM than the VM has; tracked as ADR-0012 (deferred). When it is revisited, the index layout follows ADR-0013 (proposed).
 - Web and mobile clients in v1. The protocol is designed so they can be added later.
 
 ## 2. Context (C1)
@@ -101,7 +101,7 @@ src/
 
 ## 5. Identity, auth and permissions
 
-- **Login**: email + password hashed with argon2id, plus optional TOTP 2FA.
+- **Login**: email + password hashed with argon2id, plus optional 2FA. TOTP is implemented. WebAuthn passkeys as a second factor, with single-use backup codes for recovery, are proposed in ADR-0015 and tracked in [api#19](https://github.com/discordy-voics/api/issues/19).
 - **Tokens**: 15-minute access JWTs signed with Ed25519, and rotating refresh tokens with reuse detection.
 - **Devices**: each device has an Ed25519 identity key and uploads MLS key packages. Users can compare safety numbers.
 - **Permissions**: Discord-compatible 64-bit permission bitfield, @everyone role, role hierarchy, and channel overwrites (role and member, allow/deny). Computed in `api`; cached and recomputed in guild processes.
@@ -167,11 +167,12 @@ Modelled on *How Discord Handles 2.5M Concurrent Voice Users Using WebRTC*. Each
 |---|---|
 | Voice server | One pod per node: `voice-signaling` (Elixir) controls a local `sfu` (Rust/str0m) over a Unix socket. Signaling issues stream IDs and keys and forwards speaking indicators. |
 | Allocation | **All voice channels of a guild share one voice server.** The first joiner triggers the gateway guild process to pick the **least-utilised healthy server in the guild's region** from etcd. Region is set per guild and overridable per channel. |
-| Discovery | Each voice server writes `/voics/voice/<region>/<node>` to etcd with a 10 s TTL lease, carrying users, CPU and egress. A missed lease removes it from allocation. |
+| Discovery | Each voice server writes `/voics/voice/<region>/<node>` to etcd with a 10 s TTL lease, carrying users, CPU and egress. A missed lease removes it from allocation. Active synthetic probing that also removes degraded nodes is proposed in [voice#7](https://github.com/discordy-voics/voice/issues/7). |
 | Handshake | `VOICE_STATE_UPDATE` (gateway) → `VOICE_SERVER_UPDATE {endpoint, token}` → client opens the **voice WebSocket** at `wss://discordy-rtc-<region>.voics.nl` → join payload of about 1 KB (SSRCs, codecs, crypto). The client synthesises SDP locally; the server is **ICE-lite**; there is no TURN for voice. Client IPs are never exposed to peers. |
 | Media | Opus with FEC and **DTX**: no packets in silence, and the SFU rewrites RTP sequence numbers and timestamps. Video uses VP9 SVC, AV1 or H.264 simulcast with per-subscriber layer selection driven by RTCP/REMB/TWCC bandwidth estimation. |
 | Failover | **SFU crash** → signaling restarts it and rebuilds state without client involvement (also used for zero-downtime upgrades). **Server loss or DDoS** → the lease expires or the node is drained → the client's voice WebSocket drops → the client asks the gateway → the guild process reassigns → the client reconnects. |
-| E2EE | DAVE-style: frame-level encryption with keys derived from the call's MLS group. Always on in Ephemeral and P2P chats, opt-in per channel in Standard. P2P-mode DM calls are direct peer connections with no SFU. |
+| E2EE | DAVE-style: frame-level encryption with keys derived from the call's MLS group. Always on in Ephemeral and P2P chats, opt-in per channel in Standard. Account setting `e2ee_calls_default` ("Encrypt all my calls end-to-end", default off): when on, every call the user starts or joins is E2EE, in DMs, group DMs, voice channels and Go Live ([voice#8](https://github.com/discordy-voics/voice/issues/8), owner decision 2026-10-19). Mixed calls (proposed, pending owner confirmation in [docs#10](https://github.com/discordy-voics/docs/issues/10)): if any participant has the setting on, or the channel requires E2EE, or someone already in the call is encrypted, the call is E2EE for everyone; participants who were not yet encrypted receive a new voice token with E2EE on. The setting does not change a call in progress, and a call stays E2EE until it empties. P2P-mode DM calls are direct peer connections with no SFU. DAVE is implemented on the client and in the signaling node. |
+| E2EE when settings are unreadable | If the gateway cannot read the participants' `e2ee_calls_default` (Valkey unavailable), `E2EE_SETTINGS_UNAVAILABLE_POLICY` decides: `open` (default) joins unencrypted and logs a warning, `closed` encrypts the call, `wait` retries the read for about 2 s and then refuses the join with a `VOICE_JOIN_FAILED` error ([gateway#13](https://github.com/discordy-voics/gateway/issues/13)). |
 | Screen share | Electron `desktopCapturer` (Windows Graphics Capture): screen, window or app, **with app/system audio** (Windows loopback). Presets 720p30, 1080p60, 1440p60 and Source. Hardware encode through Chromium. Several streams can be watched at once, with pop-out. DRM content renders black; **Watch Together** keeps play/pause/seek in sync while each participant plays from their own account. |
 | Audio processing | WebRTC AEC/AGC, RNNoise (WASM), adjustable VAD, global push-to-talk, per-user volume. |
 | Telemetry | Clients report jitter, loss, RTT and bitrate every 10 s → Redpanda → admin regions dashboard. |
@@ -204,7 +205,8 @@ Modelled on *How Discord Handles 2.5M Concurrent Voice Users Using WebRTC*. Each
 | 22 | P2P_SIGNAL |
 
 **Behaviour**
-- **Encoding**: JSON in v1, ETF/zstd later.
+- **Encoding**: JSON in v1. Per-connection zstd streaming is proposed as an opt-in, negotiated at connect time (ADR-0014, [gateway#11](https://github.com/discordy-voics/gateway/issues/11)). ETF comes later.
+- **Background clients**: passive sessions that receive deltas instead of the full dispatch stream are proposed in [gateway#12](https://github.com/discordy-voics/gateway/issues/12).
 - **Resume**: sessions are resumable for 2 minutes from a Valkey resume buffer.
 - **Intents**: follow the Discord model.
 
@@ -218,7 +220,7 @@ Modelled on *How Discord Handles 2.5M Concurrent Voice Users Using WebRTC*. Each
 
 ## 10. Client
 
-- **Main process**: Electron. Handles tray, global hotkeys, capture picker, auto-update (electron-updater from the public `updates.<domain>` MinIO feed), notifications and `voics://` deep links.
+- **Main process**: Electron. Handles tray, global hotkeys, capture picker, auto-update (electron-updater from the public `updates.<domain>` MinIO feed), notifications and `voics://` deep links. Push delivery to offline devices is not built. When it is, back-pressure follows ADR-0016 (proposed).
 - **Renderer**:
   - Security: `contextIsolation` and sandboxing, with a typed preload bridge.
   - Stack: React, TS and Vite, with feature-sliced folders.
@@ -229,6 +231,7 @@ Modelled on *How Discord Handles 2.5M Concurrent Voice Users Using WebRTC*. Each
   - Token-based design system with dark, OLED and light themes and an accent picker.
   - Glass surfaces, Inter + JetBrains Mono, 8 px rhythm.
   - Spring motion that honours reduced-motion settings.
+  - Keyboard operation for every interactive element, with a visible focus indicator (at least 3:1 contrast) in every theme. Tracked in [client#23](https://github.com/discordy-voics/client/issues/23).
   - Command palette (Ctrl+K), animated speaking rings, a screen-share stage with PiP, and a delivery-mode badge.
   - Key screens are mocked and reviewed before being built.
 - **Packaging**: electron-builder producing an NSIS installer (Windows, primary), dmg (macOS) and AppImage/deb (Linux). Unsigned at first; signing is added later.

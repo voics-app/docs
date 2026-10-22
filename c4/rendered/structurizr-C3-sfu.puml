@@ -1,0 +1,51 @@
+@startuml
+title <size:24>Component View: Discordy - sfu</size>\n<size:24>SFU components.</size>
+
+set separator none
+left to right direction
+
+<style>
+  root {
+    BackgroundColor: #ffffff
+    FontColor: #444444
+  }
+</style>
+
+!include <C4/C4>
+!include <C4/C4_Context>
+!include <C4/C4_Container>
+!include <C4/C4_Component>
+
+System_Boundary("Discordy_boundary", "Discordy", $tags="") {
+  Container_Boundary("Discordy.sfu_boundary", "sfu", $tags="") {
+    Component(Discordy.sfu.UDPmux, "UDP mux", $techn="tokio UdpSocket", $descr="Single socket on UDP 50000.", $tags="", $link="")
+    Component(Discordy.sfu.Sessiondemux, "Session demux", $techn="Rust", $descr="Routes datagrams by ICE ufrag (STUN) then by source address.", $tags="", $link="")
+    Component(Discordy.sfu.Peersession, "Peer session", $techn="str0m", $descr="One str0m Rtc per client: ICE-lite, DTLS-SRTP, RTP/RTCP.", $tags="", $link="")
+    Component(Discordy.sfu.Roomtable, "Room table", $techn="Rust", $descr="Sessions per room, published tracks, subscriptions.", $tags="", $link="")
+    Component(Discordy.sfu.Forwardingengine, "Forwarding engine", $techn="Rust", $descr="Forwards audio to every other member; selects video layers per subscriber.", $tags="", $link="")
+    Component(Discordy.sfu.RTCPhandler, "RTCP handler", $techn="Rust", $descr="Terminates/forwards NACK, PLI, REMB, TWCC.", $tags="", $link="")
+    Component(Discordy.sfu.Speakingdetector, "Speaking detector", $techn="Rust", $descr="Audio-level header extension to speaking events.", $tags="", $link="")
+    Component(Discordy.sfu.Controlserver, "Control server", $techn="tokio TcpListener", $descr="NDJSON on 127.0.0.1:4101: create_session, close_session, set_sink_wants.", $tags="", $link="")
+    Component(Discordy.sfu.Stats, "Stats", $techn="Rust", $descr="Per-session bitrate/loss, Prometheus metrics.", $tags="", $link="")
+  }
+
+  Container(Discordy.voicesignaling, "voice-signaling", $techn="Elixir, Phoenix", $descr="Voice WebSocket, media setup, speaking indicators, DAVE MLS relay, etcd registration, SFU supervision.", $tags="", $link="")
+}
+
+Rel(Discordy.sfu.UDPmux, Discordy.sfu.Sessiondemux, "Hands datagrams to", $techn="", $tags="", $link="")
+Rel(Discordy.sfu.Sessiondemux, Discordy.sfu.Peersession, "Feeds the owning session", $techn="", $tags="", $link="")
+Rel(Discordy.sfu.Peersession, Discordy.sfu.Forwardingengine, "Emits media packets to", $techn="", $tags="", $link="")
+Rel(Discordy.sfu.Peersession, Discordy.sfu.RTCPhandler, "Emits feedback to", $techn="", $tags="", $link="")
+Rel(Discordy.sfu.Peersession, Discordy.sfu.Speakingdetector, "Emits audio levels to", $techn="", $tags="", $link="")
+Rel(Discordy.sfu.Forwardingengine, Discordy.sfu.Roomtable, "Looks up subscribers in", $techn="", $tags="", $link="")
+Rel(Discordy.sfu.Forwardingengine, Discordy.sfu.Peersession, "Writes rewritten packets to subscribers", $techn="", $tags="", $link="")
+Rel(Discordy.sfu.RTCPhandler, Discordy.sfu.Forwardingengine, "Updates bandwidth estimates and requests keyframes", $techn="", $tags="", $link="")
+Rel(Discordy.sfu.Controlserver, Discordy.sfu.Roomtable, "Creates/closes sessions, sets sink wants", $techn="", $tags="", $link="")
+Rel(Discordy.sfu.Controlserver, Discordy.sfu.Peersession, "Creates", $techn="", $tags="", $link="")
+Rel(Discordy.sfu.Speakingdetector, Discordy.sfu.Controlserver, "Emits speaking events through", $techn="", $tags="", $link="")
+Rel(Discordy.sfu.Stats, Discordy.sfu.Peersession, "Samples", $techn="", $tags="", $link="")
+Rel(Discordy.sfu.Controlserver, Discordy.voicesignaling, "Replies with session_created, speaking, stats", $techn="NDJSON", $tags="", $link="")
+
+SHOW_LEGEND(true)
+hide stereotypes
+@enduml

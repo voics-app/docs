@@ -1,0 +1,80 @@
+@startuml code-sfu-forwarder
+title C4 code (UML): SFU forwarder — voice/sfu (sfu-core)
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+hide empty members
+
+class Forwarder {
+  - rooms: HashMap<RoomId, Room>
+  + on_packet(from: SessionId, pkt: MediaPacket): Vec<(SessionId, MediaPacket)>
+  + on_bandwidth(session: SessionId, bwe: BandwidthEstimate)
+  + on_sink_wants(session: SessionId, wants: SinkWants)
+}
+
+class Room {
+  + id: RoomId
+  - members: HashSet<SessionId>
+  - tracks: HashMap<Ssrc, Track>
+  - subscriptions: HashMap<(SessionId, Ssrc), Subscription>
+}
+
+class MediaPacket {
+  + ssrc: Ssrc
+  + kind: Audio | Video
+  + layer: Option<Layer>  ' rid or spatial/temporal id
+  + seq: u16
+  + timestamp: u32
+  + marker: bool
+  + keyframe: bool
+  + payload: Bytes
+}
+
+class Subscription {
+  + subscriber: SessionId
+  + source: Ssrc
+  + outbound_ssrc: Ssrc
+  + current_layer: Option<Layer>
+  + target_layer: Option<Layer>
+}
+
+class LayerSelector {
+  + target(wants: Option<u8>, bwe: BandwidthEstimate, available: [Layer]): Option<Layer>
+  + should_switch(pkt: MediaPacket, sub: Subscription): bool
+}
+
+class SinkWants {
+  - quality: HashMap<Ssrc, u8>  ' 0..100
+}
+
+class BandwidthEstimate {
+  + bps: u64
+  + source: Remb | Twcc
+}
+
+class RtpRewriter {
+  - seq_offset: u16
+  - ts_offset: u32
+  - last_out_seq: u16
+  - last_out_ts: u32
+  + rewrite(pkt: MediaPacket, switched: bool): MediaPacket
+}
+
+Forwarder "1" *-- "0..*" Room
+Room "1" *-- "0..*" Subscription
+Subscription *-- RtpRewriter
+Forwarder ..> LayerSelector
+LayerSelector ..> SinkWants
+LayerSelector ..> BandwidthEstimate
+Forwarder ..> MediaPacket
+RtpRewriter ..> MediaPacket
+
+note right of RtpRewriter
+  Keeps outbound seq/timestamp continuous across
+  simulcast layer switches and Opus DTX gaps, so
+  subscribers see one gap-free stream per SSRC.
+end note
+note bottom of LayerSelector
+  Switch up/down only on a keyframe of the target layer;
+  request one with PLI when the target changes.
+end note
+@enduml

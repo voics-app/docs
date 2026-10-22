@@ -1,0 +1,22 @@
+{
+  "name": "@discordy-voics/docs",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Discordy architecture, decisions, references and runbooks",
+  "license": "UNLICENSED",
+  "type": "module",
+  "packageManager": "pnpm@10.18.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "lint:md": "markdownlint-cli2",
+    "secrets:render": "node scripts/render-secrets.mjs",
+    "secrets:check": "node scripts/render-secrets.mjs --check",
+    "lint": "pnpm run lint:md && pnpm run secrets:check"
+  },
+  "devDependencies": {
+    "markdownlint-cli2": "0.18.1",
+    "yaml": "2.8.1"
+  }
+}

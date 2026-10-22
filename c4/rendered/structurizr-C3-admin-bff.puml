@@ -1,0 +1,69 @@
+@startuml
+title <size:24>Component View: Discordy - admin-bff</size>\n<size:24>admin-bff components.</size>
+
+set separator none
+left to right direction
+
+<style>
+  root {
+    BackgroundColor: #ffffff
+    FontColor: #444444
+  }
+</style>
+
+!include <C4/C4>
+!include <C4/C4_Context>
+!include <C4/C4_Container>
+!include <C4/C4_Component>
+
+System_Boundary("Discordy_boundary", "Discordy", $tags="") {
+  Container_Boundary("Discordy.adminbff_boundary", "admin-bff", $tags="") {
+    Component(Discordy.adminbff.adminapi, "admin-api", $techn="axum", $descr="/admin-api/* routes and the built SPA.", $tags="", $link="")
+    Component(Discordy.adminbff.Accessverifier, "Access verifier", $techn="axum extractor", $descr="Validates Cf-Access-Jwt-Assertion against the team JWKS, then ADMIN_ALLOWED_EMAILS.", $tags="", $link="")
+    Component(Discordy.adminbff.Adminusecases, "Admin use cases", $techn="Rust", $descr="Usage queries, region view, drain/undrain, suspend, feature flags.", $tags="", $link="")
+    Component(Discordy.adminbff.Adminaudit, "Admin audit", $techn="Rust", $descr="Records every admin action.", $tags="", $link="")
+    Component(Discordy.adminbff.Usageaggregator, "Usage aggregator", $techn="Kafka client", $descr="Consumes every topic; counters only (never content); minute/hour/day rollups.", $tags="", $link="")
+    Component(Discordy.adminbff.Rolluprepository, "Rollup repository", $techn="sqlx", $descr="discordy_admin: rollups, feature_flags, admin_audit.", $tags="", $link="")
+    Component(Discordy.adminbff.Internalstatsclient, "Internal stats client", $techn="reqwest", $descr="P4 admin endpoints of api, messages and gateway.", $tags="", $link="")
+    Component(Discordy.adminbff.Metricsclient, "Metrics client", $techn="reqwest", $descr="PromQL/MetricsQL queries.", $tags="", $link="")
+    Component(Discordy.adminbff.Voicenodereader, "Voice node reader", $techn="etcd client", $descr="Reads /discordy/voice/nodes/.", $tags="", $link="")
+  }
+
+  ContainerDb(Discordy.Postgres, "Postgres", $techn="Postgres 17 (CloudNativePG)", $descr="Relational data (DB discordy, owned by api) and admin rollups (DB discordy_admin).", $tags="", $link="")
+  ContainerQueue(Discordy.Redpanda, "Redpanda", $techn="Redpanda 25.x (Kafka API)", $descr="Event bus: discordy.{guild,message,user,interaction,telemetry,audit}.v1.", $tags="", $link="")
+  ContainerDb(Discordy.etcd, "etcd", $techn="etcd 3.6", $descr="Voice-server discovery under leased keys.", $tags="", $link="")
+  ContainerDb(Discordy.VictoriaMetrics, "VictoriaMetrics", $techn="VictoriaMetrics", $descr="Metrics storage and query.", $tags="", $link="")
+  Container(Discordy.api, "api", $techn="Rust, Axum, SQLx", $descr="Auth, users, devices, relationships, guilds, channels, roles, permissions, invites, bots, interactions, webhooks, MLS key packages, admin endpoints; transactional outbox.", $tags="", $link="")
+  Container(Discordy.messages, "messages", $techn="Rust, Axum, scylla driver", $descr="Standard message CRUD and history, Snowflake IDs, request coalescing, reactions, pins, read states, attachments.", $tags="", $link="")
+  Container(Discordy.gateway, "gateway", $techn="Elixir, Phoenix, libcluster", $descr="Client WebSocket protocol, sessions, guild processes, presence, typing, fan-out, E2EE relay, P2P signaling, voice allocation.", $tags="", $link="")
+}
+
+Rel(Discordy.api, Discordy.Postgres, "Reads/writes relational data and outbox", $techn="SQL", $tags="", $link="")
+Rel(Discordy.api, Discordy.Redpanda, "Publishes guild, user, interaction, audit events", $techn="Kafka", $tags="", $link="")
+Rel(Discordy.api, Discordy.messages, "Last message ids", $techn="HTTP /internal/v1", $tags="", $link="")
+Rel(Discordy.messages, Discordy.Redpanda, "Publishes message events", $techn="Kafka", $tags="", $link="")
+Rel(Discordy.messages, Discordy.api, "Channel access, bot token introspection", $techn="HTTP /internal/v1", $tags="", $link="")
+Rel(Discordy.gateway, Discordy.api, "Ready payload, guild state, access, introspect", $techn="HTTP /internal/v1", $tags="", $link="")
+Rel(Discordy.gateway, Discordy.messages, "Last message ids", $techn="HTTP /internal/v1", $tags="", $link="")
+Rel(Discordy.gateway, Discordy.Redpanda, "Consumes all topics; publishes telemetry", $techn="Kafka", $tags="", $link="")
+Rel(Discordy.gateway, Discordy.etcd, "Watches voice nodes", $techn="gRPC", $tags="", $link="")
+Rel(Discordy.adminbff.adminapi, Discordy.adminbff.Accessverifier, "Guarded by", $techn="", $tags="", $link="")
+Rel(Discordy.adminbff.adminapi, Discordy.adminbff.Adminusecases, "Invokes", $techn="", $tags="", $link="")
+Rel(Discordy.adminbff.Adminusecases, Discordy.adminbff.Adminaudit, "Records actions in", $techn="", $tags="", $link="")
+Rel(Discordy.adminbff.Adminusecases, Discordy.adminbff.Rolluprepository, "Queries rollups and flags", $techn="", $tags="", $link="")
+Rel(Discordy.adminbff.Adminusecases, Discordy.adminbff.Internalstatsclient, "Proxies admin stats", $techn="", $tags="", $link="")
+Rel(Discordy.adminbff.Adminusecases, Discordy.adminbff.Metricsclient, "Queries metrics", $techn="", $tags="", $link="")
+Rel(Discordy.adminbff.Adminusecases, Discordy.adminbff.Voicenodereader, "Lists voice nodes", $techn="", $tags="", $link="")
+Rel(Discordy.adminbff.Adminaudit, Discordy.adminbff.Rolluprepository, "Writes admin_audit", $techn="", $tags="", $link="")
+Rel(Discordy.adminbff.Usageaggregator, Discordy.adminbff.Rolluprepository, "Upserts rollups", $techn="", $tags="", $link="")
+Rel(Discordy.adminbff.Rolluprepository, Discordy.Postgres, "discordy_admin", $techn="SQL", $tags="", $link="")
+Rel(Discordy.adminbff.Usageaggregator, Discordy.Redpanda, "Consumes", $techn="Kafka", $tags="", $link="")
+Rel(Discordy.adminbff.Internalstatsclient, Discordy.api, "Calls", $techn="HTTP /internal/v1", $tags="", $link="")
+Rel(Discordy.adminbff.Internalstatsclient, Discordy.messages, "Calls", $techn="HTTP /internal/v1", $tags="", $link="")
+Rel(Discordy.adminbff.Internalstatsclient, Discordy.gateway, "Calls (stats, drain)", $techn="HTTP /internal/v1", $tags="", $link="")
+Rel(Discordy.adminbff.Metricsclient, Discordy.VictoriaMetrics, "Queries", $techn="HTTP", $tags="", $link="")
+Rel(Discordy.adminbff.Voicenodereader, Discordy.etcd, "Reads", $techn="gRPC", $tags="", $link="")
+
+SHOW_LEGEND(true)
+hide stereotypes
+@enduml

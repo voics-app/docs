@@ -1,0 +1,80 @@
+@startuml
+title <size:24>Container View: Discordy</size>\n<size:24>Deployable units and data stores of Discordy.</size>
+
+set separator none
+left to right direction
+
+<style>
+  root {
+    BackgroundColor: #ffffff
+    FontColor: #444444
+  }
+</style>
+
+!include <C4/C4>
+!include <C4/C4_Context>
+!include <C4/C4_Container>
+
+Person(User, "User", $descr="Chats, talks, streams and watches together using the desktop client.", $tags="", $link="")
+Person(Platformadmin, "Platform admin", $descr="Operates the platform through the admin portal and Headlamp.", $tags="", $link="")
+System(Thirdpartybot, "Third-party bot", $descr="A bot built on bots-sdk, run by a bot developer.", $tags="", $link="")
+
+System_Boundary("Discordy_boundary", "Discordy", $tags="") {
+  Container(Discordy.voicesignaling, "voice-signaling", $techn="Elixir, Phoenix", $descr="Voice WebSocket, media setup, speaking indicators, DAVE MLS relay, etcd registration, SFU supervision.", $tags="", $link="")
+  Container(Discordy.Desktopclient, "Desktop client", $techn="Electron, React, TypeScript, napi-rs", $descr="End-user application for Windows (primary), macOS and Linux.", $tags="", $link="")
+  Container(Discordy.sfu, "sfu", $techn="Rust, str0m", $descr="Home-grown selective forwarding unit: ICE-lite, DTLS-SRTP, simulcast/SVC layer selection, RTP rewrite, RTCP/BWE.", $tags="", $link="")
+  Container(Discordy.adminweb, "admin-web", $techn="React, TypeScript, Vite", $descr="Admin SPA: overview, usage, voice regions, platform health, trust & safety, feature flags, audit.", $tags="", $link="")
+  Container(Discordy.adminbff, "admin-bff", $techn="Rust, Axum, SQLx", $descr="Admin backend: Access verification, usage aggregation, stats proxying, regions, drain, suspension, flags, audit.", $tags="", $link="")
+  ContainerDb(Discordy.Postgres, "Postgres", $techn="Postgres 17 (CloudNativePG)", $descr="Relational data (DB discordy, owned by api) and admin rollups (DB discordy_admin).", $tags="", $link="")
+  ContainerDb(Discordy.ScyllaDB, "ScyllaDB", $techn="ScyllaDB 2025.x, developer mode", $descr="Messages, reactions, pins, read states, channel_last_message (keyspace discordy).", $tags="", $link="")
+  ContainerQueue(Discordy.Redpanda, "Redpanda", $techn="Redpanda 25.x (Kafka API)", $descr="Event bus: discordy.{guild,message,user,interaction,telemetry,audit}.v1.", $tags="", $link="")
+  ContainerDb(Discordy.Valkey, "Valkey", $techn="Valkey 8", $descr="Resume buffers, presence, rate limits, voice allocations, E2EE inboxes (AOF on).", $tags="", $link="")
+  ContainerDb(Discordy.etcd, "etcd", $techn="etcd 3.6", $descr="Voice-server discovery under leased keys.", $tags="", $link="")
+  ContainerDb(Discordy.MinIO, "MinIO", $techn="MinIO (S3 API)", $descr="Assets, attachments and the client update feed.", $tags="", $link="")
+  Container(Discordy.coturn, "coturn", $techn="coturn", $descr="TURN relay for P2P data channels when NAT requires it (never for voice).", $tags="", $link="")
+  ContainerDb(Discordy.VictoriaMetrics, "VictoriaMetrics", $techn="VictoriaMetrics", $descr="Metrics storage and query.", $tags="", $link="")
+  Container(Discordy.api, "api", $techn="Rust, Axum, SQLx", $descr="Auth, users, devices, relationships, guilds, channels, roles, permissions, invites, bots, interactions, webhooks, MLS key packages, admin endpoints; transactional outbox.", $tags="", $link="")
+  Container(Discordy.messages, "messages", $techn="Rust, Axum, scylla driver", $descr="Standard message CRUD and history, Snowflake IDs, request coalescing, reactions, pins, read states, attachments.", $tags="", $link="")
+  Container(Discordy.gateway, "gateway", $techn="Elixir, Phoenix, libcluster", $descr="Client WebSocket protocol, sessions, guild processes, presence, typing, fan-out, E2EE relay, P2P signaling, voice allocation.", $tags="", $link="")
+}
+
+Rel(User, Discordy.Desktopclient, "Uses", $techn="", $tags="", $link="")
+Rel(Thirdpartybot, Discordy.api, "REST /api/v1 with Bot token", $techn="HTTPS", $tags="", $link="")
+Rel(Thirdpartybot, Discordy.gateway, "Gateway with intents", $techn="WSS", $tags="", $link="")
+Rel(Platformadmin, Discordy.adminweb, "Uses (behind Cloudflare Access)", $techn="HTTPS", $tags="", $link="")
+Rel(Discordy.Desktopclient, Discordy.api, "Auth, guilds, users, devices", $techn="HTTPS/JSON", $tags="", $link="")
+Rel(Discordy.Desktopclient, Discordy.messages, "Message history and sends (routed by ingress)", $techn="HTTPS/JSON", $tags="", $link="")
+Rel(Discordy.Desktopclient, Discordy.gateway, "Real-time events, E2EE envelopes, P2P signaling", $techn="WSS/JSON", $tags="", $link="")
+Rel(Discordy.Desktopclient, Discordy.voicesignaling, "Voice WebSocket", $techn="WSS/JSON", $tags="", $link="")
+Rel(Discordy.Desktopclient, Discordy.sfu, "Voice, video and screen share", $techn="DTLS-SRTP over UDP", $tags="", $link="")
+Rel(Discordy.Desktopclient, Discordy.coturn, "P2P relay when NAT requires it", $techn="TURN", $tags="", $link="")
+Rel(Discordy.Desktopclient, Discordy.MinIO, "Downloads attachments and updates", $techn="HTTPS (signed URLs)", $tags="", $link="")
+Rel(Discordy.api, Discordy.Postgres, "Reads/writes relational data and outbox", $techn="SQL", $tags="", $link="")
+Rel(Discordy.api, Discordy.Redpanda, "Publishes guild, user, interaction, audit events", $techn="Kafka", $tags="", $link="")
+Rel(Discordy.api, Discordy.Valkey, "Rate limits and caches", $techn="RESP", $tags="", $link="")
+Rel(Discordy.api, Discordy.MinIO, "Presigns asset uploads", $techn="S3", $tags="", $link="")
+Rel(Discordy.api, Discordy.messages, "Last message ids", $techn="HTTP /internal/v1", $tags="", $link="")
+Rel(Discordy.messages, Discordy.ScyllaDB, "Reads/writes messages", $techn="CQL", $tags="", $link="")
+Rel(Discordy.messages, Discordy.Redpanda, "Publishes message events", $techn="Kafka", $tags="", $link="")
+Rel(Discordy.messages, Discordy.MinIO, "Presigns attachment uploads", $techn="S3", $tags="", $link="")
+Rel(Discordy.messages, Discordy.api, "Channel access, bot token introspection", $techn="HTTP /internal/v1", $tags="", $link="")
+Rel(Discordy.gateway, Discordy.api, "Ready payload, guild state, access, introspect", $techn="HTTP /internal/v1", $tags="", $link="")
+Rel(Discordy.gateway, Discordy.messages, "Last message ids", $techn="HTTP /internal/v1", $tags="", $link="")
+Rel(Discordy.gateway, Discordy.Redpanda, "Consumes all topics; publishes telemetry", $techn="Kafka", $tags="", $link="")
+Rel(Discordy.gateway, Discordy.Valkey, "Sessions, resume buffers, presence, voice allocations, E2EE inboxes", $techn="RESP", $tags="", $link="")
+Rel(Discordy.gateway, Discordy.etcd, "Watches voice nodes", $techn="gRPC", $tags="", $link="")
+Rel(Discordy.voicesignaling, Discordy.sfu, "Controls sessions", $techn="NDJSON over TCP 127.0.0.1:4101", $tags="", $link="")
+Rel(Discordy.voicesignaling, Discordy.etcd, "Registers node under a lease", $techn="gRPC", $tags="", $link="")
+Rel(Discordy.voicesignaling, Discordy.Redpanda, "Publishes voice quality telemetry", $techn="Kafka", $tags="", $link="")
+Rel(Discordy.adminweb, Discordy.adminbff, "Calls /admin-api", $techn="HTTPS/JSON", $tags="", $link="")
+Rel(Discordy.adminbff, Discordy.Postgres, "Rollups, flags, admin audit (discordy_admin)", $techn="SQL", $tags="", $link="")
+Rel(Discordy.adminbff, Discordy.Redpanda, "Consumes every topic for counters", $techn="Kafka", $tags="", $link="")
+Rel(Discordy.adminbff, Discordy.api, "Admin stats, users, suspension", $techn="HTTP /internal/v1", $tags="", $link="")
+Rel(Discordy.adminbff, Discordy.messages, "Message stats", $techn="HTTP /internal/v1", $tags="", $link="")
+Rel(Discordy.adminbff, Discordy.gateway, "Session stats, drain/undrain", $techn="HTTP /internal/v1", $tags="", $link="")
+Rel(Discordy.adminbff, Discordy.VictoriaMetrics, "Queries metrics", $techn="HTTP", $tags="", $link="")
+Rel(Discordy.adminbff, Discordy.etcd, "Reads voice nodes", $techn="gRPC", $tags="", $link="")
+
+SHOW_LEGEND(true)
+hide stereotypes
+@enduml

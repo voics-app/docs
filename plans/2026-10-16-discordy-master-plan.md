@@ -116,10 +116,11 @@
 |---|---|
 | api | `DATABASE_URL`, `VALKEY_URL`, `JWT_PRIVATE_KEY` (Ed25519 PEM), `PUBLIC_API_URL`, `PUBLIC_GATEWAY_URL`, `CDN_PUBLIC_URL`, `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET_ASSETS` (default `discordy-assets`), `MESSAGES_INTERNAL_URL` |
 | messages | `SCYLLA_NODES`, `SCYLLA_KEYSPACE` (default `discordy`), `API_INTERNAL_URL`, `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET_ATTACHMENTS` (default `discordy-attachments`), `CDN_PUBLIC_URL` |
-| gateway | `VALKEY_URL`, `ETCD_ENDPOINTS`, `API_INTERNAL_URL`, `MESSAGES_INTERNAL_URL`, `VOICE_TOKEN_SECRET` (HS256), `PUBLIC_GATEWAY_URL`, `DEFAULT_VOICE_REGION` (default `nl-home`), `RELEASE_COOKIE` (Erlang distribution), `CLUSTER_DNS_QUERY` (optional, k8s headless service) |
+| gateway | `VALKEY_URL`, `ETCD_ENDPOINTS`, `TURN_STATIC_AUTH_SECRET`, `TURN_URLS`, `API_INTERNAL_URL`, `MESSAGES_INTERNAL_URL`, `VOICE_TOKEN_SECRET` (HS256), `PUBLIC_GATEWAY_URL`, `DEFAULT_VOICE_REGION` (default `nl-home`), `RELEASE_COOKIE` (Erlang distribution), `CLUSTER_DNS_QUERY` (optional, k8s headless service) |
 | voice-signaling | `VOICE_REGION`, `VOICE_NODE_ID`, `VOICE_PUBLIC_WS_URL`, `VOICE_PUBLIC_IP`, `VOICE_UDP_PORT` (default `50000`), `ETCD_ENDPOINTS`, `VOICE_TOKEN_SECRET`, `SFU_CONTROL_ADDR` (default `127.0.0.1:4101`) |
+| coturn | `TURN_STATIC_AUTH_SECRET` (shared with gateway, which mints short-lived TURN credentials for P2P) |
 | sfu | `SFU_UDP_BIND` (default `0.0.0.0:50000`), `SFU_PUBLIC_IP`, `SFU_CONTROL_BIND` (default `127.0.0.1:4101`) |
-| admin-bff | `ADMIN_DATABASE_URL`, `API_INTERNAL_URL`, `VICTORIAMETRICS_URL`, `ETCD_ENDPOINTS`, `ADMIN_ALLOWED_EMAILS` (comma-separated; the second gate after Cloudflare Access) |
+| admin-bff | `ADMIN_DATABASE_URL`, `API_INTERNAL_URL`, `VICTORIAMETRICS_URL`, `ETCD_ENDPOINTS`, `ADMIN_ALLOWED_EMAILS` (comma-separated; the second gate after Cloudflare Access), `CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD` (both optional only when `DISCORDY_ENV=local`), `GATEWAY_INTERNAL_URL` |
 
 ### P3. Auth tokens
 
@@ -152,6 +153,8 @@ All calls carry the `X-Internal-Token` header. All IDs are strings.
 | `GET /internal/v1/users/{user_id}/ready` | `{ user, guilds: [GuildFull], private_channels: [Channel], relationships: [Relationship], user_settings }` |
 | `GET /internal/v1/guilds/{guild_id}/state` | `GuildFull` (guild, roles, channels, members, voice_region) |
 | `GET /internal/v1/channels/{channel_id}/access/{user_id}` | `{ "permissions": "<u64 as string>", "guild_id": ...\|null, "channel_type": int, "delivery_mode": "standard"\|"ephemeral"\|"p2p", "recipient_ids": [...] }` (403 if the user is not a member) |
+| `POST /internal/v1/users/lookup` with `{ "ids": [...] }` | `[User]`: public user fields only (never email); unknown or malformed ids are skipped; at most 100 ids per call. Used by messages to hydrate message authors (60s cache, batched per history page; degrades to `{id}` when unavailable) |
+| `GET /internal/v1/channels/{channel_id}/delivery` | `{ "guild_id": ...|null, "channel_type": int, "delivery_mode": ... }` without a user: used by messages for webhook and bot posts |
 | `GET /internal/v1/admin/stats` | `{ users_total, guilds_total, channels_total, bots_total, signups_24h }` |
 | `GET /internal/v1/admin/users?query=&limit=&after=` | paginated user list |
 | `POST /internal/v1/admin/users/{id}/suspend` with `{reason, until}` | |
@@ -161,6 +164,7 @@ All calls carry the `X-Internal-Token` header. All IDs are strings.
 
 | Endpoint | Returns |
 |---|---|
+| `POST /internal/v1/channels/{id}/messages` with `{author_id, webhook_id?, username?, avatar_url?, interaction_id?, application_id?, target_user_ids?, content?, embeds?, components?, flags?, message_reference?, attachments?}` | Creates a standard message on behalf of a bot (`author_id` = bot user id), a webhook (`author_id` = `webhook_id`, with `username`/`avatar_url` overrides, as in Discord) or an interaction response (`interaction_id` + `application_id`; `flags & 64` = ephemeral, delivered only to the invoking user). Skips the user permission check because api authorised the call. Returns 409 / 50160 for non-standard delivery modes. Responds with the Message object |
 | `GET /internal/v1/channels/{id}/last-message-id` | `{ "last_message_id": ... }` |
 | `GET /internal/v1/admin/stats` | `{ messages_24h, messages_by_mode: {standard, ephemeral_relayed, p2p_signaled} }`. Counts only, never content |
 
@@ -201,7 +205,7 @@ All calls carry the `X-Internal-Token` header. All IDs are strings.
 |---|---|---|---|
 | `discordy.guild.v1` | guild_id | api | GUILD_CREATE, GUILD_UPDATE, GUILD_DELETE, CHANNEL_CREATE, CHANNEL_UPDATE, CHANNEL_DELETE, GUILD_ROLE_CREATE, GUILD_ROLE_UPDATE, GUILD_ROLE_DELETE, GUILD_MEMBER_ADD, GUILD_MEMBER_UPDATE, GUILD_MEMBER_REMOVE, GUILD_BAN_ADD, GUILD_BAN_REMOVE, GUILD_EMOJIS_UPDATE, INVITE_CREATE, INVITE_DELETE, THREAD_CREATE, THREAD_UPDATE, THREAD_DELETE, APPLICATION_COMMAND_PERMISSIONS_UPDATE |
 | `discordy.message.v1` | channel_id | messages | MESSAGE_CREATE, MESSAGE_UPDATE, MESSAGE_DELETE, MESSAGE_DELETE_BULK, MESSAGE_REACTION_ADD, MESSAGE_REACTION_REMOVE, MESSAGE_REACTION_REMOVE_ALL, CHANNEL_PINS_UPDATE, MESSAGE_ACK |
-| `discordy.user.v1` | user_id | api | USER_UPDATE, USER_SETTINGS_UPDATE, RELATIONSHIP_ADD, RELATIONSHIP_REMOVE, CHANNEL_CREATE (DMs, with `target_user_ids`), CHANNEL_RECIPIENT_ADD, CHANNEL_RECIPIENT_REMOVE, SESSIONS_REPLACE |
+| `discordy.user.v1` | user_id | api | USER_UPDATE, USER_SETTINGS_UPDATE, RELATIONSHIP_ADD, RELATIONSHIP_REMOVE, CHANNEL_CREATE (DMs, with `target_user_ids`), CHANNEL_RECIPIENT_ADD, CHANNEL_RECIPIENT_REMOVE, SESSIONS_REPLACE, USER_DEVICES_UPDATE (`{user_id, devices:[{device_id, identity_key_b64}]}`, targeted at the user and every user who shares a DM, group DM or guild with them; drives MLS member/device removal) |
 | `discordy.interaction.v1` | application_id | api | INTERACTION_CREATE (routed to the bot's sessions) |
 | `discordy.telemetry.v1` | node/user | voice, client (via gateway), gateway | VOICE_QUALITY, USAGE_TICK |
 | `discordy.audit.v1` | guild_id | api | AUDIT_LOG_ENTRY_CREATE |
@@ -235,8 +239,11 @@ All calls carry the `X-Internal-Token` header. All IDs are strings.
 | 22 | P2P_SIGNAL | ↔ | `{channel_id, to_user_id, to_device_id, from_user_id, from_device_id, kind:"offer"\|"answer"\|"ice"\|"bye", payload:string, identity_sig_b64}` — relayed only, never persisted |
 | 23 | VOICE_TELEMETRY | → | `{channel_id, jitter_ms, loss_pct, rtt_ms, bitrate_kbps}` — published to `discordy.telemetry.v1` |
 | 24 | WATCH_TOGETHER | ↔ | `{channel_id, action:"load"\|"play"\|"pause"\|"seek", url?, position_ms, at_server_ms}` |
+| 25 | CALL_DECLINE | → | `{channel_id}`: declines the DM call ringing in that channel; a no-op when the user is not ringing |
 
-**Dispatch events emitted by the gateway itself**: READY, RESUMED, PRESENCE_UPDATE, TYPING_START, VOICE_STATE_UPDATE, VOICE_SERVER_UPDATE `{token, guild_id|null, channel_id, endpoint, region}`, GUILD_MEMBERS_CHUNK, and E2EE inbox replay after READY.
+**Dispatch events emitted by the gateway itself**: READY, RESUMED, PRESENCE_UPDATE, TYPING_START, VOICE_STATE_UPDATE, VOICE_SERVER_UPDATE `{token, guild_id|null, channel_id, endpoint, region}`, CALL_CREATE / CALL_UPDATE `Call {channel_id, message_id:null, region, ringing:[user_id], voice_states:[VoiceState]}`, CALL_DELETE `{channel_id, message_id:null}`, GUILD_MEMBERS_CHUNK, and E2EE inbox replay after READY.
+
+**DM call ringing**: the first join to a DM or group DM creates the call (CALL_CREATE to the recipients, `ringing` = the other recipients). A ringing user stops ringing when they join, send CALL_DECLINE, or after 30 s. Later changes send CALL_UPDATE; the last leave sends CALL_DELETE. After READY, the gateway replays CALL_CREATE for each active call the user rings for or takes part in. These are gateway-generated, so they are not on a P6 topic.
 
 **Typing**: `POST /api/v1/channels/{id}/typing`. The api publishes TYPING_START to `discordy.message.v1`.
 
@@ -340,7 +347,7 @@ All calls carry the `X-Internal-Token` header. All IDs are strings.
 
 **Object shapes**: follow Discord API v10 field names exactly (User, Guild, Channel, Role, Member, Message, Attachment, Embed, Reaction, Emoji, Invite, Application, ApplicationCommand, Interaction, Webhook, VoiceState, PermissionOverwrite). Extra Discordy fields:
 - Channel: `delivery_mode`, `voice_region`
-- UserSettings: `default_delivery_mode`
+- UserSettings: `default_delivery_mode`, `e2ee_calls_default` (every call the user starts or joins is E2EE; in mixed calls, any participant with it on makes the call E2EE for everyone)
 - Device: `device_id`, `identity_key_b64`
 
 **Channel types** (Discord values): 0 GUILD_TEXT, 1 DM, 2 GUILD_VOICE, 3 GROUP_DM, 4 GUILD_CATEGORY, 5 GUILD_ANNOUNCEMENT, 10/11/12 threads, 13 GUILD_STAGE_VOICE, 15 GUILD_FORUM.

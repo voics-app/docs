@@ -1,0 +1,45 @@
+@startuml
+title <size:24>Component View: Discordy - sfu</size>\n<size:24>Code view: SFU forwarding, layer selection and RTP rewriting.</size>
+
+set separator none
+top to bottom direction
+
+<style>
+  root {
+    BackgroundColor: #ffffff
+    FontColor: #444444
+  }
+</style>
+
+!include <C4/C4>
+!include <C4/C4_Context>
+!include <C4/C4_Component>
+
+System_Boundary("Discordy_boundary", "Discordy", $tags="") {
+  Container_Boundary("Discordy.sfu_boundary", "sfu", $tags="") {
+    Component(Discordy.sfu.Peersession, "Peer session", $techn="str0m", $descr="One str0m Rtc per client: ICE-lite, DTLS-SRTP, RTP/RTCP.", $tags="", $link="")
+    Component(Discordy.sfu.Forwarder, "Forwarder", $techn="struct", $descr="on_packet(from, MediaPacket) -> Vec<(SessionId, MediaPacket)>.", $tags="", $link="")
+    Component(Discordy.sfu.Room, "Room", $techn="struct", $descr="Members, published tracks by SSRC, subscriptions.", $tags="", $link="")
+    Component(Discordy.sfu.MediaPacket, "MediaPacket", $techn="struct", $descr="ssrc, rid/spatial/temporal layer, seq, timestamp, marker, payload, keyframe flag.", $tags="", $link="")
+    Component(Discordy.sfu.Subscription, "Subscription", $techn="struct", $descr="Subscriber, source track, current and target layer, rewriter state.", $tags="", $link="")
+    Component(Discordy.sfu.LayerSelector, "LayerSelector", $techn="struct", $descr="Target layer from MEDIA_SINK_WANTS quality and the subscriber's bandwidth estimate; switches on keyframes.", $tags="", $link="")
+    Component(Discordy.sfu.SinkWants, "SinkWants", $techn="struct", $descr="Map ssrc -> quality 0-100 from MEDIA_SINK_WANTS.", $tags="", $link="")
+    Component(Discordy.sfu.BandwidthEstimate, "BandwidthEstimate", $techn="struct", $descr="Latest REMB/TWCC estimate per subscriber.", $tags="", $link="")
+    Component(Discordy.sfu.RtpRewriter, "RtpRewriter", $techn="struct", $descr="Continuous seq/timestamp across layer switches and DTX gaps; outbound SSRC per subscription.", $tags="", $link="")
+  }
+
+}
+
+Rel(Discordy.sfu.Forwarder, Discordy.sfu.Room, "Looks up subscriptions in", $techn="", $tags="", $link="")
+Rel(Discordy.sfu.Forwarder, Discordy.sfu.MediaPacket, "Routes", $techn="", $tags="", $link="")
+Rel(Discordy.sfu.Room, Discordy.sfu.Subscription, "Holds", $techn="", $tags="", $link="")
+Rel(Discordy.sfu.Subscription, Discordy.sfu.LayerSelector, "Chooses layer with", $techn="", $tags="", $link="")
+Rel(Discordy.sfu.Subscription, Discordy.sfu.RtpRewriter, "Rewrites seq/timestamp with", $techn="", $tags="", $link="")
+Rel(Discordy.sfu.LayerSelector, Discordy.sfu.SinkWants, "Reads desired quality from", $techn="", $tags="", $link="")
+Rel(Discordy.sfu.LayerSelector, Discordy.sfu.BandwidthEstimate, "Caps by", $techn="", $tags="", $link="")
+Rel(Discordy.sfu.RtpRewriter, Discordy.sfu.MediaPacket, "Produces rewritten", $techn="", $tags="", $link="")
+Rel(Discordy.sfu.Peersession, Discordy.sfu.Forwarder, "on_packet", $techn="", $tags="", $link="")
+
+SHOW_LEGEND(true)
+hide stereotypes
+@enduml

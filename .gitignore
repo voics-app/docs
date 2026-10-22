@@ -1,0 +1,9 @@
+.env
+.env.*
+!.env.example
+node_modules/
+c4/.export/
+.structurizr/
+*.log
+.DS_Store
+Thumbs.db

@@ -1,0 +1,63 @@
+@startuml
+title <size:24>Component View: Discordy - messages</size>\n<size:24>messages components.</size>
+
+set separator none
+left to right direction
+
+<style>
+  root {
+    BackgroundColor: #ffffff
+    FontColor: #444444
+  }
+</style>
+
+!include <C4/C4>
+!include <C4/C4_Context>
+!include <C4/C4_Container>
+!include <C4/C4_Component>
+
+System_Boundary("Discordy_boundary", "Discordy", $tags="") {
+  Container_Boundary("Discordy.messages_boundary", "messages", $tags="") {
+    Component(Discordy.messages.PublicREST, "Public REST", $techn="axum", $descr="/api/v1/channels/{id}/messages*, reactions, pins, ack, attachments.", $tags="", $link="")
+    Component(Discordy.messages.InternalREST, "Internal REST", $techn="axum", $descr="last-message-id and admin stats (counts only).", $tags="", $link="")
+    Component(Discordy.messages.Authextractor, "Auth extractor", $techn="axum extractor", $descr="Verifies EdDSA JWTs locally; introspects bot tokens via api (60 s cache).", $tags="", $link="")
+    Component(Discordy.messages.Messageusecases, "Message use cases", $techn="Rust", $descr="Create, edit, delete, bulk delete, react, pin, ack, history; 409/50160 for non-standard channels.", $tags="", $link="")
+    Component(Discordy.messages.Attachmentusecases, "Attachment use cases", $techn="Rust", $descr="Presigned uploads, attachment metadata and CDN URLs.", $tags="", $link="")
+    Component(Discordy.messages.Messagedomain, "Message domain", $techn="Rust (domain)", $descr="Message, Attachment, Reaction, ReadState, Bucket math, backwards bucket walk.", $tags="", $link="")
+    Component(Discordy.messages.Snowflakegenerator, "Snowflake generator", $techn="Rust (domain)", $descr="Worker range 64-127.", $tags="", $link="")
+    Component(Discordy.messages.Channelaccessclient, "Channel access client", $techn="reqwest", $descr="GET /internal/v1/channels/{id}/access/{user} with a 5 s cache.", $tags="", $link="")
+    Component(Discordy.messages.Requestcoalescer, "Request coalescer", $techn="Rust", $descr="Merges identical concurrent history reads into one in-flight query.", $tags="", $link="")
+    Component(Discordy.messages.ScyllaDBrepositories, "ScyllaDB repositories", $techn="scylla", $descr="Prepared statements over (channel_id, bucket) partitions.", $tags="", $link="")
+    Component(Discordy.messages.Eventpublisher, "Event publisher", $techn="Kafka client", $descr="Publishes to discordy.message.v1 keyed by channel_id.", $tags="", $link="")
+    Component(Discordy.messages.Attachmentpresigner, "Attachment presigner", $techn="S3 client", $descr="Presigned PUT/GET on the attachments bucket.", $tags="", $link="")
+  }
+
+  ContainerDb(Discordy.ScyllaDB, "ScyllaDB", $techn="ScyllaDB 2025.x, developer mode", $descr="Messages, reactions, pins, read states, channel_last_message (keyspace discordy).", $tags="", $link="")
+  ContainerQueue(Discordy.Redpanda, "Redpanda", $techn="Redpanda 25.x (Kafka API)", $descr="Event bus: discordy.{guild,message,user,interaction,telemetry,audit}.v1.", $tags="", $link="")
+  ContainerDb(Discordy.MinIO, "MinIO", $techn="MinIO (S3 API)", $descr="Assets, attachments and the client update feed.", $tags="", $link="")
+  Container(Discordy.api, "api", $techn="Rust, Axum, SQLx", $descr="Auth, users, devices, relationships, guilds, channels, roles, permissions, invites, bots, interactions, webhooks, MLS key packages, admin endpoints; transactional outbox.", $tags="", $link="")
+}
+
+Rel(Discordy.api, Discordy.Redpanda, "Publishes guild, user, interaction, audit events", $techn="Kafka", $tags="", $link="")
+Rel(Discordy.api, Discordy.MinIO, "Presigns asset uploads", $techn="S3", $tags="", $link="")
+Rel(Discordy.messages.PublicREST, Discordy.messages.Authextractor, "Guarded by", $techn="", $tags="", $link="")
+Rel(Discordy.messages.PublicREST, Discordy.messages.Messageusecases, "Invokes", $techn="", $tags="", $link="")
+Rel(Discordy.messages.PublicREST, Discordy.messages.Attachmentusecases, "Invokes", $techn="", $tags="", $link="")
+Rel(Discordy.messages.InternalREST, Discordy.messages.Messageusecases, "Stats, last message id", $techn="", $tags="", $link="")
+Rel(Discordy.messages.Authextractor, Discordy.api, "Introspects bot tokens", $techn="HTTP", $tags="", $link="")
+Rel(Discordy.messages.Messageusecases, Discordy.messages.Messagedomain, "Applies rules from", $techn="", $tags="", $link="")
+Rel(Discordy.messages.Messageusecases, Discordy.messages.Snowflakegenerator, "Generates ids", $techn="", $tags="", $link="")
+Rel(Discordy.messages.Messageusecases, Discordy.messages.Channelaccessclient, "Checks permissions and delivery mode", $techn="", $tags="", $link="")
+Rel(Discordy.messages.Messageusecases, Discordy.messages.Requestcoalescer, "Reads history through", $techn="", $tags="", $link="")
+Rel(Discordy.messages.Messageusecases, Discordy.messages.ScyllaDBrepositories, "Writes through", $techn="", $tags="", $link="")
+Rel(Discordy.messages.Messageusecases, Discordy.messages.Eventpublisher, "Publishes events through", $techn="", $tags="", $link="")
+Rel(Discordy.messages.Attachmentusecases, Discordy.messages.Attachmentpresigner, "Presigns with", $techn="", $tags="", $link="")
+Rel(Discordy.messages.Requestcoalescer, Discordy.messages.ScyllaDBrepositories, "Single in-flight query", $techn="", $tags="", $link="")
+Rel(Discordy.messages.Channelaccessclient, Discordy.api, "GET /internal/v1/channels/{id}/access/{user}", $techn="HTTP", $tags="", $link="")
+Rel(Discordy.messages.ScyllaDBrepositories, Discordy.ScyllaDB, "CQL", $techn="", $tags="", $link="")
+Rel(Discordy.messages.Eventpublisher, Discordy.Redpanda, "discordy.message.v1", $techn="Kafka", $tags="", $link="")
+Rel(Discordy.messages.Attachmentpresigner, Discordy.MinIO, "Presigns", $techn="S3", $tags="", $link="")
+
+SHOW_LEGEND(true)
+hide stereotypes
+@enduml
