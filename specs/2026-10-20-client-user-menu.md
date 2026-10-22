@@ -58,4 +58,4 @@ Left-click on a user opens the profile popout on every surface that previously d
 | Gap | Handling |
 | --- | --- |
 | No user notes endpoint | Notes stored on the device; api#51 |
-| `delete_message_seconds` accepted but not enforced on ban | Client sends it; enforcement needs a messages-service purge, api#52 |
+| `delete_message_seconds` on ban | Enforced since api#52: api emits `BAN_MESSAGE_PURGE`, messages purges asynchronously; see [moderation tools and ban purge](2026-10-22-moderation-tools-and-ban-purge.md) |

@@ -89,7 +89,7 @@ Status counts in the matrix below: Implemented 32, Partial 25, Missing 50. 66 ne
 | Servers | Integrations and webhooks UI | Yes | Missing | - | [client#61](https://github.com/discordy-voics/client/issues/61) | P1 |
 | Servers | Audit log (last 100) | Yes | Implemented | No filters/pagination in UI | - | - |
 | Servers | Member management: nickname, roles, kick, ban, timeout | Yes | Implemented | - | - | - |
-| Servers | Ban delete-history, bulk delete, member filters, reports | Yes | Partial | - | [client#62](https://github.com/discordy-voics/client/issues/62) | P1 |
+| Servers | Ban delete-history, bulk delete, member filters, reports | Yes | Partial (history purge, bulk delete, filters, bulk kick/ban, audit filters done; reports and prune need api routes) | - | [client#62](https://github.com/discordy-voics/client/issues/62) | P1 |
 | Servers | Safety setup: verification, explicit filter, raid protection | Yes | Missing | - | [api#38](https://github.com/discordy-voics/api/issues/38) | P1 |
 | Servers | AutoMod | Yes | Missing | - | [api#39](https://github.com/discordy-voics/api/issues/39) | P1 |
 | Servers | Member pruning | Yes | Missing | - | [api#48](https://github.com/discordy-voics/api/issues/48) | P2 |

@@ -69,7 +69,7 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 | Ports | 8082: public (ingress routes `/api/v1/channels/*/messages*`, `/api/v1/guilds/*/messages/search` and the CDN host's `/attachments/*` signed downloads and `/external/*` signed media proxy here) and internal |
 | Owns data | ScyllaDB keyspace `discordy` (messages, reactions, pins, read_states, channel_last_message); MinIO bucket `discordy-attachments`; Postgres database `discordy_search` (`search_messages` index, `search_offsets`, `search_state`; rebuildable, text not stored) |
 | Publishes | `discordy.message.v1` (keyed by `channel_id`) |
-| Consumes | `discordy.message.v1` (all partitions, own offsets in Postgres) to keep the search index current |
+| Consumes | `discordy.message.v1` (all partitions, own offsets in Postgres) to keep the search index current; `discordy.guild.v1` `BAN_MESSAGE_PURGE` (offsets in the same Postgres, start at the end of the topic) to purge a banned user's recent messages, see [spec](../specs/2026-10-22-moderation-tools-and-ban-purge.md) |
 | Depends on | ScyllaDB, Redpanda, MinIO, Postgres (search, optional), api (`/internal/v1/channels/{id}/access/{user}` with a 5 s cache; bot token introspection with a 60 s cache) |
 | Called by | client, bots, api, gateway, admin-bff |
 | Snowflake workers | 64–127 |
