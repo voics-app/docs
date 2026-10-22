@@ -24,7 +24,7 @@ Every environment is one node running microk8s ([ADR-0008](../adr/0008-microk8s-
 ./env.sh destroy <env>     # terraform destroy, never for production
 ```
 
-`up` runs these stages in order: `provision` (Terraform, then the node bootstrap scripts), `kubeconfig`, `flux`, `openbao`, `secrets`, `cloudflare`, `public-ip`, `wait` (every Flux layer Ready), `seed` (demo data, non-production only) and `verify`. `ONLY=stage1,stage2 ./env.sh up <env>` runs a subset.
+`up` runs these stages in order: `provision` (Terraform, then the node bootstrap scripts), `kubeconfig`, `flux`, `openbao`, `secrets`, `cloudflare`, `public-ip`, `wait` (every Flux layer Ready), `seed` (demo data, non-production only) and `verify`. The `openbao` stage creates the static seal key Secret (`openbao-seal-key`, copy in the key store), initialises with recovery keys and leaves OpenBao auto-unsealing (`SEAL_MODE=static` in `clusters/<env>/env.conf`, [ADR-0021](../adr/0021-openbao-auto-unseal.md)), so a reboot of any environment needs no manual unseal. `ONLY=stage1,stage2 ./env.sh up <env>` runs a subset.
 
 ## Terraform
 

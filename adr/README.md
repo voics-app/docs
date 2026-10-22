@@ -24,6 +24,7 @@ This directory holds Discordy's architecture decisions. The records use the [MAD
 | [0018](0018-message-search-postgres-fts.md) | Message search on PostgreSQL full-text, fed from the event bus | proposed |
 | [0019](0019-link-unfurling-and-media-proxy.md) | Link unfurling and the embed media proxy | proposed |
 | [0020](0020-message-forwarding.md) | Message forwarding | accepted |
+| [0021](0021-openbao-auto-unseal.md) | OpenBao auto-unseal with a static key | accepted |
 
 ## Writing a new ADR
 

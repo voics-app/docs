@@ -41,7 +41,7 @@ URLs, login methods and rights per tool: [Ops tools and URLs](../runbooks/ops-ac
 
 ## OpenBao: unseal and admin
 
-OpenBao starts **sealed** after every restart or reboot. Unseal it with the quick path from a gitops checkout on the owner PC (`bootstrap/20-openbao.sh`); the keys are Shamir 3 of 5 and live in the DPAPI key store. The bootstrap root token is revoked by design; for admin work use the `owner` userpass login with policy `owner-admin`. Procedure: [OpenBao unseal](../runbooks/openbao-unseal.md).
+OpenBao **unseals itself** after every restart or reboot (static-key seal, [ADR-0021](../adr/0021-openbao-auto-unseal.md)); the key is the Secret `openbao-seal-key`, with an owner copy in the DPAPI key store. The old Shamir shares (3 of 5) are now recovery keys. The ops portal shows a live sealed banner, and the `openbao-seal-check` CronJob feeds `openbao_sealed` to Grafana and an optional webhook. If it is ever sealed anyway, run `bootstrap/20-openbao.sh` from a gitops checkout on the owner PC. The bootstrap root token is revoked by design; for admin work use the `owner` userpass login with policy `owner-admin`. Procedure: [OpenBao unseal](../runbooks/openbao-unseal.md).
 
 ## When something is wrong
 
@@ -50,4 +50,4 @@ OpenBao starts **sealed** after every restart or reboot. Unseal it with the quic
 | 403 everywhere | Your public IP changed: update `OPS_ALLOWED_CIDRS` in `cluster-config` and merge it through to `main` |
 | Cloudflare 530 or 1033 | The tunnel is down: `kubectl -n voics-system get pods` and look for cloudflared |
 | Headlamp unauthorized | The token expired (30 days): create a new one |
-| Secrets not refreshing | OpenBao is sealed |
+| Secrets not refreshing | OpenBao is sealed (portal banner; auto-unseal failed, see the runbook) |
