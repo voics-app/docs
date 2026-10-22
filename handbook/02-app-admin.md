@@ -38,3 +38,18 @@ make lint
 ```
 
 Release: tag `vX.Y.Z`, stable image, Flux. A new platform service needs its job name added to `PLATFORM_SERVICES` ([Service catalog](../services/catalog.md)).
+
+## Production data sources (verified on gen-serv, v0.1.6, 2026-10-22)
+
+| Page / panel | Source | State |
+|---|---|---|
+| Platform health: services up | `sum by (job) (up)` / `count by (job) (up)` | live for admin-bff, api, messages, gateway, voice-signaling, sfu |
+| Request rate, error ratio | `http_requests_total` (admin-bff) or `messages_http_requests_total` (messages) | live for those two; api and gateway expose no request counters yet |
+| Latency p95, DB latency p95 | `http_request_duration_seconds_bucket`, `db_query_duration_seconds_bucket` | empty until services export histograms (shown as no data) |
+| Gateway sessions | `discordy_gateway_gauges_sessions_local` by instance | live |
+| Consumer lag | `redpanda_kafka_consumer_group_lag_sum` | empty: Redpanda does not export consumer-group lag yet |
+| Voice nodes | `discordy_voice_node_*` plus gateway admin stats | live (one node, voice-nl-home) |
+| Usage dashboards | usage aggregator counters in Postgres, fed by the `discordy.*.v1` topics | live; counts match the Redpanda topic offsets |
+| Overview, users, guilds | api `/internal/v1/admin/*` | live |
+
+The Cloudflare Access login cannot be scripted, so verification queried VictoriaMetrics directly with the BFF's own PromQL and checked `/readyz` and `/metrics` through a port-forward.
