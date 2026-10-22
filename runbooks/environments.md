@@ -32,7 +32,7 @@ Nothing below is stored in git. Credentials go in environment variables of the s
 | Cloudflare API token (DNS, Tunnel, Access edit on `voics.nl`) | `40-cloudflare.sh` | `CLOUDFLARE_API_TOKEN`, plus `OWNER_EMAIL` for Access |
 | GHCR credentials with `read:packages` | `25-secrets.sh` (dev) | `GHCR_USERNAME`, `GHCR_TOKEN` |
 | GitHub PAT for the runner scale set | `20-openbao.sh` / `25-secrets.sh` | `ARC_GITHUB_TOKEN` |
-| Key store for the OpenBao unseal keys | `20-openbao.sh` | 1Password (`op`) or Windows DPAPI; items are named per environment (`OpenBao dev unseal key N`) |
+| Key store for the OpenBao recovery keys and seal key | `20-openbao.sh` | 1Password (`op`) or Windows DPAPI; items are named per environment (`OpenBao dev unseal key N`, `OpenBao dev seal key`) |
 | Tools on the operator machine | all | `terraform` (1.6 or newer), `kubectl`, `flux`, `gh`, `jq`, `curl`, `openssl`, `ssh`, `perl` |
 
 ## New environment from scratch
@@ -118,7 +118,7 @@ the stable `/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_<id>` path to `15-et
 | `provision` | `terraform apply`: machine, disks, network; then the cluster module runs `05-install-microk8s.sh`, `10-prepare-node.sh`, `15-etcd-disk.sh` over SSH | yes: scripts are idempotent, the step reruns only when scripts, host or device change |
 | `kubeconfig` | `microk8s config` into `~/.kube/discordy-<env>.config` | yes |
 | `flux` | `30-flux.sh`: Flux bootstrap with `clusters/<env>` on the environment's branch | yes: does nothing when Flux already syncs the repository |
-| `openbao` | `20-openbao.sh`: init (5 shares, threshold 3), keys to the key store, unseal, policies, Kubernetes auth roles | yes: afterwards it only unseals |
+| `openbao` | `20-openbao.sh`: create the static seal key Secret, init (5 recovery shares, threshold 3), keys to the key store, auto-unseal, policies, Kubernetes auth roles | yes: afterwards it only checks (or restores the seal key Secret) |
 | `secrets` | dev: `25-secrets.sh` generates every secret of `secrets/inventory.yaml` into `kv/discordy-dev/*`; production: set the GitHub environment secrets and run the `secrets-sync` workflow | yes: existing paths are left alone |
 | `cloudflare` | `40-cloudflare.sh`: tunnel, DNS for this environment's hosts only, Access applications | yes: existing records are never touched |
 | `public-ip` | `50-public-ip.sh`: writes `HOME_PUBLIC_IP` into the environment's cluster-config and commits it | yes |
@@ -185,7 +185,7 @@ Decide first:
 
 ### Rebuild
 
-1. **Protect the existing OpenBao keys.** `20-openbao.sh` stores new unseal keys under the names `OpenBao unseal key N` and `OpenBao root token`. With the DPAPI store a new init **overwrites** the files, and with 1Password it adds duplicates. If you will restore an OpenBao snapshot ([OpenBao backup](backup-restore.md#openbao)), keep the old keys: do **not** run the `openbao` stage's init; follow [OpenBao unseal](openbao-unseal.md) to restore the snapshot instead. If you will re-initialise and rely on GitHub as the source of truth, copy the old key files aside first.
+1. **Protect the existing OpenBao keys.** A restored data directory also needs the **seal key** (`OpenBao seal key` in the key store): `20-openbao.sh` re-creates the Secret from it. `20-openbao.sh` stores new recovery keys under the names `OpenBao unseal key N` and `OpenBao root token`. With the DPAPI store a new init **overwrites** the files, and with 1Password it adds duplicates. If you will restore an OpenBao snapshot ([OpenBao backup](backup-restore.md#openbao)), keep the old keys: do **not** run the `openbao` stage's init; follow [OpenBao unseal](openbao-unseal.md) to restore the snapshot instead. If you will re-initialise and rely on GitHub as the source of truth, copy the old key files aside first.
 2. **Machine.** In `infra/terraform/envs/gen-serv`, fill in `terraform.tfvars` from your notes (`qm config 107` of a surviving copy, or the table above) and set `run_bootstrap = true`. Drop the lost VM from the state: `terraform state rm 'module.node'` if it is still in there.
 3. **Bring-up:**
 

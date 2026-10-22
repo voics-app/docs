@@ -56,11 +56,11 @@ export function dashboardBlocks({ rows, dbs, faqUrl, rowUrl, syncedDuplicate }) 
   ];
   const handbook = rows.filter((r) => r.db === 'handbook').sort((a, b) => a.props.Order.number - b.props.Order.number || a.title.localeCompare(b.title));
   const tasks = [
-    toggle('Unseal OpenBao after a reboot', [
-      numbered('From a gitops checkout on the owner PC run the command below (keys come from the DPAPI key store).'),
+    toggle('OpenBao is sealed (it normally unseals itself)', [
+      numbered('OpenBao auto-unseals after a restart or reboot (static key, ADR-0021). Only act if the ops portal banner, the webhook or kubectl says Sealed.'),
+      numbered('Check the Secret openbao-seal-key exists in voics-system, then from a gitops checkout on the owner PC run the command below (keys come from the DPAPI key store).'),
       code('KUBECONFIG=~/.kube/discordy-gen-serv.yaml KUBECTL=kubectl KEYSTORE=dpapi bash bootstrap/20-openbao.sh'),
-      numbered('Wait for "OpenBao unsealed". If it says "cannot reach OpenBao", the pod is still restarting: run it again a minute later.'),
-      numbered('Check kubectl get clustersecretstore openbao is Valid; restart deploy/external-secrets in voics-system if not.'),
+      numbered('Wait for "OpenBao auto-unsealed". Check kubectl get clustersecretstore openbao is Valid; restart deploy/external-secrets in voics-system if not.'),
       para([...rt('Full procedure: '), ...link('OpenBao unseal runbook', rowUrl('runbooks/openbao-unseal.md'))]),
     ]),
     toggle('Deploy a release', [

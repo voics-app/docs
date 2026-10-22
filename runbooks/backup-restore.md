@@ -111,6 +111,8 @@ mc mirror offsite/discordy-attachments discordy/discordy-attachments
 
 ## OpenBao
 
+> gen-serv runs OpenBao on **pebbledb** storage, so `bao operator raft snapshot` does not apply. Take a consistent copy by scaling `sts/openbao` to 0, tarring the PVC from a helper pod (`tar czf - -C /data .`) and scaling back up (the pod unseals itself, [ADR-0021](../adr/0021-openbao-auto-unseal.md)). Keep the tar apart from the seal key; restoring needs the data plus the seal key Secret (`<KEYSTORE_PREFIX> seal key` in the key store). The pre-migration copy of 2026-10-22 is in `%USERPROFILE%\.discordy\openbao\backup\`. The Raft commands below apply if the storage backend is ever switched to Raft.
+
 ```bash
 # Snapshot (daily CronJob; run by hand before upgrades)
 kubectl -n voics-system exec openbao-0 -- sh -c 'BAO_TOKEN=$(cat /var/run/secrets/bao-snapshot-token) bao operator raft snapshot save /tmp/bao.snap'
@@ -172,7 +174,7 @@ The Proxmox weekly `vzdump` of gen-serv is the last-resort recovery path.
 
 1. Restore the VM image from the Proxmox backup storage. **Restore it under a new VMID first, with the network disconnected**, to avoid an IP conflict.
 2. Boot it and stop the old VM, then attach the network.
-3. Unseal OpenBao ([routine unseal](openbao-unseal.md#routine-unseal)).
+3. Unseal OpenBao ([routine unseal](openbao-unseal.md#what-to-do-when-it-is-sealed)).
 4. Run `flux reconcile kustomization flux-system --with-source`. Flux converges everything that changed after the image was taken.
 5. Restore the data stores that are newer than the image (Postgres PITR, Scylla, MinIO) as described above.
 
