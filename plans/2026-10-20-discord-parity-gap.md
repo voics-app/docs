@@ -60,7 +60,7 @@ Status counts in the matrix below: Implemented 32, Partial 25, Missing 50. 66 ne
 | Messaging | Link unfurling and embeds for user links | Yes | Partial | Bot embeds render only | [messages#12](https://github.com/discordy-voics/messages/issues/12) | P0 |
 | Messaging | Polls | Yes | Missing | - | [messages#14](https://github.com/discordy-voics/messages/issues/14) | P1 |
 | Messaging | Voice messages | Yes | Missing | - | [messages#15](https://github.com/discordy-voics/messages/issues/15) | P1 |
-| Messaging | Message forwarding | Yes | Missing | - | [messages#13](https://github.com/discordy-voics/messages/issues/13) | P1 |
+| Messaging | Message forwarding | Yes | Implemented | Snapshot, attachment copies, picker ([ADR 0020](../adr/0020-message-forwarding.md)) | - | - |
 | Messaging | Copy link, mark unread, report, delete confirm | Yes | Partial | - | [client#56](https://github.com/discordy-voics/client/issues/56) | P1 |
 | Messaging | Pins | Yes | Implemented | Pin panel and routes | - | - |
 | Messaging | Message search with filters | Yes | Missing | UI and API | [client#47](https://github.com/discordy-voics/client/issues/47) | P0 |
