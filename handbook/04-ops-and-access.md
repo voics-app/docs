@@ -21,7 +21,8 @@ The admin panel adds a third check: `ADMIN_ALLOWED_EMAILS`.
 
 | Tool | What it is for |
 |---|---|
-| Ops portal | Landing page linking everything |
+| Ops portal | Landing page linking everything, with the red Active alerts banner |
+| vmalert and alert relay | Alert rules (replicas, services, probes, Flux, OpenBao) and the optional webhook; see [Alerting](../runbooks/alerting.md) |
 | Headlamp | Kubernetes UI with the Flux plugin (Kustomizations, HelmReleases, reconcile and suspend); login with a service-account token |
 | Grafana | Dashboards from VictoriaMetrics |
 | pgweb | PostgreSQL browser: users, servers, channels, roles, invites |
@@ -41,7 +42,7 @@ URLs, login methods and rights per tool: [Ops tools and URLs](../runbooks/ops-ac
 
 ## OpenBao: unseal and admin
 
-OpenBao **unseals itself** after every restart or reboot (static-key seal, [ADR-0021](../adr/0021-openbao-auto-unseal.md)); the key is the Secret `openbao-seal-key`, with an owner copy in the DPAPI key store. The old Shamir shares (3 of 5) are now recovery keys. The ops portal shows a live sealed banner, and the `openbao-seal-check` CronJob feeds `openbao_sealed` to Grafana and an optional webhook. If it is ever sealed anyway, run `bootstrap/20-openbao.sh` from a gitops checkout on the owner PC. The bootstrap root token is revoked by design; for admin work use the `owner` userpass login with policy `owner-admin`. Procedure: [OpenBao unseal](../runbooks/openbao-unseal.md).
+OpenBao **unseals itself** after every restart or reboot (static-key seal, [ADR-0021](../adr/0021-openbao-auto-unseal.md)); the key is the Secret `openbao-seal-key`, with an owner copy in the DPAPI key store. The old Shamir shares (3 of 5) are now recovery keys. The ops portal shows a live sealed banner, and the `openbao-seal-check` CronJob feeds `openbao_sealed` to Grafana and the `OpenBaoSealed` alert. If it is ever sealed anyway, run `bootstrap/20-openbao.sh` from a gitops checkout on the owner PC. The bootstrap root token is revoked by design; for admin work use the `owner` userpass login with policy `owner-admin`. Procedure: [OpenBao unseal](../runbooks/openbao-unseal.md).
 
 ## When something is wrong
 
@@ -51,3 +52,4 @@ OpenBao **unseals itself** after every restart or reboot (static-key seal, [ADR-
 | Cloudflare 530 or 1033 | The tunnel is down: `kubectl -n voics-system get pods` and look for cloudflared |
 | Headlamp unauthorized | The token expired (30 days): create a new one |
 | Secrets not refreshing | OpenBao is sealed (portal banner; auto-unseal failed, see the runbook) |
+| Red alerts banner on the portal, or a webhook message | [Alerting](../runbooks/alerting.md#when-an-alert-fires) |

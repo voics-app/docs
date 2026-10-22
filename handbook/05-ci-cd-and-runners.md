@@ -25,6 +25,8 @@ Images are tagged `X.Y.Z-dev.N` (develop), `X.Y.Z-rc.N` (release and hotfix bran
 
 The website and the invite page publish on every merge to `main`; the desktop installer on a tag ([Desktop client release](09-desktop-client-release.md)).
 
+A release whose new pod never becomes ready does not stay silent: Flux keeps the old pod serving, and the `DeploymentNotReady`, `ServiceDown` and `EndpointProbeFailing` alerts fire after 2 to 5 minutes (banner on the ops portal, webhook message). See [Alerting](../runbooks/alerting.md). After every release check the portal banner is green.
+
 ## CI caching
 
 What is cached, per layer (gitops#38; shared workflows `.github` v0.5.16 and newer):
