@@ -41,6 +41,10 @@ pnpm test:e2e        # Playwright against the real Electron app and a fake backe
 
 Releases and the auto-updater are explained in [Desktop client release and auto-update](09-desktop-client-release.md). Renaming the app is a `brand.json` edit.
 
+## Settings that follow your account
+
+Appearance (theme, density, accent, text size, reduce motion), link previews, notification sounds and ringtone, mentions-only and emoji preferences are stored on the server in your user settings (`preferences`, merged key by key) and appear on every device you sign in on. The prefs store keeps a localStorage copy as a cache and sends changes as a debounced PATCH with rollback; the first sign-in per device uploads values you had changed locally before sync existed. Devices, volumes, keybinds, push-to-talk, desktop notification toggle and view state stay on the device. The full table is in [Synced user settings](../specs/2026-10-22-synced-user-settings.md).
+
 ## Sounds
 
 The desktop client plays short sound effects and the call ringtone. All of them are synthesized with Web Audio (original, no audio files, no licensing), through one shared `AudioContext` that is resumed on use and routed to the selected output device at the output volume.
