@@ -52,4 +52,4 @@ OpenBao **unseals itself** after every restart or reboot (static-key seal, [ADR-
 | Cloudflare 530 or 1033 | The tunnel is down: `kubectl -n voics-system get pods` and look for cloudflared |
 | Headlamp unauthorized | The token expired (30 days): create a new one |
 | Secrets not refreshing | OpenBao is sealed (portal banner; auto-unseal failed, see the runbook) |
-| Red alerts banner on the portal, or a webhook message | [Alerting](../runbooks/alerting.md
+| Red alerts banner on the portal, or a webhook message | [Alerting](../runbooks/alerting.md#when-an-alert-fires) |
