@@ -201,6 +201,10 @@ git push origin --delete release/0.2.0
 
 Flux image automation follows the new tag. See [Deployment via Flux](#deployment-via-flux).
 
+### CI caches during a release
+
+The first image build after a release of the shared `.github` workflows, or after a `Cargo.lock` change, is slower while the registry layer cache (`:buildcache` tag of each image) is rebuilt; later builds reuse it. To start from a clean cache, delete the `buildcache` tag of the image in GHCR and run the weekly `cache-cleanup` workflow by hand. The `.github` repository itself is released through a `release/X.Y.Z` branch (the git-flow guard rejects `develop` into `main`) and a `vX.Y.Z` tag. See [CI caching](../handbook/05-ci-cd-and-runners.md#ci-caching).
+
 ## Hotfix
 
 ```bash

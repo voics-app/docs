@@ -25,6 +25,37 @@ Images are tagged `X.Y.Z-dev.N` (develop), `X.Y.Z-rc.N` (release and hotfix bran
 
 The website and the invite page publish on every merge to `main`; the desktop installer on a tag ([Desktop client release](09-desktop-client-release.md)).
 
+## CI caching
+
+What is cached, per layer (gitops#38; shared workflows `.github` v0.5.16 and newer):
+
+| Layer | Hosted runners | Self-hosted runners |
+|---|---|---|
+| Docker layers | Registry cache in GHCR (`ghcr.io/discordy-voics/<image>:buildcache`, `mode=max`, OCI), written by the push build on develop, main, release branches and tags | Host builder cache plus registry cache import; the pushed image carries an inline cache (the `docker` driver cannot export a registry cache) |
+| Dockerfiles | BuildKit cache mounts (cargo registry and git, pnpm store, hex packages) and cargo-chef (api, messages, voice sfu, admin bff) so the dependency layer is rebuilt only when `Cargo.toml` or `Cargo.lock` change | Same |
+| Rust jobs | `Swatinem/rust-cache` | `rust-cache` plus sccache in `/cache/sccache` |
+| Node and Elixir jobs | `setup-node` pnpm cache, `actions/cache` for `deps` and `_build` | Persistent store in `/cache` (`npm_config_store_dir`, `HEX_HOME`, `MIX_HOME`) |
+| Hygiene | Weekly `cache-cleanup.yml` in every heavy repo deletes caches not used for 7 days and trims to 8 GB (limit is 10 GB per repo); run it by hand with the dry-run input | same |
+
+`scripts/runner.sh up` mounts the named volume `discordy-ci-cache-<label>` at `/cache` in every runner container (cargo registry and git are symlinked into `~/.cargo`), so caches survive `down` and `up`. Reset them with `docker volume rm discordy-ci-cache-<label>`; `runner.sh status` prints the size.
+
+The registry cache lives next to the image as the tag `buildcache`; the GHCR retention workflow only prunes prerelease tags, so it keeps it. sccache is enabled on self-hosted runners only: on hosted runners it did not help next to rust-cache (api clippy went from 48 s to 105 s, tests unchanged).
+
+Measured on hosted runners (job duration in seconds, develop push runs). Before: the last three runs with the old GitHub Actions layer cache. After: the first run with the new caches (cold) and a re-run of the same commit (warm).
+
+| Job | Before | After, cold | After, warm |
+|---|---|---|---|
+| api docker | 447 to 894 | 708 | 319 |
+| api test | 294 to 422 | 638 | 359 |
+| api clippy | 41 to 56 | 211 | 105 |
+| messages docker | 84 to 434 | n/a | 89 |
+| messages test | 134 to 237 | 384 | 160 |
+| messages clippy | 39 to 76 | 143 | 39 |
+| client docker | 113 to 151 | 148 | 59 |
+| client checks (node) | 78 to 114 | 99 | 136 |
+
+Docker builds win when source changes but dependencies do not (api halves, client halves). Rust test and clippy timings are dominated by variance and cache restore; they did not improve. The old cache hit rate was already high for messages docker, so it is unchanged.
+
 ## Where jobs run
 
 GitHub-hosted `ubuntu-latest` is the default. When the GitHub Free minutes run low you can send every repository to your own machines and back with one command.
