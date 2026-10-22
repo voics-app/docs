@@ -5,7 +5,7 @@ Summary: gateway 0.3.0 and 0.4.0 stayed 0/1 Ready on production for 2+ hours (re
 | | |
 |---|---|
 | Impact | The gateway (WebSocket realtime) was down on production until the rollback to 0.2.1; the rest of the platform kept working |
-| Detected | By hand after 2+ hours; no alert fired (led to [Alerting](alerting.md), gitops#52) |
+| Detected | By hand after 2+ hours; no alert fired (led to the alerting work, gitops#52) |
 | Root cause | `VoiceNodeDirectory` reopened the shared eetcd connection on every (re)start and resync, and handled the `already_started` answer wrongly |
 | Fix | gateway#28 (code), release 0.4.1, gitops#55 (cap removed, tag pinned) |
 | Tracking | gateway#27 |
