@@ -174,7 +174,7 @@ The Proxmox weekly `vzdump` of gen-serv is the last-resort recovery path.
 
 1. Restore the VM image from the Proxmox backup storage. **Restore it under a new VMID first, with the network disconnected**, to avoid an IP conflict.
 2. Boot it and stop the old VM, then attach the network.
-3. Unseal OpenBao ([routine unseal](openbao-unseal.md#routine-unseal)).
+3. Unseal OpenBao ([routine unseal](openbao-unseal.md#what-to-do-when-it-is-sealed)).
 4. Run `flux reconcile kustomization flux-system --with-source`. Flux converges everything that changed after the image was taken.
 5. Restore the data stores that are newer than the image (Postgres PITR, Scylla, MinIO) as described above.
 
