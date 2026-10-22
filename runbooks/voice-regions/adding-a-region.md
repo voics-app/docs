@@ -120,9 +120,12 @@ Fill in the [capacity worksheet](#appendix-a-capacity-worksheet) before ordering
 
 ## Step 2: Network requirements
 
+**LAN clients and NAT hairpin.** Most home routers do not hairpin UDP: a client on the same LAN as the node cannot reach the node through the router's own public IP. The SFU therefore offers two ICE host candidates in SESSION_DESCRIPTION: the node's LAN address (`VOICE_LAN_IP`, set from the Kubernetes downward API `status.hostIP` in `regions/_template/voice.yaml`) first, then the public `VOICE_PUBLIC_IP`. LAN clients connect directly to the LAN candidate and external clients use the public one; ICE picks whichever pair works. If both addresses are equal (a node with a public IP) the list is deduplicated. Clients also get TURN servers (`TURN_URLS`, time-limited credentials from the gateway); coturn exempts the node IP from its private-range peer deny list so a relay can reach the SFU.
+
 | Direction | Port / protocol | From → to | Why |
 |---|---|---|---|
 | Inbound | **UDP 50000** (or the region's `VOICE_UDP_PORT`) | Internet → node | SFU media (ICE-lite, DTLS-SRTP) |
+| Inbound | UDP/TCP **3478** and UDP **49160-49170** (gen-serv: coturn) | Internet → node | TURN relay fallback for clients whose UDP to the SFU is blocked; the voice client uses the TURN servers from the gateway READY payload |
 | Outbound | TCP 443 | Node → internet | GHCR image pulls, Cloudflare tunnel (standalone), GitHub (Flux) |
 | Outbound | UDP 7844 / TCP 7844 | Node → Cloudflare | Tunnel transport for `cloudflared` (standalone only) |
 | Outbound | UDP 51820 | Node → gen-serv public IP | WireGuard to the control plane (remote sites) |

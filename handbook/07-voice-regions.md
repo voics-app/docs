@@ -25,6 +25,10 @@ A region needs a node that reaches the central etcd and Redpanda, a public UDP p
 
 Rule of thumb: joined for anything on the home LAN, standalone for every other site. Never stretch a microk8s control plane across the internet.
 
+## Networking: LAN candidate, hairpin and TURN
+
+The SFU is ICE-lite and offers up to two host candidates: the node LAN IP (`VOICE_LAN_IP`, from `status.hostIP`) and the public IP. Clients on the node's own LAN connect directly (routers rarely hairpin UDP to their own public address); external clients use the public candidate. Clients also receive TURN servers from the gateway (`TURN_URLS`, time-limited credentials) and relay through coturn when UDP to the SFU is blocked. See [troubleshooting](../runbooks/voice-regions/troubleshooting.md#lan-clients-nat-hairpin).
+
 ## Procedures
 
 | Task | Runbook |
