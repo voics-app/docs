@@ -6,8 +6,23 @@ Each production service:
 
 - Exposes `GET /healthz`, `GET /readyz` and `GET /metrics`.
 - Is scraped by VictoriaMetrics under **its own job name**, which the admin health page groups by (`count by (job) (up)`): `api`, `messages`, `gateway`, `voice-signaling` (port 4100), `sfu` (port 4102) and `admin-bff`. On the cluster these jobs live in `gitops/infrastructure/controllers/victoria-metrics/helmrelease.yaml` (`server.scrape.extraScrapeConfigs`), and the pods set `prometheus.io/scrape: "false"` so the generic `kubernetes-pods` job does not count them twice. Locally they live in `gitops/local/victoriametrics/scrape.yml`. A new service needs a job here too, and its name must match `PLATFORM_SERVICES` in `admin/bff/src/domain/service_health.rs`.
+- Exports the **standard metric set** below (one naming scheme for every service; the `job` label identifies the service, so metric names carry no service prefix).
 - Logs JSON to stdout.
 - Exports OpenTelemetry data when `OTEL_EXPORTER_OTLP_ENDPOINT` is set.
+
+**Standard metrics** (the admin platform-health tiles query these; do not rename without updating `admin/bff/src/infrastructure/victoria/platform_metrics.rs`):
+
+| Metric | Type | Labels | Exported by |
+|---|---|---|---|
+| `http_requests_total` | counter | `method`, `route` (matched template, `unmatched` / `/*_path` for the rest), `status` (class: `1xx`..`5xx`) | api, messages, gateway, admin-bff |
+| `http_request_duration_seconds` | histogram | same as above | api, messages, gateway, admin-bff |
+| `db_query_duration_seconds` | histogram | `operation` (`select`/`insert`/`update`/`delete`/`other` for Postgres, `read`/`write` for Scylla); messages adds `db` (`postgres`/`scylla`), api uses `db="postgres"` | api (sqlx), messages (Postgres search, Scylla) |
+| `discordy_gateway_session_started_count`, `discordy_gateway_session_closed_count{code}` | counter | | gateway (WebSocket connect / close) |
+| `discordy_gateway_dispatch_sent_count{event}`, `discordy_gateway_events_consumed_count{topic,outcome}` | counter | | gateway (event dispatch) |
+| `discordy_gateway_gauges_sessions_local` | gauge | | gateway |
+| `redpanda_kafka_consumer_group_lag_sum` / `_max` | gauge | `redpanda_group` | Redpanda `/public_metrics` (cluster property `enable_consumer_group_metrics` includes `consumer_lag`, set by the `redpanda-topics` Job in gitops) |
+
+Histogram buckets (seconds) are identical everywhere: 0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 10. WebSocket upgrades on the gateway are counted under `status="1xx"` (101). Postgres latency is taken from sqlx's per-statement `elapsed_secs` tracing events by a small tracing layer (no call-site changes); Scylla latency is measured in the shared `execute` / `fetch_all` helpers. voice-signaling and sfu are not yet covered (tracked separately).
 
 **Common env vars** (every backend service):
 
