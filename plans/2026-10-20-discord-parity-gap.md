@@ -35,7 +35,7 @@ Status counts in the matrix below: Implemented 32, Partial 25, Missing 50. 66 ne
 | Profile and presence | Avatar, display name, bio, accent colour | Yes | Implemented | - | - | - |
 | Profile and presence | Banner edit, pronouns, theme colours, per-server profile | Yes | Partial | Banner in API but not in UI; others missing | [api#43](https://github.com/discordy-voics/api/issues/43) | P1 |
 | Profile and presence | Status (online/idle/dnd/invisible), custom status | Yes | Implemented | Dialog and gateway op exist | - | - |
-| Profile and presence | Automatic idle | Yes | Missing | No idle detection | [client#70](https://github.com/discordy-voics/client/issues/70) | P1 |
+| Profile and presence | Automatic idle | Yes | Implemented | powerMonitor idle and lock, manual DND respected (client#151) | [client#70](https://github.com/discordy-voics/client/issues/70) | P1 |
 | Profile and presence | Activity / game detection / Rich Presence / overlay | Yes | Missing | Always sends empty activities | [client#73](https://github.com/discordy-voics/client/issues/73) | P2 |
 | Profile and presence | Connections (linked accounts) | Yes | Missing | - | [api#46](https://github.com/discordy-voics/api/issues/46) | P2 |
 | Profile and presence | Profile popout: mutual servers/friends, notes, roles | Yes | Partial | Plain dialog | [client#52](https://github.com/discordy-voics/client/issues/52) | P0 |
@@ -95,7 +95,7 @@ Status counts in the matrix below: Implemented 32, Partial 25, Missing 50. 66 ne
 | Servers | Member pruning | Yes | Missing | - | [api#48](https://github.com/discordy-voics/api/issues/48) | P2 |
 | Servers | Scheduled events | Yes | Missing | - | [api#49](https://github.com/discordy-voics/api/issues/49) | P2 |
 | Servers | Age-restricted channel gate | Yes | Missing | - | [client#76](https://github.com/discordy-voics/client/issues/76) | P2 |
-| Servers | Member list grouped by role/presence, search | Yes | Partial | Existing client#34 | [client#71](https://github.com/discordy-voics/client/issues/71) | P1 |
+| Servers | Member list grouped by role/presence, search | Yes | Implemented | Groups, counts, crown, bot tag, hover card, search, windowing (client#151); ranges wait for gateway#12 | [client#71](https://github.com/discordy-voics/client/issues/71) | P1 |
 | Voice and video | Join/leave voice, mute/deafen, PTT, VAD, noise suppression, echo, AGC | Yes | Implemented | - | - | - |
 | Voice and video | Per-user volume, server mute/deafen, timeout | Yes | Implemented | - | - | - |
 | Voice and video | Camera, screen share with audio, presets | Yes | Implemented | Quality issues client#31, #39 | - | - |
