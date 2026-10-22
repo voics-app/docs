@@ -59,7 +59,7 @@ kubectl get clustersecretstore openbao                                          
 kubectl get externalsecret -A                                                         # all SecretSynced
 ```
 
-RESTART_TEST_RESULT
+Outcome on gen-serv (microk8s, OpenBao 2.7.1, 2026-10-22): the migration (`unseal -migrate` with 3 shares) completed and `bao status` shows `Seal Type static`, `Recovery Seal Type shamir`, 5 recovery shares, threshold 3. After `kubectl delete pod openbao-0` the new pod reported `Sealed false` within 8 seconds with no human step, `clustersecretstore/openbao` stayed `Valid` (`Ready True`) and every ExternalSecret was `SecretSynced`. The seal key Secret and the data PVC both survive a node reboot, so a reboot behaves like this pod restart (the VM itself was not rebooted for the test).
 
 ### Seal migration (Shamir to static), as done on gen-serv
 
