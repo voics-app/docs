@@ -45,6 +45,19 @@ Releases and the auto-updater are explained in [Desktop client release and auto-
 
 Appearance (theme, density, accent, text size, reduce motion), link previews, notification sounds and ringtone, mentions-only and emoji preferences are stored on the server in your user settings (`preferences`, merged key by key) and appear on every device you sign in on. The prefs store keeps a localStorage copy as a cache and sends changes as a debounced PATCH with rollback; the first sign-in per device uploads values you had changed locally before sync existed. Devices, volumes, keybinds, push-to-talk, desktop notification toggle and view state stay on the device. The full table is in [Synced user settings](../specs/2026-10-22-synced-user-settings.md).
 
+## Desktop integration settings
+
+Settings > Desktop holds device-local options (never synced to the account), stored in `main-settings.json` in the user data folder and validated in the main process (`src/main/desktop/`):
+
+| Option | Effect |
+| --- | --- |
+| Open Discordy at login | `app.setLoginItemSettings` on Windows and macOS; an XDG autostart entry on Linux. Only packaged builds register, so a dev run never registers the bare Electron binary. |
+| Start minimized | The login item passes `--hidden`; the window stays in the tray at login. A normal launch always shows the window. |
+| Minimize to tray | The close button hides the window (default on Windows and macOS, off on Linux). Quit from the tray menu. Without a tray the close button quits. |
+| Hardware acceleration | `app.disableHardwareAcceleration()` runs at startup from the local settings file, so a change needs a restart (the page offers **Restart now**). |
+
+The tray menu shows Open, the unread and mention summary, Mute and Deafen toggles (the renderer reports its self voice state; clicks are sent back as commands), the version and Quit. A single-instance lock makes a second launch (or a `discordy://` link) focus the existing window. The `discordy://` scheme is registered by the installer (`protocols` in `electron-builder.config.cjs`) and again at each start. Update behaviour is described in [Desktop client release and auto-update](09-desktop-client-release.md).
+
 ## Sounds
 
 The desktop client plays short sound effects and the call ringtone. All of them are synthesized with Web Audio (original, no audio files, no licensing), through one shared `AudioContext` that is resumed on use and routed to the selected output device at the output volume.
