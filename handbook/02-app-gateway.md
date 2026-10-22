@@ -16,6 +16,10 @@ Summary: the realtime WebSocket edge in Elixir: sessions, presence, event fan-ou
 
 Terminates client WebSockets (`wss://discordy-gateway.voics.nl/gateway`, protocol P7): HELLO, IDENTIFY (user JWT or bot token), READY, heartbeats, RESUME from a Valkey buffer within 120 seconds. One cluster-wide process per guild (Horde) filters the fan-out by membership, intents and `VIEW_CHANNEL`. It also aggregates presence, allocates voice nodes from etcd, relays E2EE inbox frames and P2P signaling, and publishes voice-quality telemetry. See the [gateway protocol](../protocols/gateway.md) and [events](../protocols/events.md).
 
+### Presence
+
+Each session's presence is a field of the Valkey hash `presence:sessions:<user_id>` (120 s TTL, refreshed every 30 s while the session lives); the aggregate across sessions (dnd > online > idle, invisible reads as offline) is stored in `presence:agg:<user_id>` and a change is fanned out as `PRESENCE_UPDATE` to the user's guilds and friends. State lives in Valkey, not in a node, so it is the same on every gateway pod. A client learns who is online from three places: the `presences` of each guild's own `GUILD_CREATE` (guilds follow READY as separate dispatches, so clients must read presences there, not only in READY), `GUILD_MEMBERS_CHUNK` when the request sets `presences: true`, and live `PRESENCE_UPDATE`. The api reads the same two keys read-only to compute `approximate_presence_count` on invite previews (a member counts as online when the aggregate is not offline and a live session exists; sampled over the first 10,000 members).
+
 ## Folder map
 
 | Path | What is there |
