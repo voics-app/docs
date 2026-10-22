@@ -17,6 +17,8 @@ This runbook is organised by symptom. Each section moves from the most likely ca
 | Voice token rejected / 4004-style close on IDENTIFY | [Token rejected](#token-rejected) |
 | SFU restarts repeatedly | [SFU crash loop](#sfu-crash-loop) |
 | P2P DMs never connect | [P2P / coturn](#p2p--coturn) |
+| Stuck on "Connecting", only the public IP candidate, same router as the node | [LAN clients: NAT hairpin](#lan-clients-nat-hairpin) |
+| `etcd registration failed: request timed out` in voice-signaling | [etcd request timeouts](#etcd-request-timeouts) |
 
 ## Voice WebSocket fails
 
@@ -114,9 +116,22 @@ voice-signaling verifies the HS256 voice token from VOICE_SERVER_UPDATE (60 s li
 3. **Bad configuration**: `SFU_PUBLIC_IP` is not an IPv4 literal.
 4. **Panic in the forwarder**: capture the log and the image version, drain the node, and roll back the image ([release → rollback](../release.md#rollback)). Then open an issue in `voice`.
 
+## LAN clients: NAT hairpin
+
+Symptom: both clients (or the owner at home) stay "Connecting", then the session closes after about 15 s; the SFU logs `session opened` but no DTLS. Cause: the client is behind the same router as the node and the only candidate is `PUBLIC_IP:50000`, which the router does not hairpin.
+
+1. In `prod-smoke.spec.ts` the `voice-diag` / `voice-selected-pair` lines show the remote candidates and the selected pair (or `chrome://webrtc-internals`).
+2. The remote candidates must include the node LAN IP. If not, check `VOICE_LAN_IP` in the pod env (`kubectl -n voics-voice exec deploy/voice-nl-home -c voice-signaling -- printenv VOICE_LAN_IP`) and that voice-signaling is 0.1.4 or later.
+3. From an external network (mobile hotspot) the public candidate must work: confirm the router forwards UDP 50000 to the node.
+4. If UDP to the SFU is blocked entirely, the client relays through coturn (`typ relay` local candidate in the selected pair).
+
+## etcd request timeouts
+
+`etcd registration failed: ... etcdserver: request timed out` comes from slow disk fsync on the VM (`slow fdatasync` of 1-4 s in `kubectl -n voics-data logs etcd-0`), not from the client or network. voice-signaling 0.1.4 treats the failed call as a retry on the next 3 s tick (and no longer crashes `NodePresence` on late replies). If it persists, move the etcd data dir to a faster disk or reduce competing I/O on the VM; the 3-node etcd plan (gitops#20/#21) removes the single-disk dependency.
+
 ## P2P / coturn
 
-P2P DMs use WebRTC data channels. coturn (UDP/TCP 3478 on gen-serv) relays only when a direct path fails.
+P2P DMs use WebRTC data channels. coturn (UDP/TCP 3478 on gen-serv) relays only when a direct path fails. Voice calls use the same gateway-issued TURN credentials as a fallback when UDP to the SFU is blocked.
 
 1. **"Peer offline"**: the other device isn't connected to the gateway. This is expected, because P2P requires both peers online.
 2. **The relay is needed but fails**:
