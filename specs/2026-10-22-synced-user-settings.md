@@ -1,6 +1,6 @@
 # Synced user settings (client#123)
 
-Status: implemented in contracts#14, api#61 and client#144.
+Status: implemented in contracts#14, api#61 and client#144; extended by [Appearance and accessibility](2026-10-23-appearance-and-accessibility.md).
 
 Preferences that describe the person follow the account to every device, as in Discord. Preferences that describe a device stay on it.
 
@@ -28,7 +28,9 @@ Preferences that describe the person follow the account to every device, as in D
 | Ringtone volume, media player volume | no, volume | local |
 | Collapsed categories, call stage layouts | no, view state | local |
 | Window state | no | main process |
-| 12/24h timestamps, inline media, stickers, spoilers, saturation, zoom | not synced: the client has no such preference yet; they join `preferences` when built | n/a |
+| Message group spacing, saturation, role colour display, link underline, high contrast, GIF, emoji and sticker animation, text-to-speech switch and rate | yes (client#65, client#66) | `preferences.message_spacing`, `saturation`, `role_colors`, `link_underline`, `high_contrast`, `animate_gifs`, `animate_emoji`, `animate_stickers`, `tts_read_aloud`, `tts_rate` |
+| Zoom, sync theme with computer, sync reduced motion with computer, channel list density | no, tied to the device or window | local |
+| 12/24h timestamps, inline media, spoilers | not synced: the client has no such preference yet; they join `preferences` when built | n/a |
 
 ## Contract and storage
 
