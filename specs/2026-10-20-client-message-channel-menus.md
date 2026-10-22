@@ -111,3 +111,22 @@ Delete Category first moves the children out (`PATCH parent_id: null`): the API 
 ## Verification
 
 Unit tests for every model (permission matrices, collapsed-category filter, mute expiry, pill geometry) and component tests for hover, focus-within, Shift swap, right-click on message, link, image, emoji and selection, category and channel menus, collapse all, mute, gear gating and lock/age markers. See client PR #102.
+
+## Reactions and message actions (client#55, client#56)
+
+Messages routes (contracts `openapi/discordy.yaml`): `GET /channels/{id}/messages/{id}/reactions/{emoji}` lists reacting users (partial user objects, oldest first, capped at 100; needs READ_MESSAGE_HISTORY). `DELETE .../reactions` (all), `DELETE .../reactions/{emoji}` and `DELETE .../reactions/{emoji}/{user_id}` need MANAGE_MESSAGES, except that a user may delete their own reaction through the user route. Removing one emoji emits one `MESSAGE_REACTION_REMOVE` per user; clearing all emits `MESSAGE_REACTION_REMOVE_ALL`.
+
+Client behaviour:
+
+| Feature | Rule |
+|---|---|
+| Reaction chip tooltip | names of up to three reactors plus "and N others", fetched on first hover |
+| Full list | long-press (500 ms) or context menu "See who reacted"; one tab per emoji; moderators get Remove per user |
+| Chip context menu | See who reacted, React / Remove my reaction, Remove this emoji and Remove all reactions (MANAGE_MESSAGES, confirmed) |
+| Picker | Frequently used row (`recentReactions`), skin tone selector (`skinTone` pref, applies to hand emoji), category bar with jump, one section per server |
+| External emoji | other servers' emoji (animated included) only with USE_EXTERNAL_EMOJIS in the channel |
+| Edited marker | `(edited)` with a full-date tooltip |
+| Deleted reply | "Original message was deleted" when `referenced_message` is null |
+| Forward, Report | disabled "coming soon" entries until messages#13 and the report backend land (Forward is hidden entirely once supported and enabled via `FORWARD_SUPPORTED`) |
+
+Already covered earlier: Copy Message Link (`discordy://channels/{guild}/{channel}/{message}`, handled by `main/deepLinks.ts`), delete confirmation with Shift to skip, Mark Unread. An https link form is deferred until a web origin for messages exists.
