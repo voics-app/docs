@@ -17,11 +17,11 @@ A manual build when CI is unavailable: `pnpm dist:win` on Windows, then upload `
 
 The client uses **electron-updater** with the generic provider, pointed at the feed host (`brand.json` `updateFeedHost`, overridable with `UPDATE_FEED_URL`). The code is `apps/desktop/src/main/updater.ts`.
 
-1. At start, a packaged app (not a dev run) calls `checkForUpdates`, which fetches `latest.yml` from the feed.
+1. Ten seconds after start and then every 4 hours, a packaged app (not a dev run) calls `checkForUpdates`, which fetches `latest.yml` from the feed. A finished or running download is never restarted by a later check. The updater sits behind a small port (`UpdaterPort`) so the flow is unit-tested without Electron.
 2. `latest.yml` names the newest version, the installer file, its SHA-512 and size. If the version is newer than the running one, the updater emits `update-available`.
 3. With `autoDownload = true` it downloads the installer (using the `.blockmap` to fetch only changed blocks), reporting `download-progress` to the UI, then `update-downloaded`.
 4. The user can install at once (`quitAndInstall`), or the update installs when the app quits (`autoInstallOnAppQuit = true`).
-5. The UI shows the states checking, available, downloading, downloaded, not available and error.
+5. The UI shows the states checking, available, downloading, downloaded, not available and error. A non-blocking banner (bottom right) says "Update X found", then "Downloading N%", then "Update X is ready" with **Restart to update**, **What is new** (release notes, when the feed carries them in `latest.yml` `releaseNotes`) and **Later** (hidden for that version only). Settings > About and updates shows the current version and a manual **Check for updates**.
 
 Publishing `latest.yml` is therefore what rolls an update out, and only forward: clients never downgrade.
 
