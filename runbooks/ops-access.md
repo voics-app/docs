@@ -23,7 +23,7 @@ How the owner reaches the operator tools of the gen-serv cluster, and how that a
 | MinIO console | <https://discordy-minio.voics.nl> | MinIO root user + password | root |
 | Redpanda Console | <https://discordy-redpanda.voics.nl> | none | full |
 | OpenBao UI | <https://discordy-openbao.voics.nl> | Username method, user `owner` (created by `gitops/bootstrap/22-openbao-owner-admin.sh`) | policy `owner-admin` (everything) |
-| Admin panel | <https://discordy-admin.voics.nl> | none beyond Access; admin-bff also checks `ADMIN_ALLOWED_EMAILS` | platform admin |
+| Admin panel | <https://discordy-admin.voics.nl> | none beyond Access; admin-bff also checks `ADMIN_ALLOWED_EMAILS` | platform admin; panel data sources and gaps in [the admin handbook](../handbook/02-app-admin.md#production-data-sources-verified-on-gen-serv-v016-2026-10-22) |
 
 The owner asked for full admin rights on every tool (2026-10-20). The Kubernetes Dashboard (and the microk8s `dashboard` addon built on it) was **retired by the Kubernetes project in January 2026**; Headlamp is its successor, and its Flux plugin shows Kustomizations, HelmReleases, sources and image automation, with reconcile and suspend actions.
 

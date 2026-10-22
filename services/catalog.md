@@ -138,6 +138,7 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 | Depends on | Postgres, Redpanda, VictoriaMetrics, etcd, api / messages / gateway (internal) |
 | Env vars | common + `ADMIN_DATABASE_URL` 🔒, `API_INTERNAL_URL`, `VICTORIAMETRICS_URL`, `ETCD_ENDPOINTS`, `ADMIN_ALLOWED_EMAILS` |
 | SLOs | Availability 99.0 %; dashboards p95 < 1 s; rollups lag < 2 min |
+| Production | v0.1.6 on gen-serv; dashboards verified against VictoriaMetrics and Redpanda, see [handbook](../handbook/02-app-admin.md#production-data-sources-verified-on-gen-serv-v016-2026-10-22) |
 | Runbooks | [draining a region](../runbooks/voice-regions/draining-a-region.md), [cloudflare-setup](../runbooks/cloudflare-setup.md#cloudflare-access) |
 
 ## Desktop client
