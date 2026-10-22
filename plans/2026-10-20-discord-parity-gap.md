@@ -78,8 +78,8 @@ Status counts in the matrix below: Implemented 32, Partial 25, Missing 50. 66 ne
 | Servers | Invites with expiry and max uses; revoke | Yes | Implemented | Temporary membership missing | - | - |
 | Servers | Vanity URL, banner, system channel, AFK, default notifications | Yes | Missing | - | [api#37](https://github.com/discordy-voics/api/issues/37) | P1 |
 | Servers | Onboarding, rules screening, welcome screen | Yes | Missing | - | [api#40](https://github.com/discordy-voics/api/issues/40) | P1 |
-| Servers | Server folders and synced order | Yes | Partial | Local reorder only | [client#58](https://github.com/discordy-voics/client/issues/58) | P1 |
-| Servers | Channel drag-and-drop ordering | Yes | Partial | API only | [client#59](https://github.com/discordy-voics/client/issues/59) | P1 |
+| Servers | Server folders and synced order | Yes | Implemented | Synced via user settings (see [spec](../specs/2026-10-22-server-folders-and-channel-ordering.md)) | [client#58](https://github.com/discordy-voics/client/issues/58) | P1 |
+| Servers | Channel drag-and-drop ordering | Yes | Implemented | Drag, Move up/down, permission sync prompt | [client#59](https://github.com/discordy-voics/client/issues/59) | P1 |
 | Servers | Categories, create/delete/edit channels, topic, slowmode | Yes | Implemented | - | - | - |
 | Servers | Channel permission overwrites | Yes | Implemented | - | - | - |
 | Servers | Roles + permission matrix | Yes | Implemented | Basic editor | - | - |
@@ -326,8 +326,8 @@ New issues from this pass: client#81 to client#98 and api#53 (19 issues: 4 P0, 1
 | Unread pill and mention badge | I | `rail-pip`, `rail-badge` | - |
 | In-call indicator on the server | I | `rail-call` dot | - |
 | Home button badge for DMs | P | counts mentions only, not unread DMs | [client#91](https://github.com/discordy-voics/client/issues/91) |
-| Drag to reorder | P | no drop indicator, auto-scroll or keyboard reorder; order is local | [client#91](https://github.com/discordy-voics/client/issues/91), [client#58](https://github.com/discordy-voics/client/issues/58) |
-| Drag onto another server to make a folder | M | no folders | [client#58](https://github.com/discordy-voics/client/issues/58) |
+| Drag to reorder | P | drop indicator and Move up/down done (client#58); no auto-scroll | [client#91](https://github.com/discordy-voics/client/issues/91), [client#58](https://github.com/discordy-voics/client/issues/58) |
+| Drag onto another server to make a folder | I | folders, colour, collapse, aggregate badge (client#58) | [client#58](https://github.com/discordy-voics/client/issues/58) |
 | Muted server dimming, no pill | M | only channel mutes exist | [client#91](https://github.com/discordy-voics/client/issues/91), [client#50](https://github.com/discordy-voics/client/issues/50) |
 | Menu: Mark as read, Invite, Server settings, Create channel/category, Leave/Delete | I | `GuildMenu.tsx` | - |
 | Menu: Mute server with durations, Notification settings | M | | [client#50](https://github.com/discordy-voics/client/issues/50) |
