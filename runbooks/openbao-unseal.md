@@ -41,11 +41,7 @@ In GitHub, `discordy-voics/gitops` -> Actions -> secrets-sync -> Re-run.
 
 ### Webhook alert (optional, one-time)
 
-Create the Secret by hand (never in git) with a Discord or Slack-compatible incoming webhook URL. The CronJob then posts every 30 minutes while OpenBao is sealed or unreachable:
-
-```bash
-kubectl -n voics-system create secret generic openbao-alert --from-literal=WEBHOOK_URL='https://discord.com/api/webhooks/...'
-```
+The `OpenBaoSealed` alert rule (vmalert, fed by the `openbao-seal-check` CronJob) posts to the shared `ops-alerts` webhook Secret when OpenBao is sealed or unreachable for 4 minutes. Create the Secret once: see [Alerting](alerting.md#add-the-webhook-one-time-owner-action).
 
 Without it the failure is still visible: the portal banner, the failing `openbao-seal-check` Job and the `openbao_sealed` series in Grafana.
 

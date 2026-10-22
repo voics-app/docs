@@ -1,0 +1,2 @@
+| Secrets not refreshing | OpenBao is sealed (portal banner; auto-unseal failed, see the runbook) |
+| Red alerts banner on the portal, or a webhook message | [Alerting](../runbooks/alerting.md
