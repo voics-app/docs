@@ -19,7 +19,7 @@ All manifests live in `gitops/infrastructure/controllers/alerting/` (production 
 
 | Alert | Fires when | For |
 |---|---|---|
-| `DeploymentNotReady` | ready replicas < desired replicas | 5 m |
+| `DeploymentNotReady` | ready replicas < desired, or any unavailable pod (a rollout whose new pod never turns ready) | 5 m |
 | `StatefulSetNotReady` | ready replicas < desired replicas | 5 m |
 | `ServiceDown` | `up == 0` for job api, messages, gateway, admin-bff, voice-signaling or sfu | 3 m |
 | `ServiceTargetMissing` | one of those jobs has no scrape target at all (no pod) | 3 m |
