@@ -30,6 +30,9 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
+          # setup-node v5 auto-enables pnpm caching from package.json "packageManager" and then
+          # fails because pnpm is not installed; the sync script has no dependencies to install.
+          package-manager-cache: false
       - name: Sync to Notion
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
