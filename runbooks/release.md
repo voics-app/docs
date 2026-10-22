@@ -178,14 +178,15 @@ gh pr create --base main --head release/0.2.0 --title "chore(release): 0.2.0"
 gh pr merge --merge
 ```
 
-### 5. Let release-please tag
+### 5. Tag the release
 
-The `release-please` workflow on `main` opens or updates a **release PR** (`chore(main): release 0.2.0`) containing the changelog and the bumped `.release-please-manifest.json`. Merge it. release-please then:
+```bash
+git switch main && git pull --ff-only
+git tag -a v0.2.0 -m "v0.2.0: <summary>"
+git push origin v0.2.0
+```
 
-- creates the tag `v0.2.0` and a GitHub Release with the changelog;
-- triggers the tag build, which pushes `api:0.2.0`, `api:0.2`, `api:latest`, cosign-signed, with an SBOM attached.
-
-> To make release-please produce exactly `0.2.0`, keep `release-as` in `release-please-config.json` aligned with the branch name. Otherwise it derives the version from the commits: `feat` bumps the minor version and `fix` the patch.
+The tag build pushes `api:0.2.0`, `api:0.2` and `api:latest`, cosign-signed with an SBOM, and with title, description and source annotations shown on GHCR. release-please is no longer used: it could not open PRs under the org settings and failed on every release. Versions come from git tags. The full explanation of tags is in [Handbook 11, Releasing](../handbook/11-releasing.md).
 
 ### 6. Back-merge
 
