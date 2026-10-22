@@ -51,6 +51,10 @@ Presence: the status goes Idle on its own after the idle timeout (Settings, Desk
 
 Appearance and accessibility (theme, density, message spacing, accent, text size, reduce motion, saturation, role colours, high contrast, link underline, animation and text-to-speech switches), link previews, notification sounds and ringtone, mentions-only and emoji preferences are stored on the server in your user settings (`preferences`, merged key by key) and appear on every device you sign in on. The prefs store keeps a localStorage copy as a cache and sends changes as a debounced PATCH with rollback; the first sign-in per device uploads values you had changed locally before sync existed. Devices, volumes, keybinds, push-to-talk, desktop notification toggle and view state stay on the device. The full table is in [Synced user settings](../specs/2026-10-22-synced-user-settings.md).
 
+## Keybinds and shortcuts
+
+Settings > Keybinds lists the actions in four groups (Voice, Calls, Navigation, General): mute, deafen, push to mute, camera, screen share, answer and decline a ringing call, quick switcher, previous and next channel, previous and next unread channel, history back and forward, mark read, search, upload and the member list. Click a shortcut and press the new combination (Esc cancels); Clear unbinds, Reset restores one action, Reset all restores everything. A combination used twice shows a conflict warning on the row. The Global switch (desktop app only; mute, deafen, push to mute, camera, answer, decline) makes the shortcut work while the app is in the background; it needs the native key hook and quietly stays window-only where that is unavailable. Push to talk is set under Voice and video. Ctrl+/ opens the list of every shortcut. Keybinds are saved on the device and are not synced to the account. Details: `specs/2026-10-22-client-keybinds.md`.
+
 ## Desktop integration settings
 
 Settings > Desktop holds device-local options (never synced to the account), stored in `main-settings.json` in the user data folder and validated in the main process (`src/main/desktop/`):
