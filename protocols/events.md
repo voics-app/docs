@@ -85,10 +85,34 @@ Redpanda event envelope. `data` is exactly the gateway DISPATCH payload for `typ
 | `SESSIONS_REPLACE` | `discordy.user.v1` | `SessionsReplaceEvent` |
 | `INTERACTION_CREATE` | `discordy.interaction.v1` | `Interaction` |
 | `AUDIT_LOG_ENTRY_CREATE` | `discordy.audit.v1` | `AuditLogEntryCreateEvent` |
+| `VOICE_MEMBER_MOVE` | `discordy.guild.v1` | `VoiceMemberMoveEvent` |
+| `BAN_MESSAGE_PURGE` | `discordy.guild.v1` | `BanMessagePurgeEvent` |
 | `VOICE_QUALITY` | `discordy.telemetry.v1` | `VoiceQualityEvent` |
 | `USAGE_TICK` | `discordy.telemetry.v1` | `UsageTickEvent` |
 
 ## Bus-only payloads
+
+### VoiceMemberMoveEvent
+
+VOICE_MEMBER_MOVE bus event (discordy.guild.v1, routed by guild_id). A moderator moved a member to another voice channel or disconnected them (PATCH /guilds/{id}/members/{uid} with channel_id). The gateway applies it to the member's live voice session and never dispatches it to clients; it is ignored when the member is not in voice. Clients observe the result as VOICE_STATE_UPDATE plus, for a move, VOICE_SERVER_UPDATE with a token for the new channel.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `guild_id` | `Snowflake` |  |
+| `user_id` | `Snowflake` |  |
+| `channel_id` | `?Snowflake` | The voice channel to move the member to, or null to disconnect them. |
+
+### BanMessagePurgeEvent
+
+BAN_MESSAGE_PURGE bus event (discordy.guild.v1, routed by guild_id). A moderator banned a user with delete_message_seconds > 0 (PUT /guilds/{id}/bans/{uid}). The messages service deletes every message the user authored in the listed channels at or after since_ms (storage, search index, attachments, reactions, pins) and emits MESSAGE_DELETE_BULK per channel. The gateway ignores it and never dispatches it to clients. Replays are harmless: deleting already deleted messages is a no-op.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `guild_id` | `Snowflake` |  |
+| `user_id` | `Snowflake` | The banned user whose messages are purged. |
+| `channel_ids` | `array of Snowflake` | The guild's text-capable channels and threads at ban time. |
+| `since_ms` | `integer` | Unix milliseconds: messages created at or after this instant are deleted (ban time minus delete_message_seconds). |
+| `delete_message_seconds` | `integer` |  |
 
 ### VoiceQualityEvent
 
