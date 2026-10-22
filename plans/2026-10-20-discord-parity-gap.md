@@ -83,7 +83,7 @@ Status counts in the matrix below: Implemented 32, Partial 25, Missing 50. 66 ne
 | Servers | Categories, create/delete/edit channels, topic, slowmode | Yes | Implemented | - | - | - |
 | Servers | Channel permission overwrites | Yes | Implemented | - | - | - |
 | Servers | Roles + permission matrix | Yes | Implemented | Basic editor | - | - |
-| Servers | Role hierarchy drag, hoist, icons, members, view-as-role | Yes | Partial | - | [client#60](https://github.com/discordy-voics/client/issues/60) | P1 |
+| Servers | Role hierarchy drag, hoist, icons, members, view-as-role | Yes | Implemented (view-as-role deferred) | Roles manager spec | [client#60](https://github.com/discordy-voics/client/issues/60) | P1 |
 | Servers | Custom emoji management | Yes | Implemented | - | - | - |
 | Servers | Stickers and soundboard tabs | Yes | Missing | - | [api#33](https://github.com/discordy-voics/api/issues/33) | P1 |
 | Servers | Integrations and webhooks UI | Yes | Missing | - | [client#61](https://github.com/discordy-voics/client/issues/61) | P1 |
