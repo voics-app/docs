@@ -23,6 +23,7 @@ This directory holds Discordy's architecture decisions. The records use the [MAD
 | [0017](0017-signed-attachment-download-urls.md) | Signed, expiring attachment download URLs | proposed |
 | [0018](0018-message-search-postgres-fts.md) | Message search on PostgreSQL full-text, fed from the event bus | proposed |
 | [0019](0019-link-unfurling-and-media-proxy.md) | Link unfurling and the embed media proxy | proposed |
+| [0020](0020-message-forwarding.md) | Message forwarding | accepted |
 
 ## Writing a new ADR
 

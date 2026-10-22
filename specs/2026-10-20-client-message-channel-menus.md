@@ -18,7 +18,7 @@ Visible while the message is hovered, has keyboard focus inside it (`focus-withi
 | Add reaction (picker) | same |
 | Edit | own message, standard delivery (not while Shift is held) |
 | Reply | always (not while Shift is held) |
-| Forward | hidden: unsupported (messages#13) |
+| Forward | standard delivery (disabled with a tooltip for E2EE and P2P messages); opens the picker |
 | Copy message ID | Shift held |
 | Pin / Unpin | Shift held, standard delivery and MANAGE_MESSAGES |
 | Delete, no confirmation | Shift held, own message or MANAGE_MESSAGES; a click without Shift still asks |
@@ -50,7 +50,7 @@ Message entries (always below the target block):
 | Edit Message | own message, standard delivery | PATCH message |
 | Pin / Unpin Message | standard delivery and MANAGE_MESSAGES | `PUT/DELETE /channels/{id}/pins/{id}` |
 | Reply | always | client state |
-| Forward | hidden (`FORWARD_SUPPORTED = false`) | none, messages#13 |
+| Forward | always listed (`FORWARD_SUPPORTED = true`); disabled with a tooltip for E2EE and P2P | `POST` with `message_reference.type = 1`, [ADR 0020](../adr/0020-message-forwarding.md) |
 | Create Thread | standard delivery, guild channel, CREATE_PUBLIC_THREADS | `POST` thread from message |
 | Copy Text | message has text | none |
 | Mark Unread | always | local read marker plus best-effort `ack` of the previous message; no server mark-unread endpoint |
@@ -105,7 +105,7 @@ Delete Category first moves the children out (`PATCH parent_id: null`): the API 
 | --- | --- | --- |
 | Per-server and per-channel notification levels, mute durations synced across devices | missing; stored per device, honoured by desktop notifications | api#28 |
 | Server-side mark unread | missing; local marker plus ack of the previous message | follow-up on api |
-| Forward message | missing; entry hidden | messages#13 |
+| Forward message | implemented | [ADR 0020](../adr/0020-message-forwarding.md) |
 | Category deletion re-parenting children | client does it, no server rule | follow-up on api |
 
 ## Verification
@@ -127,6 +127,6 @@ Client behaviour:
 | External emoji | other servers' emoji (animated included) only with USE_EXTERNAL_EMOJIS in the channel |
 | Edited marker | `(edited)` with a full-date tooltip |
 | Deleted reply | "Original message was deleted" when `referenced_message` is null |
-| Forward, Report | disabled "coming soon" entries until messages#13 and the report backend land (Forward is hidden entirely once supported and enabled via `FORWARD_SUPPORTED`) |
+| Report | disabled "coming soon" entry until the report backend lands (Forward is implemented, see ADR 0020) |
 
 Already covered earlier: Copy Message Link (`discordy://channels/{guild}/{channel}/{message}`, handled by `main/deepLinks.ts`), delete confirmation with Shift to skip, Mark Unread. An https link form is deferred until a web origin for messages exists.
