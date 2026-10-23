@@ -20,3 +20,9 @@ Deferred: channel status text under the name needs an API field.
 - Picture-in-picture: per-tile button using Chromium `requestPictureInPicture()` for a single video (camera or screen).
 
 Deferred: per-stream volume (user volume exists in the user menu) and viewer-side simulcast quality selection, which needs a layer-selection call in the voice session that does not exist yet; mirrored self-view and fullscreen shortcuts (client#32).
+
+## Moving members: server prerequisites and click handling (client#156)
+
+- Dragging an occupant, the user menu "Move to" panel and the channel drag-reorder all work in the client; the member move is only a request (`PATCH /guilds/{id}/members/{user}` `channel_id`, api#24). It takes effect when the **gateway** applies `VOICE_MEMBER_MOVE` to the member's live voice session (gateway commit 27188f3, 2026-10-20). A local stack whose `e2e/gateway:develop` image predates it answers 200 and nothing moves; rebuild it from gateway `develop` (`dev.sh up --rebuild`, or build that one image) before testing.
+- The user menu and its panels render in portals inside the occupant row. Their clicks bubble through the React tree, so the row only opens the profile for clicks that originate inside the row's own DOM.
+- Live regression: `tests/live/voice-move-drag.spec.ts` (owner drags a member, uses "Move to", reorders channels).
