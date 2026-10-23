@@ -33,3 +33,7 @@ Tests include two in-process clients exchanging Opus through the SFU, the contro
 ## Operate
 
 Everything about regions is in [Voice regions](07-voice-regions.md): adding, draining, failover and troubleshooting.
+
+## Encrypted calls and video quality
+
+The end-to-end encrypted call protocol (ops 25-31 as the client and node actually exchange them), the camera uplink settings and their troubleshooting are in [Voice: end-to-end encrypted calls and camera uplink quality](../specs/2026-10-23-voice-e2ee-and-uplink-quality.md).
