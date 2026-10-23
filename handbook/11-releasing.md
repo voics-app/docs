@@ -17,13 +17,24 @@ A tag is what turns code into a **release**. CI sees the tag and builds the stab
 | Repository | Trigger | Result | Live where, and when |
 |---|---|---|---|
 | api, messages, gateway, voice, admin | tag `vX.Y.Z` | Docker image `ghcr.io/discordy-voics/<image>` with tags `X.Y.Z`, `X.Y` and `latest`, with title, description and source on GHCR, cosign-signed, SBOM | Production: Flux image automation sees the stable tag within 5 min, commits the bump to gitops `main`, Flux rolls the pod (about 10 min total) |
-| client (desktop) | merge to `main` **or** tag `vX.Y.Z` | Windows installer `Discordy-Setup-X.Y.Z.exe`, `latest.yml`, `Discordy-Setup-latest.exe` and a GitHub Release | Installed clients update themselves (electron-updater reads `latest.yml`); the website button serves the new installer within about 5 min (Cloudflare cache) |
+| client (desktop) | merge to `main` **or** tag `vX.Y.Z` (installer built on the owner PC runner `karma-win` when the client variable `WINDOWS_RUNNER` is set, otherwise on GitHub `windows-latest`) | Windows installer `Discordy-Setup-X.Y.Z.exe`, `latest.yml`, `Discordy-Setup-latest.exe` and a GitHub Release | Installed clients update themselves (electron-updater reads `latest.yml`); the website button serves the new installer within about 5 min (Cloudflare cache) |
 | website | merge to `main` or tag | Static site uploaded to the `discordy-site` bucket | <https://discordy.voics.nl> after about 2 min |
 | gitops | merge to `main` (the tag is a marker) | Flux applies the manifests | Cluster, within 1 to 2 min |
 | docs | merge to `main` (the tag is a marker) | Notion sync | Notion → Home → Home Lab → Discordy |
 | contracts, .github | tag | Version marker; `.github` callers use `@main`, so a merge to `main` already changes CI everywhere | n/a |
 
 Develop builds never reach production: they get pre-release versions `X.Y.(Z+1)-dev.N`, which the production image policies ignore.
+
+## When we release: feature-based, not dated
+
+Releases are planned by **content, not by date**. Every client version has a GitHub milestone (for example [client v0.4.2](https://github.com/discordy-voics/client/milestones)) listing the issues it contains.
+
+- **A version ships as soon as all its issues are closed and CI is green.** There is no waiting for a date.
+- P0 fixes ship as soon as they are merged, in the next patch.
+- New issues go into the next open milestone. Moving an issue to a later version is a deliberate decision, noted on the issue.
+- When a release is blocked (by CI, for example), fixing the blocker is P0. The next version then includes everything that was meant for the blocked one: 0.4.1 was skipped and its content shipped as 0.4.2.
+
+Where to see it: GitHub → client → Milestones (open and closed issues per version), the project board, and the GitHub Releases page (one release per version, with the installer attached; the repository is private, so only org members can download from there, and everyone else uses the website button).
 
 ## How to release (one repository)
 

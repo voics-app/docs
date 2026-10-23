@@ -135,6 +135,19 @@ On a Linux VM the runners use host networking, so integration tests (testcontain
 
 The runner VM's Proxmox CPU type must be `host`. ScyllaDB needs SSE4.2 and PCLMUL, which `x86-64-v2-AES` and qemu64 lack, and the Scylla integration tests skip themselves without it.
 
+### Windows runner on the owner PC (client installer)
+
+The client installer (NSIS and the native crypto module) must be built on Windows. Instead of GitHub's paid `windows-latest`, it builds on a **native runner on the owner's PC**:
+
+```powershell
+powershell -File .github\scriptsunner-win.ps1 up       # download (once), register (label karma-win), start; sets WINDOWS_RUNNER=karma-win on the client repo
+powershell -File .github\scriptsunner-win.ps1 status   # online/busy, WINDOWS_RUNNER value
+powershell -File .github\scriptsunner-win.ps1 down     # remove it; client releases fall back to windows-latest
+```
+
+- It uses the PC's own Node, pnpm, Rust and MSVC: the same toolchain as `pnpm dist:win`.
+- **It does not survive a reboot. Run `up` again after restarting the PC**, otherwise client releases wait in the queue.
+
 ### Several VMs
 
 Every machine names its runners `<label>-<machine id>-N` (for example `vm-runner-3f9a1c-1`), so names never collide, even when two VMs share a hostname. The label decides which jobs a runner takes:
