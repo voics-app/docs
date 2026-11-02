@@ -95,6 +95,7 @@ scripts/runner.sh down [--host user@vm]                # remove runners (switche
 ```
 
 - **Switching**: the shared workflows' default `runs-on` follows the repository variable `CI_RUNNER`. Jobs that name a runner explicitly keep it: `discordy` (in-cluster ARC) and `windows-latest` (the installer).
+- **CI cache on self-hosted runners** ([ADR 0022](../adr/0022-ci-cache-safety-rules.md)): a persistent `/cache` volume and the toolchains in the runner image speed up PR and develop builds. **Releases are always clean**: pushes to `main`, tags, `release/*`, `hotfix/*` and PRs into `main` compile Rust from an empty `target/`, and image builds compile inside the Dockerfile (no persistent `target/`). SBOM and cosign signing run only for `main`, tags and release versions. A weekly scheduled run on `develop` builds everything cold. If a release build is red but the same commit was green on develop, suspect the cache: set the variable `CI_CACHE=off` (`gh variable set CI_CACHE --body off -R discordy-voics/<repo>`; delete it afterwards), or label the PR `ci-no-cache` and push, then re-run; clear the volume with `scripts/runner.sh cache-clear --host user@vm` when the runners are idle.
 - **Resources per runner** (one job at a time): 2 vCPU, 6–8 GB RAM and about 40 GB disk. A VM for 3 runners needs 6–8 vCPU, 16–24 GB RAM and 150 GB disk.
 - **No restart policy**: run `down` or `use github` before turning the PC or VM off. Otherwise jobs wait for the missing runner.
 
