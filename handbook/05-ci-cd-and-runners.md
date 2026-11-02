@@ -139,7 +139,7 @@ The runner VM's Proxmox CPU type must be `host`. ScyllaDB needs SSE4.2 and PCLMU
 
 The client installer (NSIS and the native crypto module) must be built on Windows. Since 2026-11-02 it **builds on GitHub's `windows-latest`** again: the owner decided not to use the PC runner (`karma-win`). The client repo variable `WINDOWS_RUNNER` is deleted and the runner is deregistered; `release.yml` uses `${{ vars.WINDOWS_RUNNER || 'windows-latest' }}`, so leaving the variable unset is all it takes.
 
-`.github/scripts/runner-win.ps1` is kept but unused. Do not set `WINDOWS_RUNNER` again without the owner's go-ahead. If it is ever revived, note that on a native Windows runner `shell: bash` can resolve to `C:\Windows\System32ash.exe` (WSL) and fail with `Bash/Service/0x8007274c`; this is what broke the 0.4.2 publish twice.
+`.github/scripts/runner-win.ps1` is kept but unused. Do not set `WINDOWS_RUNNER` again without the owner's go-ahead. If it is ever revived, note that on a native Windows runner `shell: bash` can resolve to `C:\Windows\System32\bash.exe` (WSL) and fail with `Bash/Service/0x8007274c`; this is what broke the 0.4.2 publish twice.
 
 ### Several VMs
 
