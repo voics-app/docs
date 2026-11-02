@@ -55,6 +55,12 @@ Appearance and accessibility (theme, density, message spacing, accent, text size
 
 Settings > Keybinds lists the actions in four groups (Voice, Calls, Navigation, General): mute, deafen, push to mute, camera, screen share, answer and decline a ringing call, quick switcher, previous and next channel, previous and next unread channel, history back and forward, mark read, search, upload and the member list. Click a shortcut and press the new combination (Esc cancels); Clear unbinds, Reset restores one action, Reset all restores everything. A combination used twice shows a conflict warning on the row. The Global switch (desktop app only; mute, deafen, push to mute, camera, answer, decline) makes the shortcut work while the app is in the background; it needs the native key hook and quietly stays window-only where that is unavailable. Push to talk is set under Voice and video. Ctrl+/ opens the list of every shortcut. Keybinds are saved on the device and are not synced to the account. Details: `specs/2026-10-22-client-keybinds.md`.
 
+## User area and voice connection panel
+
+The panel at the bottom of the channel list has the avatar (status menu), mute, deafen and the settings gear. Mute and deafen each have a small caret that opens a quick menu: the input (or output) device, the input (or output) volume slider, and a link to Voice and video settings. Choices are written to the same device-local preferences as Settings > Voice and video, so the voice engine applies them immediately. Tooltips show the action and the configured keybind (for example `Mute Ctrl+Shift+M`); they follow rebinding in Settings > Keybinds.
+
+While connected, the voice dock above it shows the channel and server. The signal icon opens Connection details: average ping (over the last 60 samples), last ping, outbound packet loss, jitter, bitrate, region, encryption state (end-to-end MLS or transport only) and transport (DTLS-SRTP over WebRTC). The dock and the call stage also have a noise suppression toggle (the RNNoise setting) and a camera button with a caret for choosing the camera (Test camera opens Voice and video settings). Soundboard and activities buttons arrive with voice#10 and api#50. Logic lives in `domain/voicePanel.ts`; the menus in `interface/features/voice/DeviceMenus.tsx`.
+
 ## Desktop integration settings
 
 Settings > Desktop holds device-local options (never synced to the account), stored in `main-settings.json` in the user data folder and validated in the main process (`src/main/desktop/`):
