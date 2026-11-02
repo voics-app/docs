@@ -17,7 +17,7 @@ A tag is what turns code into a **release**. CI sees the tag and builds the stab
 | Repository | Trigger | Result | Live where, and when |
 |---|---|---|---|
 | api, messages, gateway, voice, admin | tag `vX.Y.Z` | Docker image `ghcr.io/discordy-voics/<image>` with tags `X.Y.Z`, `X.Y` and `latest`, with title, description and source on GHCR, cosign-signed, SBOM | Production: Flux image automation sees the stable tag within 5 min, commits the bump to gitops `main`, Flux rolls the pod (about 10 min total) |
-| client (desktop) | merge to `main` **or** tag `vX.Y.Z` (installer built on the owner PC runner `karma-win` when the client variable `WINDOWS_RUNNER` is set, otherwise on GitHub `windows-latest`) | Windows installer `Discordy-Setup-X.Y.Z.exe`, `latest.yml`, `Discordy-Setup-latest.exe` and a GitHub Release | Installed clients update themselves (electron-updater reads `latest.yml`); the website button serves the new installer within about 5 min (Cloudflare cache) |
+| client (desktop) | merge to `main` **or** tag `vX.Y.Z` (installer built on GitHub `windows-latest`) | Windows installer `Discordy-Setup-X.Y.Z.exe`, `latest.yml`, `Discordy-Setup-latest.exe` and a GitHub Release | Installed clients update themselves (electron-updater reads `latest.yml`); the website button serves the new installer within about 5 min (Cloudflare cache) |
 | website | merge to `main` or tag | Static site uploaded to the `discordy-site` bucket | <https://discordy.voics.nl> after about 2 min |
 | gitops | merge to `main` (the tag is a marker) | Flux applies the manifests | Cluster, within 1 to 2 min |
 | docs | merge to `main` (the tag is a marker) | Notion sync | Notion → Home → Home Lab → Discordy |
