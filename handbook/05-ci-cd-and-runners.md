@@ -135,6 +135,8 @@ On a Linux VM the runners use host networking, so integration tests (testcontain
 
 The runner VM's Proxmox CPU type must be `host`. ScyllaDB needs SSE4.2 and PCLMUL, which `x86-64-v2-AES` and qemu64 lack, and the Scylla integration tests skip themselves without it.
 
+Runner containers use the VM's Docker through its socket, so any `docker run -v <path>` in a job mounts a **host** path. Each runner therefore works in `/srv/discordy-runner/<container>/_work`, mounted at the same path inside the container (`config.sh --work`). That way `docker run -v "$GITHUB_WORKSPACE:/repo"` (gitops `validate`, docs `c4`) sees the real checkout. Before this, those jobs got an empty directory (`find: 'apps': No such file or directory`).
+
 ### Client installer: GitHub `windows-latest` (owner PC runner retired)
 
 The client installer (NSIS and the native crypto module) must be built on Windows. Since 2026-11-02 it **builds on GitHub's `windows-latest`** again: the owner decided not to use the PC runner (`karma-win`). The client repo variable `WINDOWS_RUNNER` is deleted and the runner is deregistered; `release.yml` uses `${{ vars.WINDOWS_RUNNER || 'windows-latest' }}`, so leaving the variable unset is all it takes.
