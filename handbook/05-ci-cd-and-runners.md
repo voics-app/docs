@@ -127,26 +127,19 @@ On a Linux VM the runners use host networking, so integration tests (testcontain
 
 | Runners | Repos | Cost |
 |---|---|---|
-| Self-hosted VM (`vm-runner`) | api, messages, gateway, voice, client (heavy Rust/Docker builds) | free |
-| GitHub-hosted `ubuntu-latest` | docs, website, contracts, gitops, .github, bots-sdk, admin (light jobs) | GitHub minutes, $15/month budget (org Settings → Billing → Budgets) |
-| GitHub-hosted `windows-latest` | client installer, on release tags only | about $0.30 per release |
+| Self-hosted VM (`vm-runner`, 2 runners) | all repos (`CI_RUNNER=vm-runner`) | free |
+| GitHub-hosted `ubuntu-latest` | fallback only: all 12 repos have `CI_RUNNER=vm-runner` (`runner.sh use github` switches back) | GitHub minutes, $15/month budget (org Settings → Billing → Budgets) |
+| GitHub-hosted `windows-latest` | client installer, on client releases (merge to main or tag) | about $0.30 per release |
 
 `runner.sh up` and `use <label>` switch only the heavy repos; `use github` resets all. Change the set with `SELF_HOSTED_REPOS="api messages" scripts/runner.sh up`.
 
 The runner VM's Proxmox CPU type must be `host`. ScyllaDB needs SSE4.2 and PCLMUL, which `x86-64-v2-AES` and qemu64 lack, and the Scylla integration tests skip themselves without it.
 
-### Windows runner on the owner PC (client installer)
+### Client installer: GitHub `windows-latest` (owner PC runner retired)
 
-The client installer (NSIS and the native crypto module) must be built on Windows. Instead of GitHub's paid `windows-latest`, it builds on a **native runner on the owner's PC**:
+The client installer (NSIS and the native crypto module) must be built on Windows. Since 2026-11-02 it **builds on GitHub's `windows-latest`** again: the owner decided not to use the PC runner (`karma-win`). The client repo variable `WINDOWS_RUNNER` is deleted and the runner is deregistered; `release.yml` uses `${{ vars.WINDOWS_RUNNER || 'windows-latest' }}`, so leaving the variable unset is all it takes.
 
-```powershell
-powershell -File .github\scriptsunner-win.ps1 up       # download (once), register (label karma-win), start; sets WINDOWS_RUNNER=karma-win on the client repo
-powershell -File .github\scriptsunner-win.ps1 status   # online/busy, WINDOWS_RUNNER value
-powershell -File .github\scriptsunner-win.ps1 down     # remove it; client releases fall back to windows-latest
-```
-
-- It uses the PC's own Node, pnpm, Rust and MSVC: the same toolchain as `pnpm dist:win`.
-- **It does not survive a reboot. Run `up` again after restarting the PC**, otherwise client releases wait in the queue.
+`.github/scripts/runner-win.ps1` is kept but unused. Do not set `WINDOWS_RUNNER` again without the owner's go-ahead. If it is ever revived, note that on a native Windows runner `shell: bash` can resolve to `C:\Windows\System32\bash.exe` (WSL) and fail with `Bash/Service/0x8007274c`; this is what broke the 0.4.2 publish twice.
 
 ### Several VMs
 
