@@ -76,10 +76,20 @@ Settings > Desktop holds device-local options (never synced to the account), sto
 | --- | --- |
 | Open Discordy at login | `app.setLoginItemSettings` on Windows and macOS; an XDG autostart entry on Linux. Only packaged builds register, so a dev run never registers the bare Electron binary. |
 | Start minimized | The login item passes `--hidden`; the window stays in the tray at login. A normal launch always shows the window. |
-| Minimize to tray | The close button hides the window (default on Windows and macOS, off on Linux). Quit from the tray menu. Without a tray the close button quits. |
+| Show in system tray | Default on. Creates or removes the tray icon live; with it off, the close button quits and Start minimized has no effect. |
+| Minimize to tray | Default off. The minimize button hides the window to the tray instead of the taskbar. |
+| Close button minimizes to tray | The close button hides the window (default on Windows and macOS, off on Linux). Quit from the tray menu. Without a tray the close button quits. |
 | Hardware acceleration | `app.disableHardwareAcceleration()` runs at startup from the local settings file, so a change needs a restart (the page offers **Restart now**). |
 
-The tray menu shows Open, the unread and mention summary, Mute and Deafen toggles (the renderer reports its self voice state; clicks are sent back as commands), the version and Quit. A single-instance lock makes a second launch (or a `discordy://` link) focus the existing window. The `discordy://` scheme is registered by the installer (`protocols` in `electron-builder.config.cjs`) and again at each start. Update behaviour is described in [Desktop client release and auto-update](09-desktop-client-release.md).
+The tray menu shows Open, the unread and mention summary, Mute and Deafen toggles (the renderer reports its self voice state; clicks are sent back as commands), the version, Check for updates and Quit. A single-instance lock makes a second launch (or a `discordy://` link) focus the existing window. The `discordy://` scheme is registered by the installer (`protocols` in `electron-builder.config.cjs`) and again at each start. Update behaviour is described in [Desktop client release and auto-update](09-desktop-client-release.md).
+
+## Friends and direct messages
+
+When a friend request becomes a friendship (the gateway's `RELATIONSHIP_ADD` with type 1, on either side) the client creates the DM with `POST /users/@me/channels` (idempotent), adds it to Direct Messages and reopens it if it had been closed. The top of an empty or fully loaded 1:1 DM shows a large avatar, the display name, the username and "This is the beginning of your direct message history with @name."; while the DM has no messages, a "Wave to name" button sends a wave message and then disappears. Logic in `domain/dmIntro.ts`, view in `interface/features/chat/DmIntro.tsx`.
+
+## Media viewer
+
+Images and videos open in one lightbox with the same chrome: Save as, Open original and a Close button; clicking outside the media and Esc also close it. The video player's own fullscreen button is hidden there.
 
 ## Sounds
 
