@@ -735,7 +735,7 @@ A guild (server). `voice_region` is a Discordy extra.
 | `id` | `Snowflake` |  |
 | `name` | `string` |  |
 | `icon` | `?string` |  |
-| `splash?` | `?string` |  |
+| `splash?` | `?string` | Invite splash image hash (CDN path splashes/{guild_id}/{hash}), or null. |
 | `discovery_splash?` | `?string` |  |
 | `owner?` | `boolean` | True if the current user owns the guild. |
 | `owner_id` | `Snowflake` |  |
@@ -751,12 +751,12 @@ A guild (server). `voice_region` is a Discordy extra.
 | `mfa_level` | `integer` |  |
 | `application_id?` | `?Snowflake` |  |
 | `system_channel_id` | `?Snowflake` |  |
-| `system_channel_flags` | `integer` |  |
+| `system_channel_flags` | `integer` | Bit set of system message suppressions: 1 join notifications, 2 server boosts, 4 setup tips, 8 join reply buttons, 16 role subscription purchases, 32 their reply buttons. A set bit turns that message off; 0 keeps all on. Join messages are posted to system_channel_id when it is set and bit 1 is clear. |
 | `rules_channel_id?` | `?Snowflake` |  |
 | `max_members?` | `integer` |  |
 | `vanity_url_code?` | `?string` |  |
 | `description?` | `?string` |  |
-| `banner?` | `?string` |  |
+| `banner?` | `?string` | Banner image hash (CDN path banners/{guild_id}/{hash}), or null. |
 | `preferred_locale` | `string` |  |
 | `public_updates_channel_id?` | `?Snowflake` |  |
 | `nsfw_level?` | `integer` |  |
@@ -808,7 +808,7 @@ A guild with its full state (GUILD_CREATE payload and the internal guild state e
 | `id` | `Snowflake` |  |
 | `name` | `string` |  |
 | `icon` | `?string` |  |
-| `splash?` | `?string` |  |
+| `splash?` | `?string` | Invite splash image hash (CDN path splashes/{guild_id}/{hash}), or null. |
 | `discovery_splash?` | `?string` |  |
 | `owner?` | `boolean` | True if the current user owns the guild. |
 | `owner_id` | `Snowflake` |  |
@@ -824,12 +824,12 @@ A guild with its full state (GUILD_CREATE payload and the internal guild state e
 | `mfa_level` | `integer` |  |
 | `application_id?` | `?Snowflake` |  |
 | `system_channel_id` | `?Snowflake` |  |
-| `system_channel_flags` | `integer` |  |
+| `system_channel_flags` | `integer` | Bit set of system message suppressions: 1 join notifications, 2 server boosts, 4 setup tips, 8 join reply buttons, 16 role subscription purchases, 32 their reply buttons. A set bit turns that message off; 0 keeps all on. Join messages are posted to system_channel_id when it is set and bit 1 is clear. |
 | `rules_channel_id?` | `?Snowflake` |  |
 | `max_members?` | `integer` |  |
 | `vanity_url_code?` | `?string` |  |
 | `description?` | `?string` |  |
-| `banner?` | `?string` |  |
+| `banner?` | `?string` | Banner image hash (CDN path banners/{guild_id}/{hash}), or null. |
 | `preferred_locale` | `string` |  |
 | `public_updates_channel_id?` | `?Snowflake` |  |
 | `nsfw_level?` | `integer` |  |
@@ -2010,14 +2010,14 @@ PATCH /guilds/{id} body (partial). `voice_region` is a Discordy extra.
 | --- | --- | --- |
 | `name?` | `string` |  |
 | `icon?` | `?string` |  |
-| `banner?` | `?string` |  |
-| `splash?` | `?string` |  |
+| `banner?` | `?string` | Image data URI (png, jpeg, gif or webp, at most 10 MiB) to set the banner; null removes it. |
+| `splash?` | `?string` | Image data URI (png, jpeg, gif or webp, at most 10 MiB) to set the invite splash; null removes it. |
 | `description?` | `?string` |  |
 | `owner_id?` | `Snowflake` |  |
 | `afk_channel_id?` | `?Snowflake` |  |
 | `afk_timeout?` | `integer` |  |
 | `system_channel_id?` | `?Snowflake` |  |
-| `system_channel_flags?` | `integer` |  |
+| `system_channel_flags?` | `integer` | Bit set of system message suppressions: 1 join notifications, 2 server boosts, 4 setup tips, 8 join reply buttons, 16 role subscription purchases, 32 their reply buttons. A set bit turns that message off; 0 keeps all on. Join messages are posted to system_channel_id when it is set and bit 1 is clear. |
 | `rules_channel_id?` | `?Snowflake` |  |
 | `public_updates_channel_id?` | `?Snowflake` |  |
 | `preferred_locale?` | `string` |  |
