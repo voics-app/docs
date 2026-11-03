@@ -10,7 +10,7 @@ Tickets that edit the same files run in the same lane, one after the other, so t
 
 | Lane | Area (files it owns while active) | Order |
 |---|---|---|
-| **A: messages** | `chat/MessageItem.tsx`, `chat/MarkdownView.tsx`, `chat/ReplyPreview`, member list tags; later `voice/VoiceStage.tsx`, `voice/Participants.tsx`, `voiceStore` | client#86 → client#87 → client#95 |
+| **A: messages** | `chat/MessageItem.tsx`, `chat/MarkdownView.tsx`, `chat/ReplyPreview`, member list tags; later `voice/VoiceStage.tsx`, `voice/Participants.tsx`, `voiceStore` | client#86 → client#87 → client#182 (wire Chat toggles) → client#95 |
 | **B: settings and composer** | `settings/SettingsHost.tsx` and tabs, a shared `UnsavedBar`; `chat/Composer.tsx`, `chat/ChatView.tsx` `TypingBar`; later `channels/UserPanel.tsx`, `shell/customStatus.ts`, `members/ProfileDialog.tsx`, `home/HomeSidebar.tsx` | client#89 → client#88 → client#85 |
 | **C: navigation, header, apps, ops** | `palette/CommandPalette.tsx`, `app/shortcuts.ts`, `useUiStore` history; `chat/ChatView.tsx` header part, `panels/SidePanelHost.tsx` pins; app menus and a developer page; gitops alert rules | client#90 → client#93 → client#77 → gitops#61 → gitops#48 |
 | Lead | | gitops#56 (verify and close) |
@@ -52,6 +52,8 @@ Why this order:
   - Call message (type 3): duration and a Join call button.
 - **Backend check (do first):** do api/messages emit types 3 and 18? Look at the producers and `contracts/schemas/objects/message.json`. If not, render what exists and report the gap to the lead, who files the backend issue. Group DM types depend on api#29.
 - **Idea:** greetings as a list in the brand-neutral i18n strings.
+
+**client#182: wire the Chat settings toggles (P1, follow-up of client#89).** Six Chat tab prefs (`inlineMedia`, `inlineEmbeds`, `spoilerDisplay`, `showReactions`, `compactReplyPreview`, `convertEmoticons`) only store their value. Wire them into `MessageItem.tsx` / `MarkdownView.tsx` (and the composer for emoticons), with a unit test per toggle.
 
 **client#95: call view interactions (P1).**
 
@@ -181,18 +183,21 @@ Updated by the lead after every hand-back. GitHub board: <https://github.com/org
 
 | Ticket | Lane | Status | PRs | Notes |
 |---|---|---|---|---|
-| client#86 | A | in progress | | |
-| client#87 | A | queued | | |
-| client#95 | A | queued | | |
-| client#89 | B | in progress | | |
-| client#88 | B | queued | | needs #89 |
-| client#85 | B | queued | | |
-| client#90 | C | in progress | | |
-| client#93 | C | queued | | needs #90 for Jump |
-| client#77 | C | queued | | |
-| gitops#61 | C | queued | | |
-| gitops#48 | C | queued | | docs only |
-| gitops#56 | lead | closing | | owner created the Secret |
+| client#86 | A | merged | client#179, docs#80 | visual check in the client 0.5.x smoke |
+| client#87 | A | merged | client#183, docs#83 | the lead fixed content types 21/23; producers for 3/6/7/18: messages#54 |
+| client#182 | A | merging | client#191 (replaced #186), docs#86 | wires the six Chat toggles from #89 |
+| client#95 | A | partial, merging | client#189, docs#90 | backend gaps: voice#22 (screen unsubscribe), voice#23 (viewers), gateway#36 (ring) |
+| client#89 | B | merged | client#181, docs#82 | |
+| client#88 | B | merging | client#185, docs#85 | `@here` online-only: messages#53 |
+| client#85 | B | merged | client#187, docs#88 | gateway validation of activities: gateway#35 (P1 security) |
+| client#90 | C | merging | client#180, docs#81 | |
+| client#93 | C | merging | client#192 (replaced #184), docs#84 | Threads button waits for api#34 |
+| client#77 | C | merging | client#190 (replaced #188), docs#87 | app directory is a follow-up |
+| gitops#61 | C | merging | gitops#66, docs#91, docs#93 | the lead added `FluxImageScanMetricMissing` and the dev memory patch |
+| gitops#48 | C | ADR proposed | docs#92 | 5 owner questions in ADR-0023 |
+| gitops#56 | lead | done | | owner created the Secret |
+
+**Merging note (2026-11-03):** the client PRs were built in parallel and all append CSS at the same spot in `app.css`, so each merge conflicts the next one. They are merged one at a time: merge `develop` into the branch, keep both CSS sides, wait for CI, merge. Force-push is not allowed, so a stale stacked PR is replaced by a new PR that carries only its own commit.
 
 ## If you take over
 
