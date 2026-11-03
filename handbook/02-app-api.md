@@ -15,6 +15,12 @@ Summary: the REST API and owner of the relational data (Postgres), in Rust.
 
 Accounts, users and settings, DMs, relationships, devices and MLS key packages, guilds, channels, roles and permissions, members, bans, invites, emojis, audit log, applications and bots, slash commands, interactions and webhooks. It also serves the internal `/internal/v1` endpoints used by the gateway, messages and admin-bff (header `X-Internal-Token`).
 
+### Login sessions and remote logout
+
+Every login (register, login, login with a second factor) creates a session: one refresh-token family, with the client and OS parsed from the `User-Agent`, an approximate location only when the edge sends a country (`CF-IPCountry`; nothing otherwise, no IP is stored) and a last-used time that moves on every token refresh. `GET /users/@me/sessions` lists the caller's live sessions, most recently used first, with `current` set on the one making the request. `DELETE /users/@me/sessions/{session_id}` logs out one other session (400 `CANNOT_REVOKE_CURRENT_SESSION` for the current one, which uses `POST /auth/logout`; 404 for unknown or foreign ids) and `POST /users/@me/sessions/logout-all` logs out every session except the current one.
+
+Revoking takes effect at once: every request checks the session row, so its access tokens stop working immediately and its refresh token is rejected. The api also publishes the bus-only `SESSION_REVOKE` event (topic `discordy.user.v1`, `{session_ids}`, targeted at the user) and the gateway closes the live connections of those sessions with 4004, which the client treats as a sign-out. All revocation paths publish it: these routes, logout, password reset, disabling or deleting the account and an admin suspension. The encrypted-message device bound to a revoked session is removed unless another live session still holds it.
+
 ## Folder map
 
 | Path | What is there |

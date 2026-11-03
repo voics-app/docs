@@ -68,6 +68,10 @@ The panel at the bottom of the channel list has the avatar (status menu), mute, 
 
 While connected, the voice dock above it shows the channel and server. The signal icon opens Connection details: average ping (over the last 60 samples), last ping, outbound packet loss, jitter, bitrate, region, encryption state (end-to-end MLS or transport only) and transport (DTLS-SRTP over WebRTC). The dock and the call stage also have a noise suppression toggle (the RNNoise setting) and a camera button with a caret for choosing the camera (Test camera opens Voice and video settings). Soundboard and activities buttons arrive with voice#10 and api#50. Logic lives in `domain/voicePanel.ts`; the menus in `interface/features/voice/DeviceMenus.tsx`.
 
+## Devices and login sessions
+
+Settings > Devices starts with Logged-in devices: each login session of the account with its client and OS, approximate country when known, the name of its encrypted-message device and when it was last active, with this device marked and listed first. Log out on a row signs that device out; Log out all known devices (after a confirmation) signs out every device except this one. The revoked device is disconnected right away and returns to its sign-in screen. Below it, Encrypted-message devices lists the devices that can receive your encrypted messages. Logic lives in `domain/authSessions.ts`; the list in `interface/features/settings/user/SessionsList.tsx`. The endpoints are described in the api page.
+
 ## Desktop integration settings
 
 Settings > Desktop holds device-local options (never synced to the account), stored in `main-settings.json` in the user data folder and validated in the main process (`src/main/desktop/`):

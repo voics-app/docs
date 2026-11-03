@@ -87,6 +87,7 @@ Redpanda event envelope. `data` is exactly the gateway DISPATCH payload for `typ
 | `AUDIT_LOG_ENTRY_CREATE` | `discordy.audit.v1` | `AuditLogEntryCreateEvent` |
 | `VOICE_MEMBER_MOVE` | `discordy.guild.v1` | `VoiceMemberMoveEvent` |
 | `BAN_MESSAGE_PURGE` | `discordy.guild.v1` | `BanMessagePurgeEvent` |
+| `SESSION_REVOKE` | `discordy.user.v1` | `SessionRevokeEvent` |
 | `VOICE_QUALITY` | `discordy.telemetry.v1` | `VoiceQualityEvent` |
 | `USAGE_TICK` | `discordy.telemetry.v1` | `UsageTickEvent` |
 
@@ -113,6 +114,14 @@ BAN_MESSAGE_PURGE bus event (discordy.guild.v1, routed by guild_id). A moderator
 | `channel_ids` | `array of Snowflake` | The guild's text-capable channels and threads at ban time. |
 | `since_ms` | `integer` | Unix milliseconds: messages created at or after this instant are deleted (ban time minus delete_message_seconds). |
 | `delete_message_seconds` | `integer` |  |
+
+### SessionRevokeEvent
+
+SESSION_REVOKE bus event (discordy.user.v1, routed to the user in target_user_ids). Login sessions were revoked (DELETE /users/@me/sessions/{id}, POST /users/@me/sessions/logout-all). The gateway closes every live connection whose authenticated session id is listed, with close code 4004, and never dispatches it to clients.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `session_ids` | `array of string (uuid)` | The revoked session ids. |
 
 ### VoiceQualityEvent
 
