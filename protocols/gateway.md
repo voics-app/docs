@@ -38,6 +38,7 @@ Every gateway frame (both directions). `s` and `t` are only set on DISPATCH (op 
 | 23 | `VOICE_TELEMETRY` | send | `VoiceTelemetryPayload` | Client voice quality sample, published to discordy.telemetry.v1. |
 | 24 | `WATCH_TOGETHER` | both | `WatchTogetherPayload` | Watch Together playback synchronisation. |
 | 25 | `CALL_DECLINE` | send | `CallDeclinePayload` | Declines the DM call ringing in a channel. The caller's call stops ringing for this user. |
+| 26 | `CALL_RING` | send | `CallRingPayload` | Rings 1 to 10 members of a DM channel for a call the sender is in. |
 
 ## Opcode payloads
 
@@ -61,12 +62,12 @@ Op 2 IDENTIFY.
 
 ### PresenceUpdatePayload
 
-Op 3 PRESENCE_UPDATE (also the optional `presence` of IDENTIFY).
+Op 3 PRESENCE_UPDATE (also the optional `presence` of IDENTIFY). `activities` are sanitised by the gateway: at most 5 entries and at most one of type 4 (custom status); text fields at most 128 characters, `url` at most 512; unknown fields are dropped. Any violation closes the socket with 4002 DECODE_ERROR.
 
 | Field | Type | Description |
 | --- | --- | --- |
 | `status` | `"online" or "idle" or "dnd" or "invisible"` |  |
-| `activities` | `array of Activity` |  |
+| `activities` | `array of Activity` | At most 5 activities, at most one with type 4. Violations close the socket with 4002. |
 | `afk` | `boolean` |  |
 | `since?` | `?integer` | Unix ms since the client went idle. |
 
@@ -180,6 +181,23 @@ Op 24 WATCH_TOGETHER.
 | `position_ms` | `integer` |  |
 | `at_server_ms` | `integer` | Server clock (unix ms) the position refers to. |
 
+### CallDeclinePayload
+
+Op 25 CALL_DECLINE. Declines the call ringing in a DM channel; a no-op when the user is not ringing.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `channel_id` | `Snowflake` |  |
+
+### CallRingPayload
+
+Op 26 CALL_RING. Rings the listed members of a DM channel for a call the sender is in.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `channel_id` | `Snowflake` |  |
+| `user_ids` | `array of Snowflake` | Users to ring, 1 to 10. |
+
 ## Close codes
 
 | Code | Name | Description | Reconnect |
@@ -288,7 +306,7 @@ READY: the internal ready state plus session details.
 | `private_channels` | `array of Channel` |  |
 | `relationships` | `array of Relationship` |  |
 | `user_settings` | `UserSettings` |  |
-| `user_guild_settings` | `array of GuildNotificationSettings` | Stored notification settings of the user's guilds and DMs (`guild_id` null). Guilds without a row use the defaults. |
+| `user_guild_settings` | `array of GuildNotificationSettings` | Stored notification settings of the user's guilds and DMs (guild_id null); guilds without a row use the defaults. |
 | `notes` | `map of string` | The user's private notes keyed by the noted user's id. |
 | `v` | `integer` | Gateway version (1). |
 | `session_id` | `string` |  |
@@ -330,6 +348,15 @@ VOICE_SERVER_UPDATE dispatch.
 | `channel_id` | `Snowflake` |  |
 | `endpoint` | `string` | Voice node WebSocket URL. |
 | `region` | `string` |  |
+
+### CallDeleteEvent
+
+CALL_DELETE dispatch: the last participant left the DM call.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `channel_id` | `Snowflake` |  |
+| `message_id` | `null` | Always null. |
 
 ### GuildMembersChunkEvent
 
@@ -459,8 +486,9 @@ MESSAGE_CREATE / MESSAGE_UPDATE dispatch: a message plus guild context.
 | `reactions?` | `array of Reaction` |  |
 | `nonce?` | `string` | Client nonce used to resolve optimistic sends. |
 | `pinned` | `boolean` |  |
+| `hit?` | `boolean` | Only in message search results: true for the matching message, absent for its context messages. |
 | `webhook_id?` | `Snowflake` |  |
-| `type` | `integer` | MessageType. |
+| `type` | `integer` | MessageType. 0 DEFAULT, 19 REPLY. A forwarded message keeps type 0 and is identified by message_reference.type = 1 plus message_snapshots (Discord semantics). |
 | `application_id?` | `Snowflake` |  |
 | `flags?` | `integer` |  |
 | `message_reference?` | `MessageReference` |  |
@@ -469,6 +497,7 @@ MESSAGE_CREATE / MESSAGE_UPDATE dispatch: a message plus guild context.
 | `thread?` | `Channel` |  |
 | `components?` | `array of MessageComponent` |  |
 | `position?` | `integer` |  |
+| `message_snapshots?` | `array of MessageSnapshot` | Present on messages with message_reference.type = 1 (FORWARD): a frozen copy of the forwarded message taken at forward time. |
 | `guild_id?` | `Snowflake` |  |
 | `member?` | `GuildMember` |  |
 
@@ -561,21 +590,6 @@ USER_NOTE_UPDATE dispatch, sent to the author's sessions only. An empty note mea
 | --- | --- | --- |
 | `id` | `Snowflake` | The user the note is about. |
 | `note` | `string` |  |
-
-### GuildNotificationSettings
-
-Payload of USER_GUILD_SETTINGS_UPDATE and the `user_guild_settings` entries of READY. See the [notification settings spec](../specs/2026-10-20-notification-settings-and-notes.md).
-
-| Field | Type | Description |
-| --- | --- | --- |
-| `guild_id` | `Snowflake or null` | null for direct messages and group DMs. |
-| `message_notifications` | `0, 1, 2 or null` | all, only @mentions, nothing; null inherits. |
-| `suppress_everyone` | `boolean` |  |
-| `suppress_roles` | `boolean` |  |
-| `muted` | `boolean` |  |
-| `mute_config` | `{end_time} or null` | `end_time` null means until turned off. |
-| `hide_muted_channels` | `boolean` |  |
-| `channel_overrides` | `array` | `{channel_id, message_notifications, muted, mute_config}`; only non-default overrides. |
 
 ### RelationshipRemoveEvent
 

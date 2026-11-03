@@ -30,7 +30,7 @@ Every voice WebSocket frame (both directions).
 | 11 | `CLIENTS_CONNECT` | receive | `ClientsConnectPayload` | Users who joined the call. |
 | 12 | `VIDEO` | both | `VideoPayload` | Video/screen-share SSRC announcement. |
 | 13 | `CLIENT_DISCONNECT` | receive | `ClientDisconnectPayload` | A user left the call. |
-| 15 | `MEDIA_SINK_WANTS` | send | `MediaSinkWantsPayload` | Requested quality (0-100) per SSRC; selects the simulcast layer. |
+| 15 | `MEDIA_SINK_WANTS` | send | `MediaSinkWantsPayload` | Requested quality (0-100) per SSRC; selects the simulcast layer. Screen shares are delivered only after opting in with the screen SSRC at quality > 0. |
 | 21 | `DAVE_PREPARE_TRANSITION` | receive | `DavePrepareTransitionPayload` | A DAVE protocol transition is about to happen. |
 | 22 | `DAVE_EXECUTE_TRANSITION` | receive | `DaveTransitionPayload` | Execute a previously prepared transition. |
 | 23 | `DAVE_TRANSITION_READY` | send | `DaveTransitionPayload` | The client is ready for the transition. |
@@ -42,6 +42,7 @@ Every voice WebSocket frame (both directions).
 | 29 | `DAVE_MLS_ANNOUNCE_COMMIT` | receive | `DaveMlsAnnounceCommitPayload` | The winning commit for a transition. |
 | 30 | `DAVE_MLS_WELCOME` | receive | `DaveMlsWelcomePayload` | An MLS welcome for a joining member. |
 | 31 | `DAVE_MLS_INVALID_COMMIT` | send | `DaveTransitionPayload` | The received commit or welcome was invalid; the client asks to be re-added. |
+| 40 | `STREAM_VIEWERS` | receive | `StreamViewersPayload` | Sent to the streamer only: the full list of users watching their screen share, re-sent on every change. |
 
 ## Opcode payloads
 
@@ -149,7 +150,7 @@ Voice op 13 CLIENT_DISCONNECT.
 
 ### MediaSinkWantsPayload
 
-Voice op 15 MEDIA_SINK_WANTS: keys are SSRCs as decimal strings, values the wanted quality 0-100.
+Voice op 15 MEDIA_SINK_WANTS: keys are SSRCs as decimal strings, values the wanted quality 0-100. Selects the simulcast layer. Screen-share packets are opt-in: a subscriber receives a publisher's screen (the SSRC announced with `type: screen` in VIDEO) only after listing that SSRC with quality > 0; otherwise the SFU skips the packets. Opting in also makes the streamer's op 40 STREAM_VIEWERS list include the subscriber.
 
 Type: `map of integer`
 
@@ -231,6 +232,15 @@ Voice op 30 DAVE_MLS_WELCOME.
 | `transition_id` | `integer` |  |
 | `welcome_b64` | `string` |  |
 
+### StreamViewersPayload
+
+Voice op 40 STREAM_VIEWERS. Server to streamer only: the users currently watching the streamer's screen share. Always the full list (empty means nobody); it is re-sent whenever the set changes.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `ssrc` | `integer` | The streamer's screen SSRC. |
+| `user_ids` | `array of Snowflake` | Every current viewer. |
+
 ## Speaking flags
 
 | Value | Name |
@@ -250,6 +260,7 @@ Signaling talks to the co-located SFU over TCP `127.0.0.1:4101` with newline-del
 | command (`cmd`) | `set_sink_wants` | `SfuSetSinkWants` | Updates simulcast layer preferences for a session. |
 | event (`evt`) | `session_created` | `SfuSessionCreated` | Reply to create_session with the SFU's ICE/DTLS parameters. |
 | event (`evt`) | `speaking` | `SfuSpeaking` | Voice activity detected on an SSRC. |
+| event (`evt`) | `stream_viewers` | `SfuStreamViewers` | The opted-in viewers of a screen share changed; carries the full list. |
 | event (`evt`) | `stats` | `SfuStats` | Periodic SFU load statistics. |
 
 ### SfuCreateSession
@@ -306,6 +317,17 @@ SFU control event: voice activity on an SSRC.
 | `session_id` | `string` |  |
 | `ssrc` | `integer` |  |
 | `speaking` | `integer` |  |
+
+### SfuStreamViewers
+
+SFU control event: the set of subscribers opted in to a screen share changed. Carries the full viewer list; signalling forwards it to the streamer as voice op 40.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `evt` | `"stream_viewers"` |  |
+| `session_id` | `string` |  |
+| `ssrc` | `integer` | The streamer's screen SSRC. |
+| `viewers` | `array of string` | User ids of every opted-in viewer. |
 
 ### SfuStats
 
