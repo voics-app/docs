@@ -130,3 +130,22 @@ Client behaviour:
 | Report | disabled "coming soon" entry until the report backend lands (Forward is implemented, see ADR 0020) |
 
 Already covered earlier: Copy Message Link (`discordy://channels/{guild}/{channel}/{message}`, handled by `main/deepLinks.ts`), delete confirmation with Shift to skip, Mark Unread. An https link form is deferred until a web origin for messages exists.
+
+## System messages (client#87)
+
+Server-generated messages (every `type` other than 0, 19 and 20) render as an icon row (`SystemMessage.tsx`, table in `domain/systemMessage.ts`) with a coloured icon, text with bold names and links, the time (full date on hover) and a hover toolbar and context menu.
+
+| Type | Row | Interaction |
+|---|---|---|
+| 1 recipient add | "X added Y to the group." | |
+| 2 recipient remove | "X removed Y from the group." or "X left the group." | |
+| 3 call | "X started a call." then "X started a call that lasted 7 minutes." once `call.ended_timestamp` is set | Join call button while the call is running |
+| 4 name change | "X changed the group name to N." | |
+| 5 icon change | "X changed the group icon." | |
+| 6 pin | "X pinned a message to this channel. See all pinned messages." | "a message" jumps to `message_reference`, "pinned messages" opens the pins panel |
+| 7 join | one of 10 greetings, picked from the message id (same line on every client) | "Wave to say hi" replies with a wave emoji (`replyTo` the join message) |
+| 18 thread created | "X started a thread: name." | the name opens the thread side panel |
+| other | "Unknown system message (type N)" | |
+
+- Hover toolbar: React (first quick reaction, only with Add Reactions), Delete (Manage Messages), More. Context menu: Mark Unread, Delete (Manage Messages, confirm), Copy Message ID (hidden unless Developer mode is on). Reactions render under the row.
+- Producers today: messages emits 1, 2, 4, 5 (api posts them through `POST /internal/channels/{id}/messages`, standard-mode group DMs only). Nothing emits 3, 6, 7 or 18 yet; the messages `MessageKind` maps those codes to default and the internal route rejects them, and `contracts/schemas/objects/message.json` documents only types 0 and 19 and has no `call` object. The client renders them as soon as they are produced; `call` is read as `{ participants?, ended_timestamp? }` (Discord shape).
