@@ -70,3 +70,7 @@ Chosen option: **1**.
 - **CPU type.** The Proxmox VM must use CPU type **`host`**. ScyllaDB needs PCLMUL, which the default `qemu64`/`kvm64` model hides.
 - **Memory.** The VM has **12 GB**. ScyllaDB runs with `--memory 768M --reserve-memory 128M` inside a 1 Gi limit; seastar's default 1.5 GB reserve cannot fit. ingress-nginx runs 2 workers (one per CPU thread overran its limit on the 12-thread host CPU). Budgets are checked by `gitops/scripts/memory-budget.sh`.
 - **Reproducibility.** Flux rebuilds the cluster contents from git, but the VM itself and the bootstrap order are still manual. One-command provisioning (Terraform for Proxmox, Hetzner and AWS) is tracked in gitops#28, and a dev/test environment in gitops#27.
+
+## Amendment 2026-11-03: RBAC addon
+
+The original set-up enabled only `dns`, `hostpath-storage` and `metrics-server`, so the apiserver authorized every request (AlwaysAllow, gitops#32). The `rbac` addon is now enabled on `gen-serv` and in `bootstrap/10-prepare-node.sh`, so every new environment gets it. Who has what, and how access is requested and changed: [access control runbook](../runbooks/access-control.md).
