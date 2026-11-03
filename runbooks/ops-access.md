@@ -52,4 +52,5 @@ You get 403 everywhere. Change `OPS_ALLOWED_CIDRS` in `gitops/infrastructure/con
 | Redirect loop or "Access denied" on Cloudflare | Wrong email, or the Access app was edited; re-run `ACCESS_ONLY=true bootstrap/40-cloudflare.sh` |
 | 530 / 1033 from Cloudflare | Tunnel down: `kubectl -n voics-system get pods \| grep cloudflared` |
 | Headlamp "unauthorized" | The token expired; create a new one |
+| Headlamp shows nothing before sign-in | Expected: the Headlamp pod has no rights of its own since RBAC was enabled (2026-11-03); sign in with a `headlamp-admin` token. Who has what: [access control](access-control.md) |
 | Admin panel 401/403 | `ADMIN_ALLOWED_EMAILS` does not list the Access email, or `CF_ACCESS_AUD` no longer matches the Access app |

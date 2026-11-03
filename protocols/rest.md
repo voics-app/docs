@@ -167,10 +167,12 @@ Errors use the envelope `{ "code": int, "message": string, "errors"?: object }`.
 | --- | --- | --- | --- | --- | --- |
 | `GET` | `/channels/{channel_id}` | api | — | `Channel` | Get a channel |
 | `PATCH` | `/channels/{channel_id}` | api | `ModifyChannelRequest` | `Channel` | Modify a channel (including delivery_mode and voice_region) |
-| `DELETE` | `/channels/{channel_id}` | api | — | `Channel` | Delete a channel or close a DM |
+| `DELETE` | `/channels/{channel_id}` | api | — | `Channel` | Delete a channel, leave a group DM or close a DM |
 | `PUT` | `/channels/{channel_id}/permissions/{overwrite_id}` | api | `EditOverwriteRequest` | 204 No Content | Create or edit a permission overwrite |
 | `DELETE` | `/channels/{channel_id}/permissions/{overwrite_id}` | api | — | 204 No Content | Delete a permission overwrite |
 | `POST` | `/channels/{channel_id}/invites` | api | `CreateInviteRequest` | `Invite` | Create an invite |
+| `PUT` | `/channels/{channel_id}/recipients/{user_id}` | api | — | 204 No Content | Add a user to a group DM |
+| `DELETE` | `/channels/{channel_id}/recipients/{user_id}` | api | — | 204 No Content | Remove a user from a group DM, or leave with @me |
 | `POST` | `/channels/{channel_id}/typing` | api | — | 204 No Content | Trigger the typing indicator (publishes TYPING_START) |
 | `POST` | `/channels/{channel_id}/threads` | api | `CreateThreadRequest` | `Channel` | Start a thread (or forum post) |
 
@@ -194,6 +196,10 @@ Errors use the envelope `{ "code": int, "message": string, "errors"?: object }`.
 | `PATCH` | `/channels/{channel_id}/messages/{message_id}` | messages | `EditMessageRequest` | `Message` | Edit a message |
 | `DELETE` | `/channels/{channel_id}/messages/{message_id}` | messages | — | 204 No Content | Delete a message |
 | `POST` | `/channels/{channel_id}/messages/bulk-delete` | messages | `BulkDeleteRequest` | 204 No Content | Delete 2-100 messages |
+| `DELETE` | `/channels/{channel_id}/messages/{message_id}/reactions` | messages | — | 204 No Content | Remove every reaction from a message (MANAGE_MESSAGES) |
+| `GET` | `/channels/{channel_id}/messages/{message_id}/reactions/{emoji}` | messages | — | `array of PartialUser` | List the users that reacted with an emoji |
+| `DELETE` | `/channels/{channel_id}/messages/{message_id}/reactions/{emoji}` | messages | — | 204 No Content | Remove every reaction of one emoji (MANAGE_MESSAGES) |
+| `DELETE` | `/channels/{channel_id}/messages/{message_id}/reactions/{emoji}/{user_id}` | messages | — | 204 No Content | Remove one user's reaction (MANAGE_MESSAGES) |
 | `PUT` | `/channels/{channel_id}/messages/{message_id}/reactions/{emoji}/@me` | messages | — | 204 No Content | Add a reaction |
 | `DELETE` | `/channels/{channel_id}/messages/{message_id}/reactions/{emoji}/@me` | messages | — | 204 No Content | Remove the caller's reaction |
 | `GET` | `/channels/{channel_id}/pins` | messages | — | `array of Message` | List pinned messages |
@@ -253,18 +259,17 @@ Errors use the envelope `{ "code": int, "message": string, "errors"?: object }`.
 
 ### Activity
 
-A user activity.
+A user activity as stored and fanned out. The gateway sanitises client activities (PRESENCE_UPDATE): only the fields below are kept, unknown fields (including `application_id`) are dropped, and a violation closes the socket with 4002.
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `name` | `string` |  |
-| `type` | `integer` | ActivityType. |
-| `url?` | `?string` |  |
-| `created_at?` | `integer` |  |
+| `name` | `string` | Required, non-empty, at most 128 characters. |
+| `type` | `integer` | ActivityType, 0..5. At most one activity per presence may be type 4 (custom status). |
+| `url?` | `?string` | At most 512 characters. |
+| `created_at?` | `integer` | Unix milliseconds. |
 | `timestamps?` | `ActivityTimestamps` |  |
-| `application_id?` | `Snowflake` |  |
-| `details?` | `?string` |  |
-| `state?` | `?string` |  |
+| `details?` | `?string` | At most 128 characters. |
+| `state?` | `?string` | At most 128 characters. |
 | `emoji?` | `?ActivityEmoji` |  |
 
 ### ActivityEmoji
@@ -274,7 +279,7 @@ Emoji of a custom status.
 | Field | Type | Description |
 | --- | --- | --- |
 | `name` | `string` |  |
-| `id?` | `Snowflake` |  |
+| `id?` | `Snowflake` | Custom emoji id. |
 | `animated?` | `boolean` |  |
 
 ### ActivityTimestamps
@@ -295,7 +300,7 @@ Controls which mentions in a message notify.
 | `parse?` | `array of "roles" or "users" or "everyone"` |  |
 | `roles?` | `array of Snowflake` |  |
 | `users?` | `array of Snowflake` |  |
-| `replied_user?` | `boolean` |  |
+| `replied_user?` | `boolean` | Whether to mention the author of the replied-to message. Defaults to true; false suppresses the reply ping (no mention, no notification). |
 
 ### Application
 
@@ -402,7 +407,7 @@ A file attached to a message.
 | `ephemeral?` | `boolean` |  |
 | `duration_secs?` | `number` |  |
 | `waveform?` | `string` |  |
-| `flags?` | `integer` |  |
+| `flags?` | `integer` | AttachmentFlags bit set; IS_SPOILER (8) marks a spoiler. |
 
 ### AuditEntryInfo
 
@@ -620,7 +625,7 @@ Rich embed content.
 | Field | Type | Description |
 | --- | --- | --- |
 | `title?` | `string` |  |
-| `type?` | `string` |  |
+| `type?` | `string` | EmbedType: rich, link, image, video, gifv or article. Server-generated unfurls use every type but rich. |
 | `description?` | `string` |  |
 | `url?` | `string` |  |
 | `timestamp?` | `string (date-time)` |  |
@@ -666,7 +671,7 @@ Embed footer.
 
 ### EmbedMedia
 
-Embed image, thumbnail or video.
+Embed image, thumbnail or video. For unfurled links `url` is the original remote address, `proxy_url` a signed media-proxy URL on the CDN host that clients load instead; a video of type text/html is an allow-listed player iframe.
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -730,7 +735,7 @@ A guild (server). `voice_region` is a Discordy extra.
 | `id` | `Snowflake` |  |
 | `name` | `string` |  |
 | `icon` | `?string` |  |
-| `splash?` | `?string` |  |
+| `splash?` | `?string` | Invite splash image hash (CDN path splashes/{guild_id}/{hash}), or null. |
 | `discovery_splash?` | `?string` |  |
 | `owner?` | `boolean` | True if the current user owns the guild. |
 | `owner_id` | `Snowflake` |  |
@@ -746,12 +751,12 @@ A guild (server). `voice_region` is a Discordy extra.
 | `mfa_level` | `integer` |  |
 | `application_id?` | `?Snowflake` |  |
 | `system_channel_id` | `?Snowflake` |  |
-| `system_channel_flags` | `integer` |  |
+| `system_channel_flags` | `integer` | Bit set of system message suppressions: 1 join notifications, 2 server boosts, 4 setup tips, 8 join reply buttons, 16 role subscription purchases, 32 their reply buttons. A set bit turns that message off; 0 keeps all on. Join messages are posted to system_channel_id when it is set and bit 1 is clear. |
 | `rules_channel_id?` | `?Snowflake` |  |
 | `max_members?` | `integer` |  |
 | `vanity_url_code?` | `?string` |  |
 | `description?` | `?string` |  |
-| `banner?` | `?string` |  |
+| `banner?` | `?string` | Banner image hash (CDN path banners/{guild_id}/{hash}), or null. |
 | `preferred_locale` | `string` |  |
 | `public_updates_channel_id?` | `?Snowflake` |  |
 | `nsfw_level?` | `integer` |  |
@@ -783,6 +788,17 @@ A guild opt-in discovery listing and the rules that currently block listing it. 
 | `member_count` | `integer` |  |
 | `blockers` | `array of "DESCRIPTION_REQUIRED" or "MEMBER_COUNT_TOO_LOW" or "GUILD_TOO_NEW" or "NSFW_NOT_ALLOWED"` |  |
 
+### GuildFolder
+
+One entry of the user's server rail (`user_settings.guild_folders`). The array order is the rail order. An entry with a `null` id is a plain, un-foldered server (exactly one guild id); an entry with an id is a folder.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `id` | `?integer` | Folder id chosen by the client (stable per user); null for a single un-foldered server. |
+| `name` | `?string` |  |
+| `color` | `?integer` | RGB colour as 0xRRGGBB. |
+| `guild_ids` | `array of Snowflake` |  |
+
 ### GuildFull
 
 A guild with its full state (GUILD_CREATE payload and the internal guild state endpoint).
@@ -792,7 +808,7 @@ A guild with its full state (GUILD_CREATE payload and the internal guild state e
 | `id` | `Snowflake` |  |
 | `name` | `string` |  |
 | `icon` | `?string` |  |
-| `splash?` | `?string` |  |
+| `splash?` | `?string` | Invite splash image hash (CDN path splashes/{guild_id}/{hash}), or null. |
 | `discovery_splash?` | `?string` |  |
 | `owner?` | `boolean` | True if the current user owns the guild. |
 | `owner_id` | `Snowflake` |  |
@@ -808,12 +824,12 @@ A guild with its full state (GUILD_CREATE payload and the internal guild state e
 | `mfa_level` | `integer` |  |
 | `application_id?` | `?Snowflake` |  |
 | `system_channel_id` | `?Snowflake` |  |
-| `system_channel_flags` | `integer` |  |
+| `system_channel_flags` | `integer` | Bit set of system message suppressions: 1 join notifications, 2 server boosts, 4 setup tips, 8 join reply buttons, 16 role subscription purchases, 32 their reply buttons. A set bit turns that message off; 0 keeps all on. Join messages are posted to system_channel_id when it is set and bit 1 is clear. |
 | `rules_channel_id?` | `?Snowflake` |  |
 | `max_members?` | `integer` |  |
 | `vanity_url_code?` | `?string` |  |
 | `description?` | `?string` |  |
-| `banner?` | `?string` |  |
+| `banner?` | `?string` | Banner image hash (CDN path banners/{guild_id}/{hash}), or null. |
 | `preferred_locale` | `string` |  |
 | `public_updates_channel_id?` | `?Snowflake` |  |
 | `nsfw_level?` | `integer` |  |
@@ -1008,6 +1024,7 @@ A standard-mode message.
 | `edited_timestamp` | `?string (date-time)` |  |
 | `tts` | `boolean` |  |
 | `mention_everyone` | `boolean` |  |
+| `mention_here?` | `boolean` | Extension. With mention_everyone: the message pings with @here only (no @everyone), so only members who are online at send time are notified. Absent or false otherwise. |
 | `mentions` | `array of User` |  |
 | `mention_roles` | `array of Snowflake` |  |
 | `mention_channels?` | `array of ChannelMention` |  |
@@ -1016,16 +1033,28 @@ A standard-mode message.
 | `reactions?` | `array of Reaction` |  |
 | `nonce?` | `string` | Client nonce used to resolve optimistic sends. |
 | `pinned` | `boolean` |  |
+| `hit?` | `boolean` | Only in message search results: true for the matching message, absent for its context messages. |
 | `webhook_id?` | `Snowflake` |  |
-| `type` | `integer` | MessageType. |
+| `type` | `integer` | MessageType. 0 DEFAULT, 1 RECIPIENT_ADD, 2 RECIPIENT_REMOVE, 3 CALL (see call), 4 CHANNEL_NAME_CHANGE, 5 CHANNEL_ICON_CHANGE, 6 CHANNEL_PINNED_MESSAGE (message_reference is the pinned message), 7 GUILD_MEMBER_JOIN (author is the member who joined; posted in the guild system channel when one is set), 18 THREAD_CREATED (content is the thread name, message_reference.channel_id the thread), 19 REPLY. A forwarded message keeps type 0 and is identified by message_reference.type = 1 plus message_snapshots (Discord semantics). |
 | `application_id?` | `Snowflake` |  |
 | `flags?` | `integer` |  |
 | `message_reference?` | `MessageReference` |  |
+| `call?` | `MessageCall` |  |
 | `referenced_message?` | `?Message` |  |
 | `interaction_metadata?` | `MessageInteractionMetadata` |  |
 | `thread?` | `Channel` |  |
 | `components?` | `array of MessageComponent` |  |
 | `position?` | `integer` |  |
+| `message_snapshots?` | `array of MessageSnapshot` | Present on messages with message_reference.type = 1 (FORWARD): a frozen copy of the forwarded message taken at forward time. |
+
+### MessageCall
+
+Payload of a type 3 (CALL) message. ended_timestamp is null while the call is running and is set when it ends.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `participants` | `array of Snowflake` | IDs of the users who took part in the call. |
+| `ended_timestamp?` | `?string (date-time)` |  |
 
 ### MessageComponent
 
@@ -1064,15 +1093,33 @@ The interaction a message responds to.
 
 ### MessageReference
 
-Reference to another message (reply, forward, crosspost).
+Reference to another message (reply, forward, crosspost). type 0 = DEFAULT (reply), 1 = FORWARD. A FORWARD reference requires message_id and channel_id; the server copies the source message into message_snapshots at send time and the reference is informational afterwards (the viewer may lack access to the source channel). On a PIN (type 6) message, message_id is the pinned message. On a THREAD_CREATED (type 18) message, message_id is absent and channel_id is the created thread.
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `type?` | `integer` |  |
+| `type?` | `integer` | MessageReferenceType: 0 DEFAULT (reply), 1 FORWARD. |
 | `message_id?` | `Snowflake` |  |
 | `channel_id?` | `Snowflake` |  |
 | `guild_id?` | `Snowflake` |  |
 | `fail_if_not_exists?` | `boolean` |  |
+
+### MessageSearchResponse
+
+Result of GET /guilds/{guild_id}/messages/search and GET /channels/{channel_id}/messages/search.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `total_results` | `integer` | Number of messages that match, across all pages. |
+| `messages` | `array of array of Message` | One group per hit: the matching message (hit = true) between its context messages, oldest first. |
+| `index_building?` | `boolean` | True while the search index is being (re)built from stored history; results may be incomplete. |
+
+### MessageSnapshot
+
+A frozen copy of a forwarded message. Attachments are re-referenced (same stored object, freshly signed URLs); the snapshot never changes when the source is edited or deleted.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `message` | `object` |  |
 
 ### MuteConfig
 
@@ -1360,6 +1407,34 @@ A private note the current user wrote about another user. Visible only to its au
 | `note_user_id` | `Snowflake` | The user the note is about. |
 | `note` | `string` |  |
 
+### UserPreferences
+
+Client preferences that follow the account across devices (client#123). Sparse: a key is present only once the user (or a first-run migration) set it; clients fall back to their defaults for missing keys. As a PATCH value the object is merged key by key. Device-specific settings (audio and video devices, volumes, keybinds, window state, desktop notification toggle, taskbar flash) are not stored here.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `accent?` | `"iris" or "aurora" or "ember" or "rose" or "citrine" or "sky"` | Accent colour preset. |
+| `reduce_motion?` | `boolean` |  |
+| `font_scale?` | `number` | Chat font scale. |
+| `show_avatars_in_compact?` | `boolean` |  |
+| `link_previews?` | `boolean` | Show previews (embeds) of links in messages. |
+| `saturation?` | `number` | Colour saturation of the interface, 1 is full colour (accessibility). |
+| `role_colors?` | `"name" or "dot" or "hidden"` | How role colours show on member names: tint the name, a dot beside it, or not at all. |
+| `link_underline?` | `boolean` | Always underline links in messages. |
+| `message_spacing?` | `integer` | Space in pixels between message groups. |
+| `high_contrast?` | `boolean` | Increase contrast of text and borders. |
+| `animate_gifs?` | `boolean` | Play GIFs automatically; when off they play on hover. |
+| `animate_emoji?` | `boolean` | Animate custom emoji automatically. |
+| `animate_stickers?` | `boolean` | Animate stickers automatically. |
+| `tts_read_aloud?` | `boolean` | Allow the /tts command and read text-to-speech messages aloud. |
+| `tts_rate?` | `number` | Speech rate of text-to-speech playback, 1 is normal. |
+| `notify_only_mentions?` | `boolean` |  |
+| `notify_sounds?` | `boolean` | Master switch for notification sounds. |
+| `sound_toggles?` | `map of boolean` | Per-sound switches under notify_sounds; a missing entry means on. |
+| `ringtone?` | `string` |  |
+| `skin_tone?` | `string` | Skin tone modifier of the emoji picker; empty for the default. |
+| `recent_reactions?` | `array of object` | Recently used reaction emoji, most recent first. |
+
 ### UserSettings
 
 Account-wide settings of the current user. `default_delivery_mode` is a Discordy extra.
@@ -1375,6 +1450,9 @@ Account-wide settings of the current user. `default_delivery_mode` is a Discordy
 | `developer_mode` | `boolean` |  |
 | `message_display_compact` | `boolean` |  |
 | `accent_color?` | `?integer` |  |
+| `guild_folders` | `array of GuildFolder` | The user's server rail in order, with folders. Synced across devices. |
+| `guild_positions` | `array of Snowflake` | Flat server order (legacy mirror of guild_folders). |
+| `preferences` | `UserPreferences` | Synced client preferences (appearance, chat, notification sounds, emoji). Sparse. |
 
 ### VoiceRegion
 
@@ -1433,7 +1511,8 @@ POST /channels/{id}/messages/{mid}/ack body.
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `mention_count?` | `integer` |  |
+| `manual?` | `boolean` | When true the read marker is set to exactly this message, even backwards (Mark Unread). Without it the marker only moves forward. |
+| `mention_count?` | `integer` | Unread mention count to keep after a manual ack (default 0). |
 
 ### ApplicationCommandRequest
 
@@ -1462,7 +1541,8 @@ An uploaded attachment referenced when creating or editing a message.
 | `id` | `string` | Attachment ID from POST /channels/{id}/attachments, or an index for existing ones. |
 | `filename?` | `string` |  |
 | `uploaded_filename?` | `string` |  |
-| `description?` | `string` |  |
+| `description?` | `string` | Alt text shown to screen readers and as the image tooltip. |
+| `flags?` | `integer` | AttachmentFlags bit set; IS_SPOILER (8) marks the file as a spoiler. A SPOILER_ filename prefix sets it too. |
 
 ### AttachmentUpload
 
@@ -1671,7 +1751,7 @@ POST /channels/{id}/invites body.
 
 ### CreateMessageRequest
 
-POST /channels/{id}/messages body. Returns 409 (code 50160) when the effective delivery mode is not standard.
+POST /channels/{id}/messages body. allowed_mentions.replied_user=false replies without pinging the replied-to author. Returns 409 (code 50160) when the effective delivery mode is not standard. A message_reference with type 1 (FORWARD) forwards message_id from channel_id: the caller needs VIEW_CHANNEL + READ_MESSAGE_HISTORY on the source and SEND_MESSAGES (+ ATTACH_FILES when the source has attachments) on the target; content is the optional added comment and may be empty. Forwards from or to non-standard (ephemeral/P2P) channels answer 409 (50160).
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -1683,7 +1763,7 @@ POST /channels/{id}/messages body. Returns 409 (code 50160) when the effective d
 | `message_reference?` | `MessageReference` |  |
 | `components?` | `array of MessageComponent` |  |
 | `attachments?` | `array of AttachmentReference` |  |
-| `flags?` | `integer` |  |
+| `flags?` | `integer` | MessageFlags bit set. Only SUPPRESS_NOTIFICATIONS (4096) is honoured for users; other bits are dropped. |
 
 ### CreateThreadRequest
 
@@ -1930,14 +2010,14 @@ PATCH /guilds/{id} body (partial). `voice_region` is a Discordy extra.
 | --- | --- | --- |
 | `name?` | `string` |  |
 | `icon?` | `?string` |  |
-| `banner?` | `?string` |  |
-| `splash?` | `?string` |  |
+| `banner?` | `?string` | Image data URI (png, jpeg, gif or webp, at most 10 MiB) to set the banner; null removes it. |
+| `splash?` | `?string` | Image data URI (png, jpeg, gif or webp, at most 10 MiB) to set the invite splash; null removes it. |
 | `description?` | `?string` |  |
 | `owner_id?` | `Snowflake` |  |
 | `afk_channel_id?` | `?Snowflake` |  |
 | `afk_timeout?` | `integer` |  |
 | `system_channel_id?` | `?Snowflake` |  |
-| `system_channel_flags?` | `integer` |  |
+| `system_channel_flags?` | `integer` | Bit set of system message suppressions: 1 join notifications, 2 server boosts, 4 setup tips, 8 join reply buttons, 16 role subscription purchases, 32 their reply buttons. A set bit turns that message off; 0 keeps all on. Join messages are posted to system_channel_id when it is set and bit 1 is clear. |
 | `rules_channel_id?` | `?Snowflake` |  |
 | `public_updates_channel_id?` | `?Snowflake` |  |
 | `preferred_locale?` | `string` |  |
@@ -1984,6 +2064,9 @@ PATCH /users/@me/settings body (partial).
 | `developer_mode?` | `boolean` |  |
 | `message_display_compact?` | `boolean` |  |
 | `accent_color?` | `?integer` |  |
+| `guild_folders?` | `array of GuildFolder` | The user's server rail in order, with folders. Synced across devices. |
+| `guild_positions?` | `array of Snowflake` | Flat server order (legacy mirror of guild_folders). |
+| `preferences?` | `UserPreferences` | Merged key by key into the stored preferences. |
 
 ### ModifyWebhookRequest
 
@@ -2155,6 +2238,16 @@ POST /devices/{id}/key-packages body.
 | Field | Type | Description |
 | --- | --- | --- |
 | `packages` | `array of string` |  |
+
+### UserProfile
+
+GET /users/{id}/profile: a user plus what the caller and that user have in common (mutual servers and mutual friends).
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `user` | `User` |  |
+| `mutual_guilds` | `array of object` | Servers both users are members of. nick is the target user's nickname there. |
+| `mutual_friends` | `array of User` | Users who are friends of both the caller and the target. |
 
 ### VerifyEmailRequest
 

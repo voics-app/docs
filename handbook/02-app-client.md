@@ -52,6 +52,12 @@ Presence: the status goes Idle on its own after the idle timeout (Settings, Desk
 
 Appearance and accessibility (theme, density, message spacing, accent, text size, reduce motion, saturation, role colours, high contrast, link underline, animation and text-to-speech switches), link previews, notification sounds and ringtone, mentions-only and emoji preferences are stored on the server in your user settings (`preferences`, merged key by key) and appear on every device you sign in on. The prefs store keeps a localStorage copy as a cache and sends changes as a debounced PATCH with rollback; the first sign-in per device uploads values you had changed locally before sync existed. Devices, volumes, keybinds, push-to-talk, desktop notification toggle and view state stay on the device. The full table is in [Synced user settings](../specs/2026-10-22-synced-user-settings.md).
 
+## Server settings
+
+Server Settings, Overview (needs Manage Server) edits the name, description, icon, voice region, server banner and invite splash, and these defaults. System messages channel: where the server posts its automatic messages, with switches for the random welcome message when someone joins, the reply prompt on welcome messages and the setup tips (the switches are off-limits while no channel is chosen). Inactive channel and timeout (1, 5, 15, 30 minutes or 1 hour): where idle voice members are moved. Default notification settings for new members: all messages or only mentions. Changes collect in the unsaved-changes bar and are sent together on Save; each one is recorded in the audit log.
+
+Two system messages come from the server itself. A new member is announced in the system channel with a randomly picked greeting, and a new thread is announced in its parent channel with the thread's name. Join messages are on by default as soon as a system channel is set (new servers use the general channel); switch the welcome message off or pick no channel to stop them. If the post fails, the join or the thread still succeeds. Vanity URLs are not available yet (api#37).
+
 ## Keybinds and shortcuts
 
 Settings > Keybinds lists the actions in four groups (Voice, Calls, Navigation, General): mute, deafen, push to mute, camera, screen share, answer and decline a ringing call, quick switcher, previous and next channel, previous and next unread channel, history back and forward, mark read, search, upload and the member list. Click a shortcut and press the new combination (Esc cancels); Clear unbinds, Reset restores one action, Reset all restores everything. A combination used twice shows a conflict warning on the row. The Global switch (desktop app only; mute, deafen, push to mute, camera, answer, decline) makes the shortcut work while the app is in the background; it needs the native key hook and quietly stays window-only where that is unavailable. Push to talk is set under Voice and video. Ctrl+/ opens the list of every shortcut. Keybinds are saved on the device and are not synced to the account. Details: `specs/2026-10-22-client-keybinds.md`.
@@ -70,16 +76,27 @@ Settings > Desktop holds device-local options (never synced to the account), sto
 | --- | --- |
 | Open Discordy at login | `app.setLoginItemSettings` on Windows and macOS; an XDG autostart entry on Linux. Only packaged builds register, so a dev run never registers the bare Electron binary. |
 | Start minimized | The login item passes `--hidden`; the window stays in the tray at login. A normal launch always shows the window. |
-| Minimize to tray | The close button hides the window (default on Windows and macOS, off on Linux). Quit from the tray menu. Without a tray the close button quits. |
+| Show in system tray | Default on. Creates or removes the tray icon live; with it off, the close button quits and Start minimized has no effect. |
+| Minimize to tray | Default off. The minimize button hides the window to the tray instead of the taskbar. |
+| Close button minimizes to tray | The close button hides the window (default on Windows and macOS, off on Linux). Quit from the tray menu. Without a tray the close button quits. |
 | Hardware acceleration | `app.disableHardwareAcceleration()` runs at startup from the local settings file, so a change needs a restart (the page offers **Restart now**). |
 
-The tray menu shows Open, the unread and mention summary, Mute and Deafen toggles (the renderer reports its self voice state; clicks are sent back as commands), the version and Quit. A single-instance lock makes a second launch (or a `discordy://` link) focus the existing window. The `discordy://` scheme is registered by the installer (`protocols` in `electron-builder.config.cjs`) and again at each start. Update behaviour is described in [Desktop client release and auto-update](09-desktop-client-release.md).
+The tray menu shows Open, the unread and mention summary, Mute and Deafen toggles (the renderer reports its self voice state; clicks are sent back as commands), the version, Check for updates and Quit. A single-instance lock makes a second launch (or a `discordy://` link) focus the existing window. The `discordy://` scheme is registered by the installer (`protocols` in `electron-builder.config.cjs`) and again at each start. Update behaviour is described in [Desktop client release and auto-update](09-desktop-client-release.md).
+
+## Friends and direct messages
+
+When a friend request becomes a friendship (the gateway's `RELATIONSHIP_ADD` with type 1, on either side) the client creates the DM with `POST /users/@me/channels` (idempotent), adds it to Direct Messages and reopens it if it had been closed. The top of an empty or fully loaded 1:1 DM shows a large avatar, the display name, the username and "This is the beginning of your direct message history with @name."; while the DM has no messages, a "Wave to name" button sends a wave message and then disappears. Logic in `domain/dmIntro.ts`, view in `interface/features/chat/DmIntro.tsx`.
+
+## Media viewer
+
+Images and videos open in one lightbox with the same chrome: Save as, Open original and a Close button; clicking outside the media and Esc also close it. The video player's own fullscreen button is hidden there.
 
 ## Sounds
 
 The desktop client plays short sound effects and the call ringtone. All of them are synthesized with Web Audio (original, no audio files, no licensing), through one shared `AudioContext` that is resumed on use and routed to the selected output device at the output volume.
 
 - Sounds: you join a call, you disconnect, someone joins your call, someone leaves your call, mute, unmute, deafen, undeafen. Which sound a state change triggers lives in `domain/sounds.ts` (`voiceTransitionSounds`); people already in the channel when you join are not announced.
+- Message and friend-request sounds: a new message that deserves an alert (a DM or mention, or any message at the "all messages" level; not muted, not Do Not Disturb, not the channel you are looking at in the focused window) plays the message sound in the app, whether or not desktop notifications are on; a new incoming friend request plays its own sound. Both default on and have per-sound switches. The OS toast itself is silent so the sound is never doubled.
 - Ringtone: an incoming DM or group call rings in a loop until it is answered, declined or times out; the caller hears a quieter ringback. The ringtone and volume are chosen in Settings, Notifications.
 - Settings, Notifications: "Notification sounds" is the master switch; each sound has its own switch and a Preview button (stored in the device prefs as `soundToggles`, a missing entry means on). Do Not Disturb silences the effects; an incoming call still rings, because it is addressed to you and the prompt is shown anyway.
-- The main window sets `autoplayPolicy: no-user-gesture-required`: a context created without user activation stays suspended (silent), which is why a freshly started app did not ring (client#126).
+- The main window sets `autoplayPolicy: no-user-gesture-required`: a context created without user activation stays suspended (silent), which is why a freshly started app did not ring (client#126). One shared `AudioContext` is also unlocked on the first click or key press, and the main process sets the autoplay switch app-wide.
