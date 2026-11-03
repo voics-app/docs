@@ -470,7 +470,7 @@ A login session of the current user (one refresh-token family), as listed by GET
 | Field | Type | Description |
 | --- | --- | --- |
 | `id` | `string (uuid)` | Session ID; the `sid` claim of its access tokens. |
-| `client` | `string` | The client that opened the session, derived from its User-Agent (for example `Discordy Desktop`, `Firefox`). |
+| `client` | `string` | The client that opened the session, derived from its User-Agent (for example `Desktop app` (the desktop client; clients show it with the brand name), `Firefox`). |
 | `os` | `string` | Operating system derived from the User-Agent (for example `Windows`), or `Unknown`. |
 | `device_name` | `?string` | Name of the registered end-to-end encrypted device bound to the session, if any. |
 | `location` | `?string` | Approximate location (an ISO 3166-1 country code from the edge), or null when the edge does not provide one. |
