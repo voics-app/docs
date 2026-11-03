@@ -29,7 +29,7 @@ Nesting depth is capped (8) so hostile input cannot exhaust the stack.
 - ArrowUp in an empty input edits the last own delivered text message; Escape cancels an edit, then a reply.
 - Counter appears at 200 characters remaining, turns red when over; sending over 2000 is blocked.
 - Shift+Enter inserts a newline.
-- Attachments: at most 10 per message, size limits per mode; pasted text over 2000 characters becomes `message.txt`.
+- Attachments: at most 10 per message, size limits per mode; pasted text over 2000 characters shows an inline choice, Convert to file (`message.txt`) or Send as message (inserts the text), see below.
 
 ## Reply ping and @silent (client#113)
 
@@ -46,3 +46,12 @@ Nesting depth is capped (8) so hostile input cannot exhaust the stack.
 - Role mentions use the role colour; when the viewer has the role the mention is emphasised, and the row highlight comes from `isMentioned` (`mention_roles`).
 - Reply preview shows "@name" and the quoted text; a `referenced_message: null` original reads "Original message was deleted", an original that was not fetched reads "Original message unavailable".
 - Links to this instance's invite page (host from the brand module or the connection's landing origin; `instanceInviteCodes`) render an invite card (max 3 per message): server icon, name, member and online counts from `GET /invites/{code}?with_counts=true`, and Join or Joined. Lookups are cached per code for the session and fetched only when the card scrolls into view.
+
+## Composer details (client#88)
+
+- Plus button opens a menu ("Add to message"): Upload a file. Create thread, Create poll and Use apps are listed only when their flag in `COMPOSER_FEATURES` (`domain/composerFormat.ts`) is on; all are off until threads, messages#14 polls and the apps picker exist.
+- Selecting text shows a format toolbar (bold, italic, strikethrough, spoiler, code, quote). Buttons are tabbable and keep the selection; shortcuts: Ctrl/Cmd+B, Ctrl/Cmd+I, Ctrl/Cmd+Shift+X. Wrapping again removes the mark; quote toggles `> ` on every touched line. Logic is pure (`wrapRange`, `quoteRange`, `applyFormat`).
+- `@here` is suggested next to `@everyone` for users with MENTION_EVERYONE. Gap: the messages service (`domain/mentions.rs`) treats `@here` exactly like `@everyone` (`mention_everyone` set, no online-only filtering); a distinct online-only semantic needs a messages and gateway change.
+- Typing line (`TypingBar`): "A is typing", "A and B are typing", "A, B, and C are typing", then "Several people are typing" (`typingLine`).
+- Settings, Chat, "Send with Ctrl+Enter": when on, Enter inserts a newline and Ctrl/Cmd+Enter sends (`enterAction`); when off Enter sends and Shift+Enter inserts a newline.
+- Pasting more than 2000 characters no longer converts silently: an inline bar offers Convert to file or Send as message (text goes into the input; sending still needs it under 2000).
