@@ -61,4 +61,12 @@ Toolchains (rust 1.99 + clippy + rustfmt, Node 22 and 24, trivy, cosign, sccache
 - Good: switch-off is one variable, on every repository, with no code change.
 - Bad: two code paths (parallel jobs on hosted runners, one `fmt + clippy + test` job on self-hosted). Both are exercised: hosted when `CI_RUNNER` is unset, self-hosted otherwise.
 - Bad: the cache lives on one VM disk. With more runner nodes each node has its own volume and warms up independently (see the cluster plan, gitops#20 and #21).
-- Neutral: the Elixir toolchain (Erlang/OTP and Elixir) is still installed by `erlef/setup-beam` on every job; only hex packages and the `deps/_build` snapshot are cached.
+- Neutral: the Elixir toolchain was installed by `erlef/setup-beam` on every job at first; see the amendments.
+
+## Amendments
+
+- 2026-11-02 (`.github` v0.6.x, gitops#63): Erlang/OTP and Elixir are baked into the runner image (`/opt/beam`) and used when the requested versions match; `setup-beam` otherwise (GitHub-hosted, cold runs, other versions). The Elixir lint and test jobs are one `checks` job.
+- 2026-11-02: clean builds compile in `$RUNNER_TEMP/target` instead of the workspace, and a disk guard prunes every idle target dir under 15 GB free on `/cache` and builds clean under 8 GB (the VM disk filled to 100%).
+- 2026-11-02: the pnpm store moved from `/cache/pnpm-store` to the runner work dir, so pnpm can hardlink (same filesystem as the checkout).
+- 2026-11-03 (v0.6.3): a tag build skips fmt, clippy, test and audit when the same commit already has a green `main` push run of the same workflow (`verified` job; fails safe by running the checks). Rule 1 still holds for the image build. Callers grant `actions: read`.
+- The operational guide for all of this is [CI runners and caching](../handbook/12-ci-runners-and-caching.md).
