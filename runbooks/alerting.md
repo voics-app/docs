@@ -7,7 +7,7 @@ Outages must not go unnoticed (the gateway was down for 2+ hours on 2026-10-22 a
 | Piece | Where | Role |
 |---|---|---|
 | VictoriaMetrics | `observability/victoria-metrics` | Scrapes the services, kube-state-metrics and the blackbox probes |
-| kube-state-metrics | `observability/kube-state-metrics` | Deployment and StatefulSet replica counts; Flux Kustomization, HelmRelease and GitRepository Ready state (`gotk_resource_info`). The other collectors are off to save memory |
+| kube-state-metrics | `observability/kube-state-metrics` | Deployment and StatefulSet replica counts; pod container restarts and waiting reasons (pods collector, gitops#61); Flux Kustomization, HelmRelease and GitRepository Ready state (`gotk_resource_info`); the last scan time of each ImageRepository (`gotk_image_repository_last_scan_timestamp_seconds`, from the CR status). The other collectors are off to save memory |
 | blackbox-exporter | `observability/blackbox-exporter` | Probes the public endpoints end to end through Cloudflare, the tunnel and the ingress |
 | vmalert | `observability/vmalert` | Evaluates `infrastructure/controllers/alerting/rules.yml` every 30 s; API at `/api/v1/alerts` |
 | alert-relay | `observability/alert-relay` | Receives vmalert's posts and sends one message per change to the webhook |
@@ -25,8 +25,15 @@ All manifests live in `gitops/infrastructure/controllers/alerting/` (production 
 | `ServiceTargetMissing` | one of those jobs has no scrape target at all (no pod) | 3 m |
 | `EndpointProbeFailing` | a blackbox probe fails: `api-auth-gate` (API `/api/v1/users/@me` must answer 401), `gateway-websocket` (upgrade must answer 101), `cdn` (200), `update-feed` (200) | 2 m |
 | `FluxNotReady` | a Kustomization, HelmRelease or GitRepository is not Ready and not suspended | 10 m |
+| `FluxImageScanStale` | an ImageRepository was last scanned more than 30 m ago (interval is 5 m) and is not suspended | 10 m |
+| `PodCrashLooping` | any container, in any namespace including `flux-system`, is in `CrashLoopBackOff` or restarted 3 or more times in 15 m | 5 m |
 | `OpenBaoSealed` | `openbao_sealed == 1` or `openbao_reachable == 0` | 4 m |
 | `OpenBaoCheckMissing` | no `openbao_sealed` metric (the seal-check CronJob stopped) | 10 m |
+
+Notes on the two image-reflector alerts (gitops#61, from [the 2026-11-02 incident](incident-2026-11-02-image-reflector.md)):
+
+- `FluxImageScanStale` reads `status.lastScanResult.scanTime`, which only moves on a successful scan. A registry or credential error therefore fires it too. A suspended ImageRepository is skipped. An ImageRepository that never scanned has no series and does not fire. The Flux controllers' own `gotk_*` metrics are not scraped, so the CR status is the source.
+- `PodCrashLooping` did not exist before (only replica-based alerts, which a restarting controller can slip through). It covers every namespace; the restart branch catches loops that flap between Running and CrashLoopBackOff.
 
 A scale-to-zero on purpose does not fire `DeploymentNotReady` (desired is 0); it fires `ServiceTargetMissing` for the service jobs.
 
@@ -61,6 +68,8 @@ The dev environment runs the same stack and needs its own Secret in the dev clus
 | `DeploymentNotReady`, `ServiceDown` | `kubectl -n <ns> get pods`, `describe pod`, `logs`; if a new release never became ready, roll the image tag back (see [Release](release.md#rollback)) |
 | `EndpointProbeFailing` | Is the pod up? Then the tunnel or ingress: `kubectl -n voics-system get pods` (cloudflared, ingress-nginx); Cloudflare status; the probe name tells which endpoint |
 | `FluxNotReady` | `flux get kustomizations -A`, `flux get helmreleases -A`; read the message, fix in git, never `kubectl edit` |
+| `FluxImageScanStale` | `kubectl -n flux-system get imagerepositories` (LAST SCAN column) and `get pods -l app=image-reflector-controller`. A crash loop or OOM: `logs --previous`, `describe pod` (memory limits live in gitops, never patch by hand). Otherwise read the ImageRepository message (registry or `ghcr-pull` credentials). Full walkthrough: [Incident 2026-11-02](incident-2026-11-02-image-reflector.md) |
+| `PodCrashLooping` | `kubectl -n <ns> describe pod <pod>` (exit code, OOMKilled), `logs --previous`. For a Flux controller in `flux-system` see [Incident 2026-11-02](incident-2026-11-02-image-reflector.md). Fix in git (limits, config), never `kubectl edit` |
 | `OpenBaoSealed` | [OpenBao unseal](openbao-unseal.md) |
 
 ## Alerting is down
