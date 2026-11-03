@@ -4,7 +4,7 @@
 - Date: 2026-10-22
 - Deciders: @oussamaelhajoui
 - Technical story: [gitops#39](https://github.com/discordy-voics/gitops/issues/39)
-- Related: [ADR 0006](0006-secrets-flow.md), [OpenBao unseal runbook](../runbooks/openbao-unseal.md)
+- Related: [ADR 0006](0006-secrets-flow.md), [OpenBao unseal runbook](../runbooks/openbao-unseal.md), see also [ADR 0023](0023-openbao-transit-seal.md) (proposed transit seal follow-up)
 
 ## Context and Problem Statement
 

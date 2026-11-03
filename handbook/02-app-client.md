@@ -35,6 +35,7 @@ Summary: the Electron and React desktop app, with a Rust native crypto module.
 pnpm install
 pnpm build:native    # native/crypto for this platform
 pnpm dev             # electron-vite with HMR
+pnpm dev2            # a second instance (port 5174, own user data folder) for a second account
 pnpm test:unit && pnpm typecheck && pnpm lint
 pnpm test:e2e        # Playwright against the real Electron app and a fake backend
 ```
