@@ -19,7 +19,21 @@ Push to talk stays configured under Settings, Voice and video (it needs key-up a
 
 Persisted binds are merged with the catalog on load (`mergeKeybinds`): user keys and global flags are kept, actions added in later releases appear with their defaults, unknown ones are dropped. So upgrading never loses or duplicates a bind.
 
-Behaviour of the actions: answer and decline act on the DM call ringing for the user (`ringingCallFor`); screen share toggle stops a running share or opens the source picker while in a call; push to mute mutes while held and restores the mic on release only if it was live; unread navigation walks the open server's unmuted unread text channels (the DM list from Home) and wraps; history is an in-memory back/forward stack of visited views (50 entries, `domain/navHistory.ts`) fed by every navigation.
+Behaviour of the actions: answer and decline act on the DM call ringing for the user (`ringingCallFor`); screen share toggle stops a running share or opens the source picker while in a call; push to mute mutes while held and restores the mic on release only if it was live; Alt+Up / Down walks the open server's channels in sidebar order, voice and stage channels included (the view opens, the call is never joined); unread navigation walks the open server's unmuted unread text channels (the DM list from Home), wraps, and goes to channels with unread mentions first while any other has them; history is an in-memory back/forward stack of visited views (50 entries, pure functions in `domain/navHistory.ts`) kept in `useUiStore` as `history` and driven by `navigate(view)`, `back()` and `forward()`; stepping never records a new entry, and navigating from the middle drops the forward entries. Other features (for example Jump in the pins panel) must go through `navigate` so the move is recorded.
+
+## Fixed navigation shortcuts
+
+Not rebindable (`domain/shortcutCatalog.ts`): Ctrl+Alt+Up / Down previous or next server; Ctrl+Alt+Shift+Up / Down previous or next unread channel across all servers (DMs first, then servers in rail order, mentions first); Ctrl+[ and Ctrl+] history back or forward (same as the Alt+Left / Right bind); the mouse back and forward buttons (buttons 4 and 5) do the same.
+
+## Quick switcher (Ctrl+K)
+
+Model in `domain/quickSwitcher.ts`, UI in `palette/CommandPalette.tsx`.
+
+- Prefixes narrow the search and show a mode chip in the input: `@` people (DMs), `#` text channels, `!` voice channels, `*` servers. `*server channel` (a space after the server part) lists the channels of the matching servers filtered by the second part.
+- Matching tiers: label prefix (100), substring of label, hint or keywords (50), subsequence (10). With a term the tier decides first, then the relevance boost.
+- Relevance boost: channels with unread mentions, then unread (muted channels excluded), then recently visited (newest first, taken from the navigation history).
+- An empty query (or a bare prefix) lists by that boost alone: recent and unread channels first, then everything else in the original order (actions last).
+- Enter on a voice channel joins it; Alt+Up / Down only views it.
 
 ## Editor (Settings, Keybinds)
 
@@ -39,4 +53,4 @@ Lists every bound action (with "(global)" for system-wide ones), push to talk wh
 
 ## Tests
 
-`tests/unit/domain/keybinds.test.ts` (catalog, defaults without conflicts, merge/migration, conflicts, reset, global specs), `navHistory.test.ts` (history stack, unread picker), `tests/unit/main/hotkeys.test.ts` (hub, modifier matching, hold release, shared hook), `tests/unit/interface/KeybindsEditor.test.tsx` (record, conflict, reset, clear).
+`tests/unit/domain/keybinds.test.ts` (catalog, defaults without conflicts, merge/migration, conflicts, reset, global specs), `navHistory.test.ts` (history stack, unread picker), `quickSwitcher.test.ts` (prefix parsing, ranking, mentions-first unread picker), `tests/unit/application/uiHistory.test.ts` (history in `useUiStore`, fixed shortcut keys), `tests/unit/main/hotkeys.test.ts` (hub, modifier matching, hold release, shared hook), `tests/unit/interface/KeybindsEditor.test.tsx` (record, conflict, reset, clear).
