@@ -20,7 +20,8 @@ runs-on = (CI_RUNNER set and != "github") ? CI_RUNNER : "ubuntu-latest"
 
 | `CI_RUNNER` value | Jobs go to |
 |---|---|
-| `vm-runner` (current value in all 12 repositories) | the two VM runners |
+| `vm-runner` (current value in 11 repositories) | the two VM runners |
+| `ubuntu-latest` (docs, since 2026-11-03: its lint jobs are tiny and were clogging the VM queue) | GitHub-hosted |
 | unset, or `github` | GitHub-hosted `ubuntu-latest` (costs GitHub minutes; $15/month budget) |
 | any other label | runners registered with that label (a PC, another VM) |
 
@@ -178,6 +179,7 @@ When to go cold: a PR is green but you suspect it should not be, a failure only 
 | Windows builds | a native Windows runner picked WSL `bash.exe` | the installer builds on GitHub `windows-latest`; no self-hosted Windows runner |
 | An empty `.dockerignore` | sent 18.8 GB of context; the api image took 835 s | `.dockerignore` is reviewed in every Dockerfile PR |
 | The runner updates itself | GitHub's runner auto-updates inside the container. The 2.338.0 → 2.338.2 update left `externals/node24/bin/npm` broken (`Cannot find module '../lib/cli.js'`), so every step that installs pnpm through `pnpm/action-setup` failed; cold client runs died after 14 s | self-hosted cold runs install pnpm with corepack instead. Also bump `IMAGE` in `runner.sh` to the latest runner release and rebuild when idle, so runners start from a clean install |
+| `CI_RUNNER=github` in a repo with its own workflows | the shared workflows map `github` to `ubuntu-latest`, but a repo's own workflows (docs `docs.yml`, `notion-sync.yml`) use `vars.CI_RUNNER \|\| 'ubuntu-latest'` directly, so they waited forever for a runner labelled "github" (2026-11-03, docs CI stuck for hours) | to move a repo to GitHub-hosted, set `ubuntu-latest`, which works with both expressions |
 | Deleting `CI_RUNNER` on a repo | does not "reset" it: there is no organization fallback, so the repo moves to paid GitHub-hosted runners | set it back to `vm-runner` instead of deleting it |
 
 ## Disk space: what grows, what cleans it, what to do when it is full
