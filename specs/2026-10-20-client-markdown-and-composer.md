@@ -29,7 +29,7 @@ Nesting depth is capped (8) so hostile input cannot exhaust the stack.
 - ArrowUp in an empty input edits the last own delivered text message; Escape cancels an edit, then a reply.
 - Counter appears at 200 characters remaining, turns red when over; sending over 2000 is blocked.
 - Shift+Enter inserts a newline.
-- Attachments: at most 10 per message, size limits per mode; pasted text over 2000 characters becomes `message.txt`.
+- Attachments: at most 10 per message, size limits per mode; pasted text over 2000 characters shows an inline choice, Convert to file (`message.txt`) or Send as message (inserts the text), see below.
 
 ## Reply ping and @silent (client#113)
 
@@ -37,3 +37,12 @@ Nesting depth is capped (8) so hostile input cannot exhaust the stack.
 - A message starting with `@silent ` (case-insensitive, text required after it) is sent with `flags: 4096` (`SUPPRESS_NOTIFICATIONS`, `1 << 12`) and the prefix stripped. Standard chats only; in ephemeral and P2P chats the text is sent as typed. Silent messages show a small bell-off mark next to the text.
 - messages service, `POST /channels/{id}/messages`: `flags` accepts only `SUPPRESS_NOTIFICATIONS` from users (every other bit, including EPHEMERAL, is dropped) and is stored and echoed on the message and its `MESSAGE_CREATE` event. `allowed_mentions.replied_user` is honoured; `parse`, `roles` and `users` are accepted and ignored. A reply adds the replied-to author (not a webhook) to `mentions` unless `replied_user` is false, so the existing mention badge logic covers replies.
 - Suppression, end to end: for a `SUPPRESS_NOTIFICATIONS` message messages bumps no read-state mention counter (the `mentions` array is kept, as in Discord); the client treats a silent message as never mentioning the viewer (`isMentioned`), so there is no mention badge or inbox entry, and `notifyIncoming` returns before any desktop notification, sound or taskbar flash. The gateway forwards message objects and flags unchanged.
+
+## Composer details (client#88)
+
+- Plus button opens a menu ("Add to message"): Upload a file. Create thread, Create poll and Use apps are listed only when their flag in `COMPOSER_FEATURES` (`domain/composerFormat.ts`) is on; all are off until threads, messages#14 polls and the apps picker exist.
+- Selecting text shows a format toolbar (bold, italic, strikethrough, spoiler, code, quote). Buttons are tabbable and keep the selection; shortcuts: Ctrl/Cmd+B, Ctrl/Cmd+I, Ctrl/Cmd+Shift+X. Wrapping again removes the mark; quote toggles `> ` on every touched line. Logic is pure (`wrapRange`, `quoteRange`, `applyFormat`).
+- `@here` is suggested next to `@everyone` for users with MENTION_EVERYONE. Gap: the messages service (`domain/mentions.rs`) treats `@here` exactly like `@everyone` (`mention_everyone` set, no online-only filtering); a distinct online-only semantic needs a messages and gateway change.
+- Typing line (`TypingBar`): "A is typing", "A and B are typing", "A, B, and C are typing", then "Several people are typing" (`typingLine`).
+- Settings, Chat, "Send with Ctrl+Enter": when on, Enter inserts a newline and Ctrl/Cmd+Enter sends (`enterAction`); when off Enter sends and Shift+Enter inserts a newline.
+- Pasting more than 2000 characters no longer converts silently: an inline bar offers Convert to file or Send as message (text goes into the input; sending still needs it under 2000).
