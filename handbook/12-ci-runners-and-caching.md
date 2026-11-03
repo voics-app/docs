@@ -252,17 +252,57 @@ What each one costs:
 
 ## Measured speeds
 
-The full table (VM with cache, VM without cache, GitHub-hosted, before and after each optimization, as factors) is kept on [gitops#63](https://github.com/discordy-voics/gitops/issues/63) and the Notion page **CI speed reference**. Headline numbers, medians in seconds:
+Reference numbers, so a later change can be compared against them. All are job durations in seconds (`gh api repos/discordy-voics/<repo>/actions/runs/<id>/jobs`). Measured 2026-11-03 on `.github` v0.6.3 with the round-2 optimizations, on the same commits (PRs api#88, messages#50, gateway#34, client#175). Runs: VM with cache, VM with the `ci-no-cache` label, and GitHub-hosted (repo `CI_RUNNER=github`).
 
-| Job | GitHub-hosted (before 10-23) | VM, no cache | VM, cache |
+### PR checks: VM warm vs VM cold vs GitHub-hosted
+
+| Repo, job | VM, cache on | VM, cache off (cold) | GitHub-hosted | Cache factor (cold ÷ warm) | VM warm vs hosted |
+|---|---|---|---|---|---|
+| api fmt + clippy + test | **109** | 325 | 169 wall clock (fmt 15, clippy 141, test 169 as parallel jobs; 325 runner-seconds) | 3.0× | VM 1.6× faster |
+| messages fmt + clippy + test | **133** (300 in a run that shared the VM with api) | 247 | 162 wall clock (fmt 15, clippy 162, test 153) | 1.9× | VM 1.2× faster |
+| gateway checks (Elixir) | **38** | 236 | 37 | 6.2× | equal |
+| client checks (Node) | 210 | 191 | **121** | none (tests dominate) | hosted 1.7× faster |
+
+What this means:
+
+- **Rust and Elixir** profit from the persistent build dirs: 2 to 6 times faster than cold.
+- **The client** does not. Its time is lint, typecheck and vitest on the CPU, and GitHub's runners have faster cores.
+- **The VM is free** (no Actions minutes), runs two jobs at a time, and is fastest for anything that compiles.
+
+### Before and after the whole effort (VM, PR checks)
+
+| Job | Before (2026-10-23, VM without any cache) | Now, warm | Factor |
 |---|---|---|---|
-| api PR test | 63 | 576 | 60 to 273 |
-| messages test | 94 | 378 | 84 to 320 |
-| gateway test | 30 | 235 | 51 |
-| api docker image | 582 | 680 | 108 |
-| api tag docker job | | about 650 | about 95 |
+| api test (+ clippy job) | 1794 (+229) | 109 for fmt + clippy + test | 16× |
+| messages test | 575 | 133 | 4.3× |
+| gateway test | 235 | 38 | 6.2× |
+| client checks | 652 | 210 | 3.1× |
 
-Plain test jobs are about as fast on GitHub's runners as on the warm VM (their CPUs are faster per core). Image builds and anything that profits from a warm build directory are 5 to 7 times faster on the VM.
+### Docker image builds (develop pushes, VM, after round 2)
+
+| Image | Source-only change | Dependency or Dockerfile change | GitHub-hosted, for reference |
+|---|---|---|---|
+| api | 56 | 174 to 367 | 319 warm, 467 to 708 cold |
+| messages | 55 | 137 to 336 | 89 warm |
+| gateway | 48 | 126 to 231 | 53 |
+| client | 50 to 60 | 113 | 59 to 148 |
+| voice sfu / signaling | 46 / 55 | 168 to 212 / 177 to 185 | |
+| admin | 49 | 331 to 593 | |
+| api tag build (docker job) | about 95 | | about 650 before the VM cache |
+
+### Single optimizations (measured before and after, same machine)
+
+| Optimization | Before | After | Factor |
+|---|---|---|---|
+| pnpm store on the same filesystem (hardlinks instead of copies) | 15.4 | 2.8 | 5.5× |
+| gateway image after a `runtime.exs` change (config layering) | 82 | 8 | 10× |
+| voice signaling image, same change | 66 | 6 | 11× |
+| api image after a README change (`.dockerignore`) | 60 | 3 | 20× |
+| cargo-chef prebuilt binary vs `cargo install` | 30 | 7 | 4.3× |
+| api `cargo test --no-run`, `debug=line-tables-only` vs full debug info | 106 (13 GB) | 63 (4.2 GB) | 1.7× time, 3.1× disk |
+| Release tag: checks skipped when main already passed | about 930 for the Rust job | image build only | the checks are skipped entirely |
+
+Variance: a warm run can take twice as long when both runners compile at the same time, or when `Cargo.lock` changed (new cache key). Compare medians of a few runs, not one run.
 
 ## Who to ask, where to look
 
