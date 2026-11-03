@@ -10,13 +10,13 @@ All options are device-local preferences in `prefsStore` (only link previews alr
 
 | Row | Pref | Default | Used by |
 |---|---|---|---|
-| Display images and videos | `inlineMedia` | on | stored only; message rendering reads it in a follow-up |
-| Show embeds | `inlineEmbeds` | on | stored only |
+| Display images and videos | `inlineMedia` | on `MessageAttachments` and `MediaAttachment`: off lists images and videos as file link rows instead of tiles (client#182) |
+| Show embeds | `inlineEmbeds` | on | `MessageEmbeds`: off hides every embed, on still honours link previews |
 | Show link previews | `linkPreviews` (synced) | on | existing link preview cards |
-| Show spoiler content: On click, On servers I moderate, Always | `spoilerDisplay` | On click | stored only |
-| Show reactions | `showReactions` | on | stored only |
-| Compact reply preview | `compactReplyPreview` | off | stored only |
-| Convert emoticons | `convertEmoticons` | on | stored only |
+| Show spoiler content: On click, On servers I moderate, Always | `spoilerDisplay` | On click | `spoilersOpen(mode, canManageMessages)` in `domain/chatDisplay.ts`; text spoilers and spoiler attachments. On servers I moderate follows MANAGE_MESSAGES at guild level |
+| Show reactions | `showReactions` | on | `Reactions` in `MessageItem`: off hides the reaction bar (system messages too) |
+| Compact reply preview | `compactReplyPreview` | off | reply preview: no avatar, text flattened to one line and cut at 80 characters |
+| Convert emoticons | `convertEmoticons` | on | the composer, at one point in `send()` after mention translation, calling `convertEmoticons` in `domain/emoticons.ts` |
 | Send with Ctrl+Enter | `sendWithCtrlEnter` | off | the composer (client#88) reads it with the `selectSendWithCtrlEnter` selector |
 
 ## Advanced tab and Developer mode
@@ -47,6 +47,7 @@ Unmounting a page clears its registration. Switching between roles inside Roles 
 
 ## Gaps and follow-ups
 
-- Chat toggles other than Ctrl+Enter and link previews only store the value. Wiring them into message rendering touches `MessageItem.tsx` and is left for after the message rendering tickets.
+- Emoticons: `:)` `:-)` `(:` `:(` `:-(` `:'(` `:D` `xD` `;)` `:P` `:O` `<3` become emoji when standalone (space or line edge before, space, `.,!?` or end after). Code spans and fenced blocks are skipped, and `:/` is not converted because it is part of URLs. Messages already sent are not changed.
+- Copy Message ID on system messages now follows Developer mode like the other menus (client#183 showed it always until the pref existed).
 - None of the new prefs sync across devices; that needs new `preferences` fields in contracts first.
 - Search covers user settings only.
