@@ -34,7 +34,7 @@
 - Payments and monetisation.
 - Capturing DRM-protected video (Netflix etc.). That is circumvention of copy protection; **Watch Together** is offered instead.
 - Full-text message search in v1. It needs an Elasticsearch-class engine and more RAM than the VM has; tracked as ADR-0012 (deferred). When it is revisited, the index layout follows ADR-0013 (proposed).
-- Web and mobile clients in v1. The protocol is designed so they can be added later.
+- Web and mobile clients in v1. The protocol is designed so they can be added later. (Mobile was requested on 2026-11-03: [plan](../plans/2026-11-03-mobile-app.md), [ADR 0024](../adr/0024-mobile-client-stack.md).)
 
 ## 2. Context (C1)
 
