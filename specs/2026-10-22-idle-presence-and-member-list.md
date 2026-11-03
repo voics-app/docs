@@ -23,6 +23,8 @@ Test hook: when the app runs with `DISCORDY_E2E=1`, `globalThis.__e2eIdleSeconds
 
 The custom status is now broadcast. The client sends it as a Discord-style activity `{ type: 4, name: "Custom Status", state: <text>, emoji? }` inside `PRESENCE_UPDATE` and IDENTIFY; the gateway already stores and fans out arbitrary activity maps, so other members see it in `PRESENCE_UPDATE`, `GUILD_CREATE.presences` and `GUILD_MEMBERS_CHUNK.presences`. The dialog gained "Clear after": Do not clear, 30 minutes, 1 hour, 4 hours, Today (local midnight). `expires_at` is stored in `custom_status` (already part of the contract); the client clears an expired status within 10 s and stops broadcasting it.
 
+Update (client#85): the status can carry an emoji (picked with the shared emoji picker; a custom emoji travels as `emoji: { name, id }` and `custom_status.emoji_id`), or be emoji-only. The editor shows a 128-character counter (counted by code point) and a Remove emoji action. The status line (emoji, text truncated with an ellipsis, full text in the tooltip) appears in the member list and its hover card, under the name in DM rows (1:1 DMs, 60 characters) and in the profile dialog (`members/StatusLine.tsx`, `statusLine()` and `truncateText()` in `domain/memberList.ts`). The status menu opens above the user panel through `menuTopAbove()` (`domain/menuPlacement.ts`), flipping below when there is no room, instead of a fixed offset. Gateway check: activities are accepted as a list of maps and forwarded unchanged in dispatches and READY/GUILD_CREATE presences; the gateway does not validate type or length, so the 128-character cap is enforced by the client only (a possible hardening follow-up). Tests: `customStatus.test.ts`.
+
 ## Member list
 
 `MemberList` shows, per guild:
