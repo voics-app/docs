@@ -18,16 +18,25 @@ Last reviewed: 2026-11-03 (`.github` v0.6.3). Story: [gitops#59](https://github.
 runs-on = (CI_RUNNER set and != "github") ? CI_RUNNER : "ubuntu-latest"
 ```
 
-| `CI_RUNNER` (repository variable, or organization variable as fallback) | Jobs go to |
+| `CI_RUNNER` value | Jobs go to |
 |---|---|
 | `vm-runner` (current value in all 12 repositories) | the two VM runners |
 | unset, or `github` | GitHub-hosted `ubuntu-latest` (costs GitHub minutes; $15/month budget) |
 | any other label | runners registered with that label (a PC, another VM) |
 
-- A **repository** variable beats an organization variable, so you can move a single repository: `gh variable set CI_RUNNER -R discordy-voics/<repo> -b github`, and later `gh variable delete CI_RUNNER -R discordy-voics/<repo>`.
+- `CI_RUNNER` is declared per repository; see the next section.
 - `.github/scripts/runner.sh use github` or `use vm-runner` switches every repository at once.
 - Jobs that name a runner explicitly ignore `CI_RUNNER`: `windows-latest` for the desktop installer, the in-cluster `discordy` runners for secrets-sync and minio-publish.
 - If `CI_RUNNER` names a label with no online runner, jobs queue forever without failing. That is the first thing to check when CI "hangs".
+
+### Where `CI_RUNNER` is declared
+
+- It is a **GitHub Actions repository variable**, set separately in **each of the 12 repositories**. There is **no** organization-level `CI_RUNNER`, because on GitHub Free private repositories cannot rely on organization settings.
+- **To see it:** GitHub → the repository → **Settings → Secrets and variables → Actions → Variables** tab. On the CLI: `gh variable list -R discordy-voics/<repo>`. All repos at once: `for r in api messages gateway voice admin client website gitops docs contracts .github bots-sdk; do echo "$r=$(gh variable get CI_RUNNER -R discordy-voics/$r)"; done`.
+- **Who writes it:** `scripts/runner.sh` in the `.github` repo (function `set_runner_var`). `runner.sh up` and `runner.sh use <label>` set it in every repo; `runner.sh use github` deletes it everywhere.
+- **Who reads it:** the `runs-on:` line of every reusable workflow in `.github/.github/workflows/*.yml`, plus `notion-sync.yml` and `runner-maintenance.yml`. The expression is shown above.
+- **Moving one repo:** `gh variable set CI_RUNNER -R discordy-voics/<repo> -b github`.
+- **Moving it back:** set it to `vm-runner` again. **Do not `delete` it**: there is no organization fallback, so deleting it also sends the repo to GitHub-hosted runners. On 2026-11-03 a measurement script deleted it on four repos after a hosted test, and their CI quietly ran on paid runners until it was restored.
 
 ## What is preinstalled where
 
@@ -168,6 +177,71 @@ When to go cold: a PR is green but you suspect it should not be, a failure only 
 | `runner.sh up` while a job runs | kills it (happened twice) | check `runner.sh status` first; re-run the killed job |
 | Windows builds | a native Windows runner picked WSL `bash.exe` | the installer builds on GitHub `windows-latest`; no self-hosted Windows runner |
 | An empty `.dockerignore` | sent 18.8 GB of context; the api image took 835 s | `.dockerignore` is reviewed in every Dockerfile PR |
+| The runner updates itself | GitHub's runner auto-updates inside the container. The 2.338.0 → 2.338.2 update left `externals/node24/bin/npm` broken (`Cannot find module '../lib/cli.js'`), so every step that installs pnpm through `pnpm/action-setup` failed; cold client runs died after 14 s | self-hosted cold runs install pnpm with corepack instead. Also bump `IMAGE` in `runner.sh` to the latest runner release and rebuild when idle, so runners start from a clean install |
+| Deleting `CI_RUNNER` on a repo | does not "reset" it: there is no organization fallback, so the repo moves to paid GitHub-hosted runners | set it back to `vm-runner` instead of deleting it |
+
+## Disk space: what grows, what cleans it, what to do when it is full
+
+The runner VM has one 146 GB disk (Proxmox VM 108, disk on the `tb` pool). Everything below lives on it.
+
+| What | Where on the VM | Typical size | Cleaned by |
+|---|---|---|---|
+| Rust build dirs | Docker volume `discordy-ci-cache-vm-runner`, path `/cache/target/<repo>/<key>/` | 25 GB | every Rust job (2 newest per repo, 7-day idle), disk guard under 15 GB free |
+| sccache | volume, `/cache/sccache` | 2 GB | sccache itself (4 GB cap) |
+| cargo downloads, hex, corepack, mix snapshots | volume, `/cache/cargo`, `/cache/hex`, `/cache/corepack`, `/cache/mixcache` | about 1 GB | stable; `cache-clear` by hand |
+| Trivy DB | volume, `/cache/trivy` | 1.6 GB | Trivy (replaces it) |
+| pnpm stores | `/srv/discordy-runner/<container>/_work/.pnpm-store` (one per runner) | 1 GB each | **daily maintenance** wipes one over 3 GB |
+| Docker build cache | Docker's own storage (`/var/lib/docker`) | 17 GB before the first prune | **daily maintenance** keeps at most 15 GB and drops records unused for 14 days |
+| Locally built images (`ghcr.io/discordy-voics/*`) | `/var/lib/docker` | 82 old tags, about 5 GB | **daily maintenance** removes those older than 24 h (they are already pushed to GHCR) |
+| Leftover test containers | `/var/lib/docker` | small | **daily maintenance** (stopped for over 24 h) |
+| Runner container logs | `/var/lib/docker/containers` | small | Docker (`max-size 20m`, 3 files per container) |
+| Checkouts and job temp | `/srv/discordy-runner/<container>/_work` | 1 to 3 GB | the runner (`_temp` is emptied after every job) |
+| Pre-pulled test images, runner image | `/var/lib/docker` | about 4 GB | never pruned (needed); refreshed by `runner.sh up` |
+
+### Automatic cleanup
+
+- **Daily maintenance:** the workflow `runner-maintenance` in the `.github` repo runs `scripts/runner-prune.sh` daily at 03:30 UTC on a VM runner.
+  - It turns **red** when the disk is still under 20 GB free afterwards. GitHub then emails the owner, and the run summary shows free space before and after.
+  - Run it by hand: GitHub → `.github` repo → Actions → runner-maintenance → Run workflow. It has two options: *dry run* (shows what would go) and *deep* (also wipes Rust targets and sccache).
+- **Every Rust job** prunes its own repo's old target dirs. The disk guard prunes all repos' idle target dirs under 15 GB free and builds clean under 8 GB, so a full disk degrades to slow builds instead of failing.
+- The prune never removes the CI cache volume, the runner image or the pre-pulled test images.
+
+### Cleaning by hand
+
+Log in to the runner VM with `ssh oussama@192.168.1.219`, then:
+
+```bash
+cd ~/.github && git pull                       # the scripts live in the .github repo clone in your home dir
+df -h /                                        # how full is the disk
+docker system df                               # Docker's share: images, build cache, volumes
+scripts/runner.sh status                       # are the runners busy? (prefer cleaning when idle)
+
+scripts/runner-prune.sh --dry-run              # what the daily prune would remove
+scripts/runner-prune.sh                        # prune now (safe while jobs run)
+scripts/runner-prune.sh --deep                 # also wipe Rust targets + sccache (next PR runs compile cold)
+
+scripts/runner.sh cache-clear --what target    # or all|cargo|sccache|pnpm|trivy|mix; refuses while a runner is busy
+scripts/runner.sh cache-clear --what all --layers   # everything incl. the Docker build cache: the next runs are all cold
+```
+
+What each one costs:
+
+- `runner-prune.sh` costs almost nothing: the next image build of a repo whose layers were pruned is slower once.
+- `--deep` and `cache-clear --what target` make the next PR run of each Rust repo cold (api about 5 minutes instead of 2).
+- `--what all --layers` makes every first run cold.
+
+### When the disk is full anyway (the 2026-11-02 incident)
+
+**Symptoms:** many jobs fail at once, with "No space left on device" in checkout, cargo or Docker steps, or the runners go offline.
+
+1. On the VM, run `df -h /` and `docker system df`, plus `docker run --rm -v discordy-ci-cache-vm-runner:/cache alpine du -sh /cache/*` to see what is big.
+2. Run `scripts/runner-prune.sh`. If that is not enough, run `scripts/runner-prune.sh --deep`. Both are safe while jobs run.
+3. Still full: `scripts/runner.sh cache-clear --what all --layers --force` (when the runners are stuck busy), then `docker system prune -af` as the last step. It also removes the pre-pulled images; `runner.sh up` pulls them again.
+4. Re-run the failed jobs: `gh run rerun <id> --failed -R discordy-voics/<repo>`.
+5. If it keeps happening, grow the disk:
+   - In Proxmox (`https://192.168.1.88:8006`), VM 108 → Hardware → the `tb` disk → Disk Action → Resize. Never use the thin pool `local-lvm`.
+   - Then on the VM: `sudo growpart /dev/sda 3 && sudo pvresize /dev/sda3 && sudo lvextend -r -l +100%FREE /dev/ubuntu-vg/ubuntu-lv`.
+6. The fallback while you fix it: `scripts/runner.sh use github` moves all CI to GitHub-hosted runners (costs minutes), and `use vm-runner` moves it back.
 
 ## How to read a run
 
