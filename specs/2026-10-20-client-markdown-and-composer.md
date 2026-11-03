@@ -31,6 +31,9 @@ Nesting depth is capped (8) so hostile input cannot exhaust the stack.
 - Shift+Enter inserts a newline.
 - Attachments: at most 10 per message, size limits per mode; pasted text over 2000 characters becomes `message.txt`.
 
-## Deferred
+## Reply ping and @silent (client#113)
 
-Reply @ping toggle (`allowed_mentions.replied_user`) and `@silent` (suppress-notifications flag) need sender and contract work.
+- The reply bar shows an "@ ON/OFF" toggle (not for your own messages). Off sends `allowed_mentions: {"replied_user": false}` with the message reference: the replied-to author is neither mentioned nor notified. The last choice is remembered on this device (`discordy.reply-ping.v1`), as in Discord.
+- A message starting with `@silent ` (case-insensitive, text required after it) is sent with `flags: 4096` (`SUPPRESS_NOTIFICATIONS`, `1 << 12`) and the prefix stripped. Standard chats only; in ephemeral and P2P chats the text is sent as typed. Silent messages show a small bell-off mark next to the text.
+- messages service, `POST /channels/{id}/messages`: `flags` accepts only `SUPPRESS_NOTIFICATIONS` from users (every other bit, including EPHEMERAL, is dropped) and is stored and echoed on the message and its `MESSAGE_CREATE` event. `allowed_mentions.replied_user` is honoured; `parse`, `roles` and `users` are accepted and ignored. A reply adds the replied-to author (not a webhook) to `mentions` unless `replied_user` is false, so the existing mention badge logic covers replies.
+- Suppression, end to end: for a `SUPPRESS_NOTIFICATIONS` message messages bumps no read-state mention counter (the `mentions` array is kept, as in Discord); the client treats a silent message as never mentioning the viewer (`isMentioned`), so there is no mention badge or inbox entry, and `notifyIncoming` returns before any desktop notification, sound or taskbar flash. The gateway forwards message objects and flags unchanged.

@@ -87,6 +87,7 @@ Errors use the envelope `{ "code": int, "message": string, "errors"?: object }`.
 | `POST` | `/users/@me/mfa/totp/disable` | api | `DisableTotpRequest` | 204 No Content | Disable TOTP |
 | `POST` | `/users/@me/mfa/codes-verification` | api | `BackupCodesVerificationRequest` | `BackupCodesResponse` | List or regenerate backup codes |
 | `GET` | `/users/{user_id}` | api | — | `User` | Get a user |
+| `GET` | `/users/{user_id}/profile` | api | — | `UserProfile` | Get a user's profile with mutual servers and mutual friends |
 | `GET` | `/users/@me/settings` | api | — | `UserSettings` | Get the current user's settings |
 | `PATCH` | `/users/@me/settings` | api | `ModifyUserSettingsRequest` | `UserSettings` | Modify the current user's settings (including default_delivery_mode) |
 | `GET` | `/users/@me/guilds/{guild_id}/settings` | api | — | `GuildNotificationSettings` | Get the current user's notification settings for a guild (or `@me` for DMs) |
@@ -134,6 +135,11 @@ Errors use the envelope `{ "code": int, "message": string, "errors"?: object }`.
 | `PATCH` | `/guilds/{guild_id}/emojis/{emoji_id}` | api | `ModifyEmojiRequest` | `Emoji` | Modify a custom emoji |
 | `DELETE` | `/guilds/{guild_id}/emojis/{emoji_id}` | api | — | 204 No Content | Delete a custom emoji |
 | `GET` | `/guilds/{guild_id}/invites` | api | — | `array of Invite` | List a guild's invites |
+| `GET` | `/discovery/guilds` | api | — | `DiscoveryPage` | Browse and search public servers that opted in to discovery |
+| `GET` | `/discovery/categories` | api | — | `DiscoveryCategories` | List discovery categories |
+| `POST` | `/discovery/guilds/{guild_id}/join` | api | — | 204 No Content | Join a publicly listed server |
+| `GET` | `/guilds/{guild_id}/discovery` | api | — | `GuildDiscoverySettings` | Get a guild discovery settings (requires MANAGE_GUILD) |
+| `PUT` | `/guilds/{guild_id}/discovery` | api | `UpdateGuildDiscoveryRequest` | `GuildDiscoverySettings` | List or delist a guild in discovery (requires MANAGE_GUILD) |
 
 ### Webhooks
 
@@ -564,6 +570,40 @@ A user device with its Ed25519 identity key (Discordy extra).
 | `name?` | `string` |  |
 | `created_at?` | `string (date-time)` |  |
 
+### DiscoveryCategories
+
+Category slugs a guild can be listed under.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `categories` | `array of string` |  |
+
+### DiscoveryGuild
+
+One server card of `GET /discovery/guilds` (Discordy extra).
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `id` | `Snowflake` |  |
+| `name` | `string` |  |
+| `icon` | `?string` |  |
+| `description` | `?string` |  |
+| `category` | `string` | Category slug, see `GET /discovery/categories`. |
+| `tags` | `array of string` |  |
+| `approximate_member_count` | `integer` |  |
+| `approximate_presence_count` | `?integer` | Online members; null when presence is unavailable. |
+
+### DiscoveryPage
+
+A page of discoverable servers, largest first.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `guilds` | `array of DiscoveryGuild` |  |
+| `total` | `integer` | Matches across all pages. |
+| `offset` | `integer` |  |
+| `limit` | `integer` |  |
+
 ### Embed
 
 Rich embed content.
@@ -720,6 +760,19 @@ Permissions of an application's command(s) in a guild.
 | `application_id` | `Snowflake` |  |
 | `guild_id` | `Snowflake` |  |
 | `permissions` | `array of ApplicationCommandPermission` |  |
+
+### GuildDiscoverySettings
+
+A guild opt-in discovery listing and the rules that currently block listing it. Listing needs a description of at least 10 characters, the configured minimum member count and guild age, and no age-restricted (nsfw) channel.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `enabled` | `boolean` |  |
+| `category` | `?string` |  |
+| `tags` | `array of string` |  |
+| `listed_at` | `?string (date-time)` |  |
+| `member_count` | `integer` |  |
+| `blockers` | `array of "DESCRIPTION_REQUIRED" or "MEMBER_COUNT_TOO_LOW" or "GUILD_TOO_NEW" or "NSFW_NOT_ALLOWED"` |  |
 
 ### GuildFull
 
@@ -1971,6 +2024,16 @@ A pending TOTP secret; 2FA is not active until POST /users/@me/mfa/totp/verify.
 | --- | --- | --- |
 | `secret` | `string` | Base32 secret for manual entry. |
 | `otpauth_uri` | `string` | `otpauth://totp/...` URI to render as a QR code. |
+
+### UpdateGuildDiscoveryRequest
+
+PUT /guilds/{guild_id}/discovery body. `enabled: false` removes the listing; otherwise `category` is required.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `enabled` | `boolean` |  |
+| `category?` | `?string` |  |
+| `tags?` | `array of string` |  |
 
 ### UploadKeyPackagesRequest
 

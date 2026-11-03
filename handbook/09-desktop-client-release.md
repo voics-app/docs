@@ -41,7 +41,7 @@ Silent and scripted uninstalls: `"Uninstall Discordy.exe" /S` keeps the data; ad
 
 ## Branding
 
-`apps/desktop/brand.json` holds `displayName`, `productName`, `shortName`, `appId` (`nl.voics.discordy`), `protocolScheme` (`discordy`), `description`, `publisher` and `updateFeedHost`. The window title, tray, UI copy, deep-link scheme, installer name and `electron-builder.config.cjs` read it; the installer is named `${productName}-Setup-${version}.${ext}`. A unit test fails if the display name is hard-coded elsewhere. Identifiers such as `@discordy/*` packages and `DISCORDY_*` variables stay as they are.
+`apps/desktop/brand.json` holds `displayName`, `productName`, `shortName`, `appId` (`nl.voics.discordy`), `protocolScheme` (`discordy`), `description`, `publisher`, `updateFeedHost`, and the hosts (`baseDomain`, `landingUrl`, `apiUrl`, `gatewayUrl`, `cdnUrl`). The window title, tray, UI copy, deep-link scheme, installer name and `electron-builder.config.cjs` read it; the installer is named `${productName}-Setup-${version}.${ext}`. A unit test fails if the display name is hard-coded elsewhere. Identifiers such as `@discordy/*` packages and `DISCORDY_*` variables stay as they are.
 
 ## Rollback
 

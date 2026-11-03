@@ -12,7 +12,7 @@ The site is a static page set served at `https://discordy.voics.nl` from the Min
 | `src/` | HTML and CSS templates with `{{tokens}}` (`{{name}}`, `{{colors.accent}}`). No brand string is hard-coded. |
 | `src/assets/logo.svg` | The logo. |
 | `scripts/build.mjs` | Renders `src/` into `dist/` (Node 18 or newer, no dependencies). It also copies `gitops/site/invite/index.html` into `dist/invite/` so the invite page always ships with the site. |
-| `scripts/check.mjs` | Fails on a hard-coded brand name or an unresolved token. |
+| `scripts/check.mjs` | Fails on a hard-coded brand name, a hard-coded base domain or an unresolved token. |
 | `deploy/deploy.sh` | Publishes `dist/` to MinIO. |
 
 ## Rebrand step by step
@@ -28,7 +28,7 @@ The site is a static page set served at `https://discordy.voics.nl` from the Min
 4. Open a PR to `develop` as usual. The CI job builds and checks the site on every push.
 5. Release to `main`: the merge publishes the site.
 
-The desktop client has its own `brand.json` with the same idea ([Desktop client release](09-desktop-client-release.md#branding)); rename both to rename the product.
+The full cross-repository checklist (client, api emails, admin, bots-sdk, gitops hosts, DNS and Cloudflare, what to redeploy) is the [How to rebrand](../runbooks/rebrand.md) runbook. The desktop client has its own `brand.json` with the same idea ([Desktop client release](09-desktop-client-release.md#branding)); rename both to rename the product.
 
 ## Download buttons
 

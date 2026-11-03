@@ -29,6 +29,8 @@ A release whose new pod never becomes ready does not stay silent: Flux keeps the
 
 ## CI caching
 
+The complete takeover guide (what is preinstalled, every cache and its key, switching on and off, the change checklist, quirks, speeds) is [CI runners and caching](12-ci-runners-and-caching.md). This section is the short version.
+
 What is cached, per layer (gitops#38; shared workflows `.github` v0.5.16 and newer):
 
 | Layer | Hosted runners | Self-hosted runners |
@@ -39,7 +41,33 @@ What is cached, per layer (gitops#38; shared workflows `.github` v0.5.16 and new
 | Node and Elixir jobs | `setup-node` pnpm cache, `actions/cache` for `deps` and `_build` | Persistent store in `/cache` (`npm_config_store_dir`, `HEX_HOME`, `MIX_HOME`) |
 | Hygiene | Weekly `cache-cleanup.yml` in every heavy repo deletes caches not used for 7 days and trims to 8 GB (limit is 10 GB per repo); run it by hand with the dry-run input | same |
 
-`scripts/runner.sh up` mounts the named volume `discordy-ci-cache-<label>` at `/cache` in every runner container (cargo registry and git are symlinked into `~/.cargo`), so caches survive `down` and `up`. Reset them with `docker volume rm discordy-ci-cache-<label>`; `runner.sh status` prints the size.
+### Self-hosted runners: persistent cache and preinstalled toolchains (gitops#59)
+
+On the VM runners the shared workflows use the `/cache` volume and the toolchains baked into the runner image instead of the Actions cache. The safety rules (why releases stay clean) are in [ADR 0022](../adr/0022-ci-cache-safety-rules.md).
+
+| What | Where / how |
+|---|---|
+| Rust | one job `fmt + clippy + test` (fmt first, compile once, fail fast); `CARGO_HOME=/cache/cargo`, per-repo `target/` in `/cache/target/<repo>/<key>/` (key = `Cargo.lock` + `rustc -vV` + toolchain + arch + workdir + `env`), sccache in `/cache/sccache` |
+| Node | Node 22/24 from the image, corepack pnpm (downloads in `/cache/corepack`), pnpm store in the runner work dir `/srv/discordy-runner/<container>/_work/.pnpm-store` (same filesystem as the checkout, so installs hardlink) |
+| Elixir | one `checks` job; OTP 29.1.2 and Elixir 1.20.5 from the image (`/opt/beam`, `setup-beam` when the versions differ), hex packages in `/cache/hex`, `deps/_build` snapshot copied per job |
+| Docker | the host builder's layer cache across runs, Trivy DB in `/cache/trivy`, SBOM and cosign only on `main`, tags and release versions |
+| Image | rust (+ clippy, rustfmt), Node, Erlang/OTP + Elixir, trivy, cosign, sccache, yq; no `gh` (scripts use curl + jq); testcontainers images are pre-pulled by `runner.sh up` |
+
+Releases are always clean: pushes to `main`, tags, `release/*`, `hotfix/*` and PRs into `main` compile Rust from an empty `target/` and Docker images compile inside the Dockerfile (no persistent `target/`). A target dir is used by one job at a time (`flock`; a concurrent job gets a private clean dir).
+
+**Switch it off** (clean from-scratch build, same as GitHub-hosted): set the variable `CI_CACHE=off` (`gh variable set CI_CACHE --body off -R discordy-voics/<repo>` or at organization level; delete it or set `on` to switch back), or label a pull request `ci-no-cache` and push a commit (a re-run keeps the old labels). Every scheduled run (weekly, Monday 04:17 UTC on `develop`, in api, messages, gateway, voice and client) is a cold build, so a cache that hides a breakage shows up within a week and alerts like any red CI.
+
+**Clear it:** `scripts/runner.sh cache-clear --host user@vm [--what all|cargo|target|sccache|pnpm|trivy|mix] [--layers] [--force]` (refuses while a runner is busy). Rebuild the runners with `runner.sh up` when idle to pick up new toolchain versions; versions are listed at the top of `runner.sh`.
+
+Measured on the VM runners (job duration, `gh api repos/discordy-voics/<repo>/actions/runs/<id>/jobs`). Before: api `test` 1794 s (cargo test 1477 s plus rust-cache upload 298 s) and `clippy` 229 s in parallel jobs, messages `test` 575 s, client `checks` 652 s. After (PR runs, unit tests only):
+
+| Job | Before | After, first run (cold target) | After, warm |
+|---|---|---|---|
+| api fmt + clippy + test | 1794 (test) | 1720 | 561, then 60 |
+| messages fmt + clippy + test | 575 (test) | n/a | 84 |
+| client checks | 652 | 279 (warm store) | 279 |
+
+`scripts/runner.sh up` mounts the named volume `discordy-ci-cache-<label>` at `/cache` in every runner container (cargo registry and git are symlinked into `~/.cargo`), so caches survive `down` and `up`. Reset them with `runner.sh cache-clear` (see above); `runner.sh status` prints the size.
 
 The registry cache lives next to the image as the tag `buildcache`; the GHCR retention workflow only prunes prerelease tags, so it keeps it. sccache is enabled on self-hosted runners only: on hosted runners it did not help next to rust-cache (api clippy went from 48 s to 105 s, tests unchanged).
 
@@ -127,13 +155,23 @@ On a Linux VM the runners use host networking, so integration tests (testcontain
 
 | Runners | Repos | Cost |
 |---|---|---|
-| Self-hosted VM (`vm-runner`) | api, messages, gateway, voice, client (heavy Rust/Docker builds) | free |
-| GitHub-hosted `ubuntu-latest` | docs, website, contracts, gitops, .github, bots-sdk, admin (light jobs) | GitHub minutes, $15/month budget (org Settings → Billing → Budgets) |
-| GitHub-hosted `windows-latest` | client installer, on release tags only | about $0.30 per release |
+| Self-hosted VM (`vm-runner`, 2 runners) | all repos (`CI_RUNNER=vm-runner`) | free |
+| GitHub-hosted `ubuntu-latest` | fallback only: all 12 repos have `CI_RUNNER=vm-runner` (`runner.sh use github` switches back) | GitHub minutes, $15/month budget (org Settings → Billing → Budgets) |
+| GitHub-hosted `windows-latest` | client installer, on client releases (merge to main or tag) | about $0.30 per release |
 
 `runner.sh up` and `use <label>` switch only the heavy repos; `use github` resets all. Change the set with `SELF_HOSTED_REPOS="api messages" scripts/runner.sh up`.
 
 The runner VM's Proxmox CPU type must be `host`. ScyllaDB needs SSE4.2 and PCLMUL, which `x86-64-v2-AES` and qemu64 lack, and the Scylla integration tests skip themselves without it.
+
+Runner containers use the VM's Docker through its socket, so any `docker run -v <path>` in a job mounts a **host** path. Each runner therefore works in `/srv/discordy-runner/<container>/_work`, mounted at the same path inside the container (`config.sh --work`). That way `docker run -v "$GITHUB_WORKSPACE:/repo"` (gitops `validate`, docs `c4`) sees the real checkout. Before this, those jobs got an empty directory (`find: 'apps': No such file or directory`).
+
+**Runner VM disk:** 150 GB on the Proxmox `tb` pool (`scsi0 tb:vm-108-disk-0`, VMID 108). The Ubuntu installer only gave the root LV half of it. On 2026-11-02 it was grown online to the whole VG (`sudo lvextend -r -l +100%FREE /dev/ubuntu-vg/ubuntu-lv`): 146 GB, after the CI caches filled the old 73 GB root. To grow it further, resize the disk on `tb` in Proxmox first (never the thin pool `local-lvm`), then `growpart /dev/sda 3`, `pvresize /dev/sda3` and the same `lvextend`.
+
+### Client installer: GitHub `windows-latest` (owner PC runner retired)
+
+The client installer (NSIS and the native crypto module) must be built on Windows. Since 2026-11-02 it **builds on GitHub's `windows-latest`** again: the owner decided not to use the PC runner (`karma-win`). The client repo variable `WINDOWS_RUNNER` is deleted and the runner is deregistered; `release.yml` uses `${{ vars.WINDOWS_RUNNER || 'windows-latest' }}`, so leaving the variable unset is all it takes.
+
+`.github/scripts/runner-win.ps1` is kept but unused. Do not set `WINDOWS_RUNNER` again without the owner's go-ahead. If it is ever revived, note that on a native Windows runner `shell: bash` can resolve to `C:\Windows\System32\bash.exe` (WSL) and fail with `Bash/Service/0x8007274c`; this is what broke the 0.4.2 publish twice.
 
 ### Several VMs
 

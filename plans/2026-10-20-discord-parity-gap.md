@@ -35,7 +35,7 @@ Status counts in the matrix below: Implemented 32, Partial 25, Missing 50. 66 ne
 | Profile and presence | Avatar, display name, bio, accent colour | Yes | Implemented | - | - | - |
 | Profile and presence | Banner edit, pronouns, theme colours, per-server profile | Yes | Partial | Banner in API but not in UI; others missing | [api#43](https://github.com/discordy-voics/api/issues/43) | P1 |
 | Profile and presence | Status (online/idle/dnd/invisible), custom status | Yes | Implemented | Dialog and gateway op exist | - | - |
-| Profile and presence | Automatic idle | Yes | Missing | No idle detection | [client#70](https://github.com/discordy-voics/client/issues/70) | P1 |
+| Profile and presence | Automatic idle | Yes | Implemented | powerMonitor idle and lock, manual DND respected (client#151) | [client#70](https://github.com/discordy-voics/client/issues/70) | P1 |
 | Profile and presence | Activity / game detection / Rich Presence / overlay | Yes | Missing | Always sends empty activities | [client#73](https://github.com/discordy-voics/client/issues/73) | P2 |
 | Profile and presence | Connections (linked accounts) | Yes | Missing | - | [api#46](https://github.com/discordy-voics/api/issues/46) | P2 |
 | Profile and presence | Profile popout: mutual servers/friends, notes, roles | Yes | Partial | Plain dialog | [client#52](https://github.com/discordy-voics/client/issues/52) | P0 |
@@ -95,7 +95,7 @@ Status counts in the matrix below: Implemented 32, Partial 25, Missing 50. 66 ne
 | Servers | Member pruning | Yes | Missing | - | [api#48](https://github.com/discordy-voics/api/issues/48) | P2 |
 | Servers | Scheduled events | Yes | Missing | - | [api#49](https://github.com/discordy-voics/api/issues/49) | P2 |
 | Servers | Age-restricted channel gate | Yes | Missing | - | [client#76](https://github.com/discordy-voics/client/issues/76) | P2 |
-| Servers | Member list grouped by role/presence, search | Yes | Partial | Existing client#34 | [client#71](https://github.com/discordy-voics/client/issues/71) | P1 |
+| Servers | Member list grouped by role/presence, search | Yes | Implemented | Groups, counts, crown, bot tag, hover card, search, windowing (client#151); ranges wait for gateway#12 | [client#71](https://github.com/discordy-voics/client/issues/71) | P1 |
 | Voice and video | Join/leave voice, mute/deafen, PTT, VAD, noise suppression, echo, AGC | Yes | Implemented | - | - | - |
 | Voice and video | Per-user volume, server mute/deafen, timeout | Yes | Implemented | - | - | - |
 | Voice and video | Camera, screen share with audio, presets | Yes | Implemented | Quality issues client#31, #39 | - | - |
@@ -115,7 +115,7 @@ Status counts in the matrix below: Implemented 32, Partial 25, Missing 50. 66 ne
 | App and settings | Themes dark/light/AMOLED, accent, density, font scale, reduce motion | Yes | Implemented | - | - | - |
 | App and settings | Zoom, OS theme sync, custom themes | Yes | Missing | - | [client#66](https://github.com/discordy-voics/client/issues/66) | P1 |
 | App and settings | Accessibility page | Yes | Partial | - | [client#65](https://github.com/discordy-voics/client/issues/65) | P1 |
-| App and settings | Keybinds editor (8 actions) | Yes | Partial | - | [client#67](https://github.com/discordy-voics/client/issues/67) | P1 |
+| App and settings | Keybinds editor (18 actions, global scope, conflicts, reset) | Yes | Yes | - | [client#67](https://github.com/discordy-voics/client/issues/67) | P1 |
 | App and settings | Language / i18n | Yes | Missing | English only | [client#64](https://github.com/discordy-voics/client/issues/64) | P1 |
 | App and settings | Streamer mode | Yes | Missing | - | [client#74](https://github.com/discordy-voics/client/issues/74) | P2 |
 | App and settings | Privacy & delivery (E2EE modes) | Yes | Implemented | Discordy-specific | - | - |
@@ -524,7 +524,7 @@ New issues from this pass: client#81 to client#98 and api#53 (19 issues: 4 P0, 1
 | Voice and video | I | | - |
 | Chat tab | M | | [client#89](https://github.com/discordy-voics/client/issues/89) |
 | Notifications | P | global switches only | [client#50](https://github.com/discordy-voics/client/issues/50), [client#84](https://github.com/discordy-voics/client/issues/84) |
-| Keybinds | P | 8 actions; mark-read is a no-op | [client#67](https://github.com/discordy-voics/client/issues/67), [client#84](https://github.com/discordy-voics/client/issues/84) |
+| Keybinds | Y | 18 actions, global via key hook, conflicts, per-action reset (client#67) | [client#67](https://github.com/discordy-voics/client/issues/67), [client#84](https://github.com/discordy-voics/client/issues/84) |
 | Advanced and developer mode | M | copy IDs always shown | [client#89](https://github.com/discordy-voics/client/issues/89) |
 | Settings search, Log out in nav | M | | [client#89](https://github.com/discordy-voics/client/issues/89) |
 | Unsaved changes bar | P | channel settings only | [client#89](https://github.com/discordy-voics/client/issues/89) |

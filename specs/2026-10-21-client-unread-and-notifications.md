@@ -15,9 +15,19 @@ All mutes, levels and suppression flags are the synced per-guild settings resour
 
 - Server menu: Mute server (15m, 1h, 3h, 8h, 24h, until off) and Notification settings dialog (level, suppress @everyone/@here, suppress role mentions, hide muted channels, channel overrides list).
 - Channel and category menus use the same overrides.
+- `@silent` messages (flag `1 << 12`) never count as mentions and fire no notification, sound or taskbar flash; a reply with the ping turned off lists nobody in `mentions` ([composer spec](2026-10-20-client-markdown-and-composer.md)).
 - Muted channels render dimmed and do not count as unread; mentions in them still count (Discord behaviour).
 - Notes use `PUT /users/@me/notes/{id}` via the synced notes store, saved on blur.
 
 ## Mentions inbox (Ctrl+I, title bar button)
 
 Interim implementation: entries are collected on this device from live `MESSAGE_CREATE` and from loaded history (server messages that mention the viewer, honouring suppression flags), newest 100 kept. A server-side `GET /users/@me/mentions` would make it complete across devices and cold starts; not built yet.
+
+## Private delivery modes (client#154)
+
+Ephemeral (E2EE relay, ops 20/21) and P2P messages never arrive as `MESSAGE_CREATE`; the client only has their plaintext after decrypting. The services therefore report every newly decrypted incoming message (`onIncoming`, once per message id, not for duplicates or our own sends) to the same pipeline as standard messages (`registerIncoming` in `dispatchRouter.ts`): channel `last_message_id` (unread marker), mention counter, mentions inbox and then `notifyIncoming`. The same rules apply: mute, notification level, DND, suppress @everyone/roles, and "channel is currently focused". The OS notification for a private message carries only the sender and the generic text "Sent a private message"; the plaintext never reaches the notification centre (there is no separate preview setting yet). Live regression: `tests/live/private-notify.spec.ts`.
+
+## Window chrome (client#157)
+
+- Title bar: the brand cell and the empty cell to the right of the "Search or jump to" pill are `-webkit-app-region: drag`; the pill and the title-bar buttons are `no-drag` (Chromium treats a `drag` ancestor as draggable for any child that is not explicitly `no-drag`, so the end cell must set its children to `no-drag`).
+- Server rail badges (mentions, call dot) are inset from the rail edge and the scroll area has top padding so the badge ring is never clipped by the scroller.
