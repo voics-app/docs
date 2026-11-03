@@ -478,6 +478,7 @@ MESSAGE_CREATE / MESSAGE_UPDATE dispatch: a message plus guild context.
 | `edited_timestamp` | `?string (date-time)` |  |
 | `tts` | `boolean` |  |
 | `mention_everyone` | `boolean` |  |
+| `mention_here?` | `boolean` | Extension. With mention_everyone: the message pings with @here only (no @everyone), so only members who are online at send time are notified. Absent or false otherwise. |
 | `mentions` | `array of User` |  |
 | `mention_roles` | `array of Snowflake` |  |
 | `mention_channels?` | `array of ChannelMention` |  |
@@ -488,10 +489,11 @@ MESSAGE_CREATE / MESSAGE_UPDATE dispatch: a message plus guild context.
 | `pinned` | `boolean` |  |
 | `hit?` | `boolean` | Only in message search results: true for the matching message, absent for its context messages. |
 | `webhook_id?` | `Snowflake` |  |
-| `type` | `integer` | MessageType. 0 DEFAULT, 19 REPLY. A forwarded message keeps type 0 and is identified by message_reference.type = 1 plus message_snapshots (Discord semantics). |
+| `type` | `integer` | MessageType. 0 DEFAULT, 1 RECIPIENT_ADD, 2 RECIPIENT_REMOVE, 3 CALL (see call), 4 CHANNEL_NAME_CHANGE, 5 CHANNEL_ICON_CHANGE, 6 CHANNEL_PINNED_MESSAGE (message_reference is the pinned message), 7 GUILD_MEMBER_JOIN (author is the member who joined; posted in the guild system channel when one is set), 18 THREAD_CREATED (content is the thread name, message_reference.channel_id the thread), 19 REPLY. A forwarded message keeps type 0 and is identified by message_reference.type = 1 plus message_snapshots (Discord semantics). |
 | `application_id?` | `Snowflake` |  |
 | `flags?` | `integer` |  |
 | `message_reference?` | `MessageReference` |  |
+| `call?` | `MessageCall` |  |
 | `referenced_message?` | `?Message` |  |
 | `interaction_metadata?` | `MessageInteractionMetadata` |  |
 | `thread?` | `Channel` |  |
