@@ -4,16 +4,27 @@ Grafana dashboard "Discordy: System load" for watching a stress test live. URL p
 
 Source: `gitops/infrastructure/controllers/grafana/dashboards/discordy-system-load.json`, deployed as a ConfigMap labelled `grafana_dashboard=1` that the Grafana chart sidecar provisions. Edit the JSON in git (changes made in the UI are not persisted).
 
+## Variables
+
+`Datasource` (VictoriaMetrics) and `Namespace` (multi-select over `voics-apps`, `voics-data`, `voics-voice`, default all). Namespace filters the pod health, per-pod and HTTP panels.
+
 ## Rows
 
 | Row | Shows | Source |
 |---|---|---|
-| Overview | Scrape targets up and down, scrape duration and size, pod restarts in the last hour, pods not Ready, unavailable replicas, public endpoint probes | `up`, `scrape_*`, kube-state-metrics, blackbox |
-| Traffic | Gateway and admin-bff requests/s by status and route, 5xx rate, gateway latency p50/p95/p99, messages requests/s | `http_*`, `messages_http_requests_total` |
-| Apps | Gateway sessions, guild processes, voice allocations, BEAM memory and run queue, admin-bff event rates | `discordy_gateway_gauges_*`, `vm_*`, `admin_bff_*` |
-| Data (Redpanda) | Produce and consume rate, records/s, request latency p95/p99, consumer lag per group, under-replicated replicas, RPC connections and errors | `redpanda_*` |
-| Voice (SFU) | Sessions, rooms, ingress and egress bitrate | `sfu_*` |
+| Node | CPU % and memory % (all containers summed over `machine_cpu_cores` / `machine_memory_bytes`), disk usage %, disk and network throughput, network errors and drops, public endpoint probes | cAdvisor, blackbox |
+| Pod health | Restarts in the last hour, pods not Ready, unavailable replicas, StatefulSet ready versus desired | kube-state-metrics |
+| Per-pod resources | CPU, memory and network per pod | cAdvisor |
+| Traffic and apps | Requests/s by job and status, 5xx rate, top routes, latency p95/p99 per job and route (api, gateway, messages, admin-bff) | `http_requests_total`, `http_request_duration_seconds` |
+| Gateway | Sessions, guild processes, voice allocations, events consumed and dispatched, session start and close rate, admin-bff event rates | `discordy_gateway_*`, `admin_bff_*` |
+| Data: Redpanda | Produce and consume rate, records/s, request latency, consumer lag per group, under-replicated replicas, RPC connections and errors | `redpanda_*` |
+| Data: ScyllaDB, Valkey, Postgres | Pod CPU and memory only | cAdvisor |
+| Voice | SFU sessions, rooms, ingress and egress bitrate; signaling users, rooms and SFU connections; voice pod CPU and memory | `sfu_*`, `discordy_voice_node_*`, cAdvisor |
 
 ## Known gaps
 
-Only metrics that are scraped today are shown. Missing: node CPU, memory, disk, network and load; per-pod CPU, memory and throttling (cAdvisor); ingress-nginx request and latency metrics; ScyllaDB, Valkey and Postgres metrics; voice signaling and API app metrics (the `api` and `voice-signaling` jobs are up but export no application series); packet loss in the SFU; messages-service latency. Add the exporter or scrape job first, then a panel in the JSON.
+- No node-exporter: node CPU and memory are the sum of container usage (cAdvisor does not export the root cgroup), so host processes outside pods are not counted; no host load average.
+- No CPU throttling metrics (`container_cpu_cfs_*` is not exported by this kubelet).
+- No ingress-nginx metrics: no per-host request rate, status or latency at the edge.
+- No ScyllaDB, Valkey or Postgres exporters: no reads/writes, latency, ops/s, connections or TPS.
+- No SFU packet loss.
