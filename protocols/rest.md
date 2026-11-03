@@ -27,6 +27,7 @@ Errors use the envelope `{ "code": int, "message": string, "errors"?: object }`.
 | 10014 | `UNKNOWN_EMOJI` | 404 | Unknown emoji. |
 | 10015 | `UNKNOWN_WEBHOOK` | 404 | Unknown webhook. |
 | 10026 | `UNKNOWN_BAN` | 404 | Unknown ban. |
+| 10057 | `UNKNOWN_GUILD_TEMPLATE` | 404 | Unknown guild template. |
 | 10062 | `UNKNOWN_INTERACTION` | 404 | Unknown interaction. |
 | 10063 | `UNKNOWN_APPLICATION_COMMAND` | 404 | Unknown application command. |
 | 40001 | `UNAUTHORIZED` | 401 | Unauthorized. Provide a valid token and try again. |
@@ -140,6 +141,14 @@ Errors use the envelope `{ "code": int, "message": string, "errors"?: object }`.
 | `POST` | `/discovery/guilds/{guild_id}/join` | api | — | 204 No Content | Join a publicly listed server |
 | `GET` | `/guilds/{guild_id}/discovery` | api | — | `GuildDiscoverySettings` | Get a guild discovery settings (requires MANAGE_GUILD) |
 | `PUT` | `/guilds/{guild_id}/discovery` | api | `UpdateGuildDiscoveryRequest` | `GuildDiscoverySettings` | List or delist a guild in discovery (requires MANAGE_GUILD) |
+| `GET` | `/guilds/templates` | api | — | `array of GuildTemplate` | List the built-in server templates |
+| `GET` | `/guilds/templates/{code}` | api | — | `GuildTemplate` | Resolve a server template by code (built-in or shared) |
+| `POST` | `/guilds/templates/{code}` | api | `CreateGuildFromTemplateRequest` | `Guild` | Create a guild from a template |
+| `GET` | `/guilds/{guild_id}/templates` | api | — | `array of GuildTemplate` | List a guild's templates (requires MANAGE_GUILD) |
+| `POST` | `/guilds/{guild_id}/templates` | api | `CreateGuildTemplateRequest` | `GuildTemplate` | Create a template from the guild (requires MANAGE_GUILD) |
+| `PUT` | `/guilds/{guild_id}/templates/{code}` | api | — | `GuildTemplate` | Re-snapshot a template from the guild (requires MANAGE_GUILD) |
+| `PATCH` | `/guilds/{guild_id}/templates/{code}` | api | `ModifyGuildTemplateRequest` | `GuildTemplate` | Modify a template's name or description (requires MANAGE_GUILD) |
+| `DELETE` | `/guilds/{guild_id}/templates/{code}` | api | — | 204 No Content | Delete a template (requires MANAGE_GUILD) |
 
 ### Webhooks
 
@@ -856,6 +865,24 @@ The current user's notification settings for one guild, or for their DMs when gu
 | `hide_muted_channels` | `boolean` |  |
 | `channel_overrides` | `array of ChannelNotificationOverride` | Only channels with a non-default override. |
 
+### GuildTemplate
+
+A server template: a shareable snapshot of a guild's roles and channels (Discord guild template). Built-in templates have a `code` starting with `builtin-`, no creator and a null `source_guild_id`.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `code` | `string` |  |
+| `name` | `string` |  |
+| `description` | `?string` |  |
+| `usage_count` | `integer` |  |
+| `creator_id` | `any` |  |
+| `creator` | `any` |  |
+| `created_at` | `string (date-time)` |  |
+| `updated_at` | `string (date-time)` |  |
+| `source_guild_id` | `any` |  |
+| `serialized_source_guild` | `TemplateSourceGuild` |  |
+| `is_dirty` | `boolean` | Always false: syncing is explicit (`PUT /guilds/{guild_id}/templates/{code}`). |
+
 ### InstallParams
 
 Default scopes and permissions for the bot invite.
@@ -1208,6 +1235,65 @@ A 64-bit Discordy Snowflake ID serialized as a decimal string (42 bits ms since 
 
 Type: `string`
 
+### TemplateChannel
+
+A channel of a template. `id` and `parent_id` are template-local ids, numbered from 1.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `id` | `integer` |  |
+| `type` | `integer` | ChannelType: 0 text, 2 voice, 4 category, 5 announcement, 13 stage, 15 forum. |
+| `name` | `string` |  |
+| `position` | `integer` |  |
+| `topic` | `?string` |  |
+| `nsfw` | `boolean` |  |
+| `bitrate?` | `integer` |  |
+| `user_limit?` | `integer` |  |
+| `rate_limit_per_user?` | `integer` |  |
+| `parent_id` | `?integer` |  |
+| `permission_overwrites` | `array of TemplateOverwrite` |  |
+
+### TemplateOverwrite
+
+A role permission overwrite of a template channel. `id` is a template-local role id (0 is @everyone); member overwrites are never captured.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `id` | `integer` |  |
+| `type` | `integer` | OverwriteType: always 0 (role). |
+| `allow` | `PermissionBitset` |  |
+| `deny` | `PermissionBitset` |  |
+
+### TemplateRole
+
+A role of a template. `id` is template-local: 0 is @everyone, other roles are numbered from 1 in ascending position.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `id` | `integer` |  |
+| `name` | `string` |  |
+| `permissions` | `PermissionBitset` |  |
+| `color` | `integer` |  |
+| `hoist` | `boolean` |  |
+| `mentionable` | `boolean` |  |
+
+### TemplateSourceGuild
+
+The structure a template creates: guild settings, roles and channels with template-local ids.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `name` | `string` |  |
+| `description` | `?string` |  |
+| `verification_level` | `integer` |  |
+| `default_message_notifications` | `integer` |  |
+| `explicit_content_filter` | `integer` |  |
+| `afk_timeout` | `integer` |  |
+| `afk_channel_id` | `?integer` | Template-local channel id. |
+| `system_channel_id` | `?integer` | Template-local channel id. |
+| `roles` | `array of TemplateRole` | Includes @everyone (id 0) first. |
+| `channels` | `array of TemplateChannel` |  |
+
 ### ThreadMember
 
 A user's membership of a thread.
@@ -1541,6 +1627,15 @@ POST /guilds/{id}/emojis body.
 | `image` | `string` | Data URI, 256 KiB max. |
 | `roles?` | `array of Snowflake` |  |
 
+### CreateGuildFromTemplateRequest
+
+POST /guilds/templates/{code} body.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `name` | `string` |  |
+| `icon?` | `?string` | Image data URI. |
+
 ### CreateGuildRequest
 
 POST /guilds body.
@@ -1553,6 +1648,15 @@ POST /guilds body.
 | `verification_level?` | `integer` |  |
 | `default_message_notifications?` | `integer` |  |
 | `explicit_content_filter?` | `integer` |  |
+
+### CreateGuildTemplateRequest
+
+POST /guilds/{guild_id}/templates body. A guild has at most one template.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `name` | `string` |  |
+| `description?` | `?string` |  |
 
 ### CreateInviteRequest
 
@@ -1841,6 +1945,15 @@ PATCH /guilds/{id} body (partial). `voice_region` is a Discordy extra.
 | `default_message_notifications?` | `integer` |  |
 | `explicit_content_filter?` | `integer` |  |
 | `voice_region?` | `string` |  |
+
+### ModifyGuildTemplateRequest
+
+PATCH /guilds/{guild_id}/templates/{code} body.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `name?` | `string` |  |
+| `description?` | `?string` |  |
 
 ### ModifyMemberRequest
 
