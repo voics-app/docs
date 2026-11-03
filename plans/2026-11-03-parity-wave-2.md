@@ -183,17 +183,17 @@ Updated by the lead after every hand-back. GitHub board: <https://github.com/org
 
 | Ticket | Lane | Status | PRs | Notes |
 |---|---|---|---|---|
-| client#86 | A | merged | client#179, docs#80 | visual check in the client 0.5.x smoke |
-| client#87 | A | merged | client#183, docs#83 | the lead fixed content types 21/23; producers for 3/6/7/18: messages#54 |
-| client#182 | A | merging | client#191 (replaced #186), docs#86 | wires the six Chat toggles from #89 |
-| client#95 | A | partial, merging | client#189, docs#90 | backend gaps: voice#22 (screen unsubscribe), voice#23 (viewers), gateway#36 (ring) |
-| client#89 | B | merged | client#181, docs#82 | |
-| client#88 | B | merging | client#185, docs#85 | `@here` online-only: messages#53 |
-| client#85 | B | merged | client#187, docs#88 | gateway validation of activities: gateway#35 (P1 security) |
-| client#90 | C | merging | client#180, docs#81 | |
-| client#93 | C | merging | client#192 (replaced #184), docs#84 | Threads button waits for api#34 |
-| client#77 | C | merging | client#190 (replaced #188), docs#87 | app directory is a follow-up |
-| gitops#61 | C | merging | gitops#66, docs#91, docs#93 | the lead added `FluxImageScanMetricMissing` and the dev memory patch |
+| client#86 | A | released 0.5.0 | client#179, docs#80 | prod smoke 30/30 on 0.5.0 (client#196 fixed a stale member-list selector) |
+| client#87 | A | released 0.5.0 | client#183, docs#83 | the lead fixed content types 21/23; producers for 3/6/7/18: messages#54 |
+| client#182 | A | released 0.5.0 | client#191 (replaced #186), docs#86 | wires the six Chat toggles from #89 |
+| client#95 | A | released 0.5.0 | client#189, docs#90 | backend gaps: voice#22 (screen unsubscribe), voice#23 (viewers), gateway#36 (ring) |
+| client#89 | B | released 0.5.0 | client#181, docs#82 | |
+| client#88 | B | released 0.5.0 | client#185, docs#85 | `@here` online-only: messages#53 |
+| client#85 | B | released 0.5.0 | client#187, docs#88 | gateway validation of activities: gateway#35 (P1 security) |
+| client#90 | C | released 0.5.0 | client#180, docs#81 | |
+| client#93 | C | released 0.5.0 | client#192 (replaced #184), docs#84 | Threads button waits for api#34 |
+| client#77 | C | released 0.5.0 | client#190 (replaced #188), docs#87 | app directory is a follow-up |
+| gitops#61 | C | done (verified live on gitops 0.14.0) | gitops#66, docs#91, docs#93 | the lead added `FluxImageScanMetricMissing` and the dev memory patch |
 | gitops#48 | C | ADR proposed | docs#92 | 5 owner questions in ADR-0023 |
 | gitops#56 | lead | done | | owner created the Secret |
 
@@ -205,3 +205,5 @@ Updated by the lead after every hand-back. GitHub board: <https://github.com/org
 2. Review open PRs (read the diff, check CI), merge green ones into `develop`, and update the ticket with what was verified.
 3. Start the next queued ticket of a free lane with the brief above, at most 3 at a time.
 4. Releases are feature-based. After a release, check the pod is 1/1 Ready within 3 minutes, otherwise roll back (`docs/runbooks/release.md`). The release script lives in the `.github` repo (`scripts/release.sh`).
+
+**Releases (2026-11-03):** contracts 0.3.0, api 0.8.0, messages 0.6.0, admin 0.2.0, client 0.5.0, website 0.3.1, gitops 0.14.0, .github 0.6.5. Every service pod was 1/1 Ready after rollout. Lane work is complete; what's open is the backend follow-ups named in the notes above and ADR-0023 (owner questions in docs#10).
