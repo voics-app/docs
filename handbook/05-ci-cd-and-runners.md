@@ -29,6 +29,8 @@ A release whose new pod never becomes ready does not stay silent: Flux keeps the
 
 ## CI caching
 
+The complete takeover guide (what is preinstalled, every cache and its key, switching on and off, the change checklist, quirks, speeds) is [CI runners and caching](12-ci-runners-and-caching.md). This section is the short version.
+
 What is cached, per layer (gitops#38; shared workflows `.github` v0.5.16 and newer):
 
 | Layer | Hosted runners | Self-hosted runners |
@@ -46,10 +48,10 @@ On the VM runners the shared workflows use the `/cache` volume and the toolchain
 | What | Where / how |
 |---|---|
 | Rust | one job `fmt + clippy + test` (fmt first, compile once, fail fast); `CARGO_HOME=/cache/cargo`, per-repo `target/` in `/cache/target/<repo>/<key>/` (key = `Cargo.lock` + `rustc -vV` + toolchain + arch + workdir + `env`), sccache in `/cache/sccache` |
-| Node | Node 22/24 from the image, corepack pnpm, pnpm store `/cache/pnpm-store` |
-| Elixir | hex packages in `/cache/hex`, `deps/_build` snapshot copied per job |
+| Node | Node 22/24 from the image, corepack pnpm (downloads in `/cache/corepack`), pnpm store in the runner work dir `/srv/discordy-runner/<container>/_work/.pnpm-store` (same filesystem as the checkout, so installs hardlink) |
+| Elixir | one `checks` job; OTP 29.1.2 and Elixir 1.20.5 from the image (`/opt/beam`, `setup-beam` when the versions differ), hex packages in `/cache/hex`, `deps/_build` snapshot copied per job |
 | Docker | the host builder's layer cache across runs, Trivy DB in `/cache/trivy`, SBOM and cosign only on `main`, tags and release versions |
-| Image | rust (+ clippy, rustfmt), Node, trivy, cosign, sccache, yq; testcontainers images are pre-pulled by `runner.sh up` |
+| Image | rust (+ clippy, rustfmt), Node, Erlang/OTP + Elixir, trivy, cosign, sccache, yq; no `gh` (scripts use curl + jq); testcontainers images are pre-pulled by `runner.sh up` |
 
 Releases are always clean: pushes to `main`, tags, `release/*`, `hotfix/*` and PRs into `main` compile Rust from an empty `target/` and Docker images compile inside the Dockerfile (no persistent `target/`). A target dir is used by one job at a time (`flock`; a concurrent job gets a private clean dir).
 
