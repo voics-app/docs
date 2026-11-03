@@ -140,6 +140,17 @@ Consumers depend on what they consume, so release in dependency order:
 
 ## Standard release
 
+**Automated:** `scripts/release.sh <repo> <X.Y.Z>` in the `.github` repo runs steps 1, 4, 5 and 6 below. Run it from the folder that holds the repo checkouts, or set `BASE`. What it does:
+
+- pushes `release/X.Y.Z` from `develop` and opens the PR to `main`;
+- waits for the PR checks and merges;
+- waits for a green `main` push CI run on the PR's **merge commit** (it reads the SHA from GitHub, because a fetch straight after the merge can still see the old `main`);
+- tags `vX.Y.Z`, back-merges `main` into `develop` and deletes the release branch.
+
+It never tags without that green run (a repo without CI on `main` stops there). If CI already made the tag on that commit, it reuses it: the client's release workflow tags the version itself (client#195). Afterwards, do step 7 and check the pods yourself.
+
+The manual steps below are what the script does, for when it stops halfway.
+
 The example uses version `0.2.0` in repository `api`.
 
 ### 1. Cut the release branch

@@ -118,7 +118,7 @@ To run one service natively and the rest in containers, stop its container (`doc
 ## 5. Try it
 
 1. Start the client (`pnpm dev` in `client`). It points at `http://localhost:8000` by default.
-2. Register two users. Use a second client profile (`pnpm dev -- --profile=b`) or a second machine on the LAN.
+2. Register two users. Use a second dev client (`pnpm dev2` in `client`: port 5174 and its own user data folder) or a second machine on the LAN.
 3. Create a guild, send a message, and check that the second user receives it.
 4. Join a voice channel with both clients. Locally, `VOICE_PUBLIC_IP` is `127.0.0.1`, or your LAN IP for a second machine.
 
