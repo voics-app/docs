@@ -26,6 +26,7 @@ This directory holds Discordy's architecture decisions. The records use the [MAD
 | [0020](0020-message-forwarding.md) | Message forwarding | accepted |
 | [0021](0021-openbao-auto-unseal.md) | OpenBao auto-unseal with a static key | accepted |
 | [0022](0022-ci-cache-safety-rules.md) | CI caches and preinstalled toolchains: the safety rules | accepted |
+| [0023](0023-openbao-transit-seal.md) | OpenBao transit seal against a second OpenBao | proposed |
 
 ## Writing a new ADR
 
