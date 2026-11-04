@@ -6,7 +6,7 @@ Last reviewed: 2026-11-04 ([client#206](https://github.com/discordy-voics/client
 
 ## Status
 
-M0 skeleton plus the first M1 slices. `apps/mobile` in the `client` repository is an Expo app with four bottom tabs (Servers, DMs, Notifications, You). You can sign in (email and password, then the authenticator or backup code when the account has two-factor sign-in) and sign out from the You tab. The app keeps a gateway connection and the Servers tab lists your servers and, per server, the text channels you can see, grouped by category. Tapping a text channel opens its messages (see Messages below). The DMs tab lists your conversations and the You tab has your account and a few settings (see Direct messages, profiles and settings below). Notifications is still a placeholder. All stores, the session manager and the protocol clients come from `@discordy/core`; nothing is published to an app store, and these slices have been tested with mocks only, not yet on a device or simulator.
+M0 skeleton plus the first M1 slices. `apps/mobile` in the `client` repository is an Expo app laid out like the desktop client, with no bottom tabs (see Layout below). You can sign in (email and password, then the authenticator or backup code when the account has two-factor sign-in) and sign out from the You screen. The app keeps a gateway connection and the server rail lists your servers and, per server, the text channels you can see, grouped by category. Tapping a text channel opens its messages (see Messages below). The DM column lists your conversations and the You screen has your account and a few settings (see Direct messages, profiles and settings below). Notifications is still a placeholder. All stores, the session manager and the protocol clients come from `@discordy/core`; nothing is published to an app store, and these slices have been tested with mocks only, not yet on a device or simulator.
 
 ## How it is built
 
@@ -61,14 +61,28 @@ The `client` CI calls the shared node workflow with the root scripts `lint`, `ty
 
 [Run the mobile app](../runbooks/run-the-mobile-app.md) (phone with Expo Go, development builds, Windows without a Mac).
 
+## Layout
+
+The main screen follows the desktop shell: a narrow server rail on the left, a column beside it, and a user panel at the foot of the column.
+
+| Part | Behaviour |
+|---|---|
+| Server rail | Direct messages on top, a separator, then your servers and folders in the order you set on desktop (folders open and close). The selected item has a pill on its left edge and a squarer, accent-coloured tile; a server with unread messages has a short pip; mentions show a red count (Direct messages counts mentions in all conversations). Muted channels never light the pip. Create, join and discover are not on mobile yet. |
+| Column | The selected server's name and its text channels by category (tap a category to collapse it), with the open channel highlighted, unread channels bold with a dot, muted ones dimmed and mention counts. With Direct messages selected it is the conversation list. The bell in the column header opens Notifications. |
+| User panel | Your avatar, name and status (your custom status when set). Tapping it, or the gear, opens the You screen. |
+| Chats | Opening a channel or conversation shows the chat full screen over the rail. The back arrow, the swipe from the left edge (iOS) and the Android back button return to the rail, with the same server and channel still selected. |
+| Deep links | `/servers/:guildId/:channelId` and `/dms/:channelId` open that chat with the main screen underneath; `/servers/:guildId` and `/dms` open the main screen with that view selected. Signed out always lands on sign-in. |
+
+Colours, radii and sizes are desktop's Nightglass tokens (72 pt rail, 48 pt tiles). The layout has been tested with mocks only, not yet on a device.
+
 ## Direct messages, profiles and settings
 
 | Topic | Behaviour |
 |---|---|
-| DMs tab | Lists your 1:1 and group conversations, most recent activity first, with the person's name (their nickname if they are a friend and you set one), or the group name, or the members' names. DMs you closed on this device stay hidden until a newer message arrives. The order and the hiding come from the core DM model. |
+| DM list | Lists your 1:1 and group conversations, most recent activity first, with the person's name (their nickname if they are a friend and you set one), or the group name, or the members' names. DMs you closed on this device stay hidden until a newer message arrives. The order and the hiding come from the core DM model. |
 | Opening | A row opens the same message screen as a server channel (history, composer, replies, edit, delete, reactions); there are no roles in a DM, so every participant may send, react and read. Conversations with private delivery show the same notice as private channels, never messages or an error. |
 | Profile | Tap an author name, or Profile in the header of a 1:1 DM. A sheet shows the avatar (from the CDN, with the initial as fallback), display name, username, About me (refreshed from the profile endpoint, the cached one shows if that fails) and, for friends, Friends since. |
-| You tab | Your avatar, name, username and email, a Show reactions under messages switch (a device-local core preference) and Sign out. |
+| You screen | Your avatar, name, username and email, a Show reactions under messages switch (a device-local core preference) and Sign out. |
 
 ## What comes next
 
