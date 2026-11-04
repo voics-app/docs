@@ -4,6 +4,7 @@
 - Date: 2026-11-03
 - Deciders: @oussamaelhajoui
 - Technical story: [mobile plan](../plans/2026-11-03-mobile-app.md)
+- Implementation: [Mobile client](../handbook/13-mobile-client.md) (M0 skeleton)
 - Related: [ADR 0001](0001-technology-stack.md) (desktop stack), [ADR 0004](0004-custom-sfu.md) (SFU), [spec non-goals](../specs/2026-10-16-voics-platform-design.md) (mobile was out of scope for v1)
 
 ## Context and Problem Statement

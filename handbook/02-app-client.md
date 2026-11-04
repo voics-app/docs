@@ -40,7 +40,7 @@ pnpm test:unit && pnpm typecheck && pnpm lint
 pnpm test:e2e        # Playwright against the real Electron app and a fake backend
 ```
 
-Releases and the auto-updater are explained in [Desktop client release and auto-update](09-desktop-client-release.md). Renaming the app is a `brand.json` edit.
+Releases and the auto-updater are explained in [Desktop client release and auto-update](09-desktop-client-release.md). Renaming the app is a `brand.json` edit. The mobile app skeleton in the same repository is described in [Mobile client](13-mobile-client.md).
 
 ## Appearance and accessibility
 

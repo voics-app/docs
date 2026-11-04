@@ -1,6 +1,6 @@
 # Mobile app (iOS first, Android from the same code): plan (2026-11-03)
 
-Summary: a React Native (Expo) app in the `client` monorepo that shares the desktop client's TypeScript core. It ships to iPhones through TestFlight. It comes in milestones: shared core, text MVP with push notifications, voice, encrypted modes, then parity polish. **This page is the plan only; nothing is implemented yet.** The stack choice is [ADR 0024](../adr/0024-mobile-client-stack.md) (proposed).
+Summary: a React Native (Expo) app in the `client` monorepo that shares the desktop client's TypeScript core. It ships to iPhones through TestFlight. It comes in milestones: shared core, text MVP with push notifications, voice, encrypted modes, then parity polish. **This page is the plan; the M0 `apps/mobile` skeleton exists (see [Mobile client](../handbook/13-mobile-client.md)), the rest is not implemented yet.** The stack choice is [ADR 0024](../adr/0024-mobile-client-stack.md) (proposed).
 
 Why now: mobile was a written non-goal of the v1 spec ("Web and mobile clients in v1. The protocol is designed so they can be added later"). On 2026-11-03 the owner asked for an iOS app.
 
