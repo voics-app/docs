@@ -13,6 +13,7 @@
 | [Backup and restore](backup-restore.md) | Backup policy, restore drills and disaster recovery |
 | [Secret rotation](secret-rotation.md) | Scheduled or emergency rotation of any secret in the inventory |
 | [Environments](environments.md) | Standing up a new environment (Proxmox, Hetzner, AWS) with one command, the dev/test environment, rebuilding production after a disaster |
+| [Load testing](load-testing.md) | Measuring messages per second and concurrent sessions on production (harness, safety, cleanup) |
 | [Release](release.md) | git-flow releases, **how each component reaches production** (pipelines, Flux timings, intervals), hotfixes, rollback, desktop installers, website |
 | [Local development](local-development.md) | Running the stack on a workstation |
 | [Cloudflare setup](cloudflare-setup.md) | Tunnel, DNS and Access configuration |
