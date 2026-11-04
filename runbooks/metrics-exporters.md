@@ -25,7 +25,7 @@ Scylla and Postgres are discovered by pod label, so adding a scrape never restar
 
 Port-forward and query `up`; every job above must be `1`:
 
-```
+```bash
 kubectl -n observability port-forward service/victoria-metrics 18428:8428
 curl -s 'http://127.0.0.1:18428/api/v1/query?query=up' 
 ```
