@@ -95,7 +95,7 @@ The tray menu shows Open, the unread and mention summary, Mute and Deafen toggle
 
 When a friend request becomes a friendship (the gateway's `RELATIONSHIP_ADD` with type 1, on either side) the client creates the DM with `POST /users/@me/channels` (idempotent), adds it to Direct Messages and reopens it if it had been closed. The top of an empty or fully loaded 1:1 DM shows a large avatar, the display name, the username and "This is the beginning of your direct message history with @name."; while the DM has no messages, a "Wave to name" button sends a wave message and then disappears. Logic in `domain/dmIntro.ts`, view in `interface/features/chat/DmIntro.tsx`.
 
-The profile dialog and the DM profile panel show "Friends since <date>", read from `Relationship.since`. Clicking the avatar in either one opens it full size in the image viewer. The About me field allows 300 characters (`BIO_MAX_LENGTH`); the api stores and validates the same limit from api 0.13.0.
+The profile dialog and the DM profile panel show "Friends since" with the date, read from `Relationship.since`. Clicking the avatar in either one opens it full size in the image viewer. The About me field allows 300 characters (`BIO_MAX_LENGTH`); the api stores and validates the same limit from api 0.13.0.
 
 ## Pinned DMs and pinned channels
 
