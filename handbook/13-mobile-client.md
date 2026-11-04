@@ -48,10 +48,10 @@ M0 skeleton plus the first M1 slices. `apps/mobile` in the `client` repository i
 | App setting | `brand.json` field |
 |---|---|
 | Display name | `displayName` |
-| URL scheme (`discordy://`) | `protocolScheme` |
+| URL scheme (`voics://`) | `protocolScheme` |
 | iOS bundle identifier and Android package | `appId` |
 
-The icon is `apps/desktop/build/icon.png` (512 px; a 1024 px icon without transparency is needed before the App Store). **The bundle id `nl.voics.discordy` is a placeholder** until the owner decides it ([docs#10](https://github.com/discordy-voics/docs/issues/10), plan decision 4). Changing it is a `brand.json` edit; it must happen before the first TestFlight build, because the id cannot change afterwards. Renaming the product: see [How to rebrand](../runbooks/rebrand.md); the mobile app follows the client `brand.json`.
+The icon is `apps/desktop/build/icon.png` (512 px; a 1024 px icon without transparency is needed before the App Store). The app is named Voics and the bundle id and Android package are `nl.voics.app`; the id cannot change after the first TestFlight build. Renaming the product: see [How to rebrand](../runbooks/rebrand.md); the mobile app follows the client `brand.json`.
 
 ## CI
 

@@ -8,10 +8,10 @@ Versioning follows [How we work](03-how-we-work.md#releases-and-versioning). `.g
 
 1. **Version.** `scripts/release-version.mjs` reads the version the feed serves (`latest.yml`, fetched with a cache-buster) and picks the next one, because electron-updater only updates to a strictly higher semver. On `main`: the version in `apps/desktop/package.json` if it is higher than the published one (the release branch bumped it), otherwise published patch + 1. On a tag: exactly the tag, and the run fails clearly if it is not higher than the published version. If the feed cannot be read the run fails instead of guessing. The chosen version is applied to `package.json` in the CI workspace only (unit-tested in `tests/unit/main/releaseVersion.test.ts`).
 2. A **Windows (NSIS)** build runs on a GitHub-hosted `windows-latest` runner, including the native crypto module (Rust). It costs roughly 15 to 30 billed minutes on the GitHub Free quota. The build checks that `latest.yml` carries the chosen version.
-3. `Discordy-Setup-X.Y.Z.exe`, its `.blockmap` and `latest.yml` are attached to the GitHub Release `vX.Y.Z`, which the workflow creates (and tags at the merge commit) for `main` builds.
-4. `minio-publish` uploads them to the `discordy-updates` bucket (served at `https://discordy-updates.voics.nl`) and copies the installer to `Discordy-Setup-latest.exe`, the stable target of the website's Download button. `latest.yml` and the stable name get a 5-minute cache, so the button and installed clients see a new build within five minutes.
+3. `Voics-Setup-X.Y.Z.exe`, its `.blockmap` and `latest.yml` are attached to the GitHub Release `vX.Y.Z`, which the workflow creates (and tags at the merge commit) for `main` builds.
+4. `minio-publish` uploads them to the `discordy-updates` bucket (served at `https://discordy-updates.voics.nl`) and copies the installer to `Voics-Setup-latest.exe`, the stable target of the website's Download button. `latest.yml` and the stable name get a 5-minute cache, so the button and installed clients see a new build within five minutes.
 
-A manual build when CI is unavailable: `pnpm dist:win` on Windows, then upload `apps/desktop/release/{Discordy-Setup-X.Y.Z.exe,.blockmap,latest.yml}` to the bucket. The same steps are in [Release, Desktop client release](../runbooks/release.md#desktop-client-release).
+A manual build when CI is unavailable: `pnpm dist:win` on Windows, then upload `apps/desktop/release/{Voics-Setup-X.Y.Z.exe,.blockmap,latest.yml}` to the bucket. The same steps are in [Release, Desktop client release](../runbooks/release.md#desktop-client-release).
 
 ## How the auto-updater works
 
@@ -27,21 +27,23 @@ Publishing `latest.yml` is therefore what rolls an update out, and only forward:
 
 ## Uninstall and data on your computer
 
-The Windows uninstaller removes the app and **keeps your data by default**, like Discord, so a reinstall picks up where you left off. The uninstaller shows a page with an unchecked box **Also delete my Discordy data**. Where things live (Electron's per-user profile, whatever the install location or install mode):
+The Windows uninstaller removes the app and **keeps your data by default**, like Discord, so a reinstall picks up where you left off. The uninstaller shows a page with an unchecked box **Also delete my Voics data**. Where things live (Electron's per-user profile, whatever the install location or install mode):
 
 | Location | What is in it | Removed by the checkbox |
 |---|---|---|
-| `%APPDATA%\<productName>` (for example `%APPDATA%\Discordy`) | session token vault, local message store and caches, settings, per-user E2EE key files (`crypto/<userId>.key` and `.db`), logs, Chromium caches | Yes |
+| `%APPDATA%\<productName>` (for example `%APPDATA%\Voics`) | session token vault, local message store and caches, settings, per-user E2EE key files (`crypto/<userId>.key` and `.db`), logs, Chromium caches | Yes |
 | `%LOCALAPPDATA%\@discordydesktop-updater` (package name with `/` removed, plus `-updater`) | downloaded update installers | Yes |
-| The install directory (default `%LOCALAPPDATA%\Programs\Discordy`) | the app itself | Always removed |
+| The install directory (default `%LOCALAPPDATA%\Programs\Voics`) | the app itself | Always removed |
 
 Deleting the data also deletes the local encryption keys; encrypted history that only those keys could open is not recoverable afterwards, which the uninstaller page says. Nothing outside these folders is ever touched. Folder names come from `brand.json` (`productName`) and the package name, not from literals (`apps/desktop/build/installer.nsh`).
 
-Silent and scripted uninstalls: `"Uninstall Discordy.exe" /S` keeps the data; add `/DELETEDATA` to remove it too. An in-app update (electron-updater runs the old uninstaller with `--updated`) never deletes data.
+Silent and scripted uninstalls: `"Uninstall Voics.exe" /S` keeps the data; add `/DELETEDATA` to remove it too. An in-app update (electron-updater runs the old uninstaller with `--updated`) never deletes data.
 
 ## Branding
 
-`apps/desktop/brand.json` holds `displayName`, `productName`, `shortName`, `appId` (`nl.voics.discordy`), `protocolScheme` (`discordy`), `description`, `publisher`, `updateFeedHost`, and the hosts (`baseDomain`, `landingUrl`, `apiUrl`, `gatewayUrl`, `cdnUrl`). The window title, tray, UI copy, deep-link scheme, installer name and `electron-builder.config.cjs` read it; the installer is named `${productName}-Setup-${version}.${ext}`. A unit test fails if the display name is hard-coded elsewhere. Identifiers such as `@discordy/*` packages and `DISCORDY_*` variables stay as they are.
+`apps/desktop/brand.json` holds `displayName`, `productName`, `shortName`, `appId` (`nl.voics.app`), `protocolScheme` (`voics`), `description`, `publisher`, `updateFeedHost`, and the hosts (`baseDomain`, `landingUrl`, `apiUrl`, `gatewayUrl`, `cdnUrl`). The window title, tray, UI copy, deep-link scheme, installer name and `electron-builder.config.cjs` read it; the installer is named `${productName}-Setup-${version}.${ext}`. A unit test fails if the display name is hard-coded elsewhere. Identifiers such as `@discordy/*` packages and `DISCORDY_*` variables stay as they are. The hosts stay on the `discordy-*.voics.nl` names.
+
+The product was renamed from Discordy to Voics with a new V app icon. The new `appId` installs as a separate app next to an old Discordy install, and data folders follow `productName` (`%APPDATA%\Voics`), so settings and sign-in do not carry over and `discordy://` links no longer open the app. No migration is built. The Windows exe gets its icon and version info from electron-builder (`signAndEditExecutable` is no longer disabled); that step downloads winCodeSign, whose archive contains symlinks, so a Windows build needs administrator rights or Developer Mode.
 
 ## Rollback
 
