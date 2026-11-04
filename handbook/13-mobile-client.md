@@ -2,7 +2,7 @@
 
 Summary: what exists of the mobile app today (the M0 skeleton plus the first M1 slices: sign-in, gateway, server list and text channels), how it is built in the client monorepo, how its name and bundle id are configured, how CI checks it, and what comes next. The plan is [Mobile app plan](../plans/2026-11-03-mobile-app.md); the stack choice is [ADR 0024](../adr/0024-mobile-client-stack.md).
 
-Last reviewed: 2026-11-04 ([client#206](https://github.com/discordy-voics/client/issues/206), PRs client#256, client#257 and client#258; skeleton: client#205, PR client#232).
+Last reviewed: 2026-11-05 (servers: [client#274](https://github.com/discordy-voics/client/issues/274); [client#206](https://github.com/discordy-voics/client/issues/206), PRs client#256, client#257 and client#258; skeleton: client#205, PR client#232).
 
 ## Status
 
@@ -39,7 +39,7 @@ M0 skeleton plus the first M1 slices. `apps/mobile` in the `client` repository i
 | Sending | Type and tap Send. The message shows at once, dimmed, and settles when the server answers. If sending fails, the message stays with "Not sent: reason" and Retry and Discard. |
 | Long press | A bottom sheet with quick reactions, Reply, Edit and Delete. Only what you may do is shown: Edit on your own messages, Delete on your own or with Manage Messages, reactions with Add Reactions, Reply and the composer with Send Messages. The rules come from the core permission and message menu code, the same as desktop. Delete asks for confirmation. |
 | Reactions | Tap a reaction chip to add or remove your own. A refused change is undone and the reason shows in a red bar above the list. |
-| Not yet | Channels with private delivery (ephemeral, peer to peer) show a notice instead of messages, because they need the encryption core (M3). Attachments, formatting and embeds, threads, pins and unread markers are not in this slice. |
+| Not yet | Channels with private delivery (ephemeral, peer to peer) open on a plain message instead of messages, because they need the encryption core (M3). Attachments, formatting and embeds, threads, pins and unread markers are not in this slice. |
 
 ## Name, scheme and bundle id (branding)
 
@@ -68,7 +68,7 @@ The main screen follows the desktop shell: a narrow server rail on the left, a c
 | Part | Behaviour |
 |---|---|
 | Server rail | Direct messages on top, a separator, then your servers and folders in the order you set on desktop (folders open and close). The selected item has a pill on its left edge and a squarer, accent-coloured tile; a server with unread messages has a short pip; mentions show a red count (Direct messages counts mentions in all conversations). Muted channels never light the pip. Create, join and discover are not on mobile yet. |
-| Column | The selected server's name and its text channels by category (tap a category to collapse it), with the open channel highlighted, unread channels bold with a dot, muted ones dimmed and mention counts. With Direct messages selected it is the conversation list. The bell in the column header opens Notifications. |
+| Column | The selected server's name (tap it for the server menu, see Servers below) and its channels of every kind by category (tap a category to collapse it): text `#`, announcement megaphone, voice and stage speaker (with the people connected and the user limit), forum bubbles. The open channel is highlighted, unread channels bold with a dot, muted ones dimmed, with mention counts; a lock marks private, ephemeral (accent lock) and age-restricted (18+) channels and a link marks peer-to-peer ones. With Direct messages selected it is the conversation list. The bell in the column header opens Notifications. |
 | User panel | Your avatar, name and status (your custom status when set). Tapping it, or the gear, opens the You screen. |
 | Chats | Opening a channel or conversation shows the chat full screen over the rail. The back arrow, the swipe from the left edge (iOS) and the Android back button return to the rail, with the same server and channel still selected. |
 | Deep links | `/servers/:guildId/:channelId` and `/dms/:channelId` open that chat with the main screen underneath; `/servers/:guildId` and `/dms` open the main screen with that view selected. Signed out always lands on sign-in. |
@@ -83,6 +83,20 @@ Colours, radii and sizes are desktop's Nightglass tokens (72 pt rail, 48 pt tile
 | Opening | A row opens the same message screen as a server channel (history, composer, replies, edit, delete, reactions); there are no roles in a DM, so every participant may send, react and read. Conversations with private delivery show the same notice as private channels, never messages or an error. |
 | Profile | Tap an author name, or Profile in the header of a 1:1 DM. A sheet shows the avatar (from the CDN, with the initial as fallback), display name, username, About me (refreshed from the profile endpoint, the cached one shows if that fails) and, for friends, Friends since. |
 | You screen | Your avatar, name, username and email, a Show reactions under messages switch (a device-local core preference) and Sign out. |
+
+## Servers
+
+| Topic | Behaviour |
+|---|---|
+| Voice channels | Listed in their category with the speaker icon, the user limit (`2/4`, red when full) and, indented under the row, the people connected right now from voice state: avatar, name (nickname first) and marks for muted, deafened (server ones in red), camera and live. A collapsed category does not hide them in the list on desktop; mobile collapses everything in it. Tapping one opens a screen with the channel name, who is in it and the line "Voice isn't in this test version yet". Joining needs a native build and is a separate ticket. |
+| Other channels | Ephemeral, peer-to-peer and forum channels open on one plain sentence saying they are not in this test version, never on unreadable content or an error. Threads are not listed (as on desktop). |
+| Member list | The people icon at the right of a server channel's header opens the server's member list, which slides in from the right like any pushed screen (back returns to the chat). Groups are hoisted roles (highest first), Online and Offline, each collapsible, built by the core member rules; a row has the avatar with a status dot, the name in the role colour, a crown for the owner, an APP tag for bots, a speaker when in voice and the activity or custom status line. Search filters the loaded members and asks the gateway for more after a short pause. A swipe from the right edge to open it is not built. |
+| Profile sheet | Tapping a person (also an author in a server chat) shows avatar, names, About me, their roles and Member since in the server, Friends since, and a Message button (not on your own profile) that opens or creates the DM and shows it. |
+| Server menu | Tapping the server name in the column header. Invite people appears with Create Invite (choose expiry and uses, then Copy link or Share, through the first text channel as on desktop). Server settings appears with Manage Server, Manage Roles or Manage Channels. Leave server (not for the owner) asks first. Delete server, notification settings, mute and mark as read are not on mobile. |
+| Server settings | A list of the pages the user may open, using the same permission rules as desktop's server settings (the shared `serverSettingsTabs` in core): Overview (Manage Server: name, icon from the photo library, only changed fields are sent), Roles (Manage Roles: hierarchy list with member counts and locks; per role name, colour, display separately, mentionable and every permission, with a switch disabled when the user lacks that permission or the role is at or above their highest; create and delete with confirmation), Members (everyone, as on desktop: search, and Kick or Ban only for people the user outranks with the matching permission, after a confirmation), Invites (Manage Server: create, copy, revoke with confirmation) and Channels (Manage Channels: create channel with kind, category and delivery mode or create category, rename, delete with confirmation). A deep link to a page the user may not open shows a note, not controls. |
+| Not built | From desktop's server settings: Emoji, Template, Discovery, Bans (list and unban), Audit log. Inside the pages: banner, invite splash, description, voice region, system messages, inactive channel, default notifications and prune in Overview; role reordering, duplicate, role icon, adding roles to members and members per role in Roles; roles, timeout, nickname and Mod View in Members; permission overwrites, topic, slowmode, age restriction and reordering in Channels. Also pinned channels and the channel context menu. |
+
+The pages run on Expo Go modules only (`expo-clipboard`, `expo-image-picker`). Like the rest of the app they were tested with mocks, not yet on a device.
 
 ## What comes next
 
