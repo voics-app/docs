@@ -6,7 +6,7 @@ Last reviewed: 2026-11-04 ([client#205](https://github.com/discordy-voics/client
 
 ## Status
 
-M0 skeleton only. `apps/mobile` in the `client` repository is an Expo app with a sign-in placeholder and four bottom tabs (Servers, DMs, Notifications, You) holding placeholder screens. It talks to no API yet. The shared `packages/core` extraction is a separate ticket ([client#204](https://github.com/discordy-voics/client/issues/204)). Nothing is published to an app store.
+M0 skeleton only. `apps/mobile` in the `client` repository is an Expo app with a sign-in placeholder and four bottom tabs (Servers, DMs, Notifications, You) holding placeholder screens. It talks to no API yet. The shared `packages/core` (`@discordy/core`) is being extracted in [client#204](https://github.com/discordy-voics/client/issues/204): the domain rules and protocol contracts are in, and persistence goes through a `KeyValueStorage` port so the same code runs on desktop (localStorage) and mobile. The application layer and protocol clients follow. Nothing is published to an app store.
 
 ## How it is built
 
