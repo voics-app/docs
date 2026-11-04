@@ -213,6 +213,7 @@ Op 26 CALL_RING. Rings the listed members of a DM channel for a call the sender 
 | 4009 | `SESSION_TIMED_OUT` | The session timed out. | yes |
 | 4013 | `INVALID_INTENTS` | An invalid intent bitfield was sent. | no |
 | 4014 | `DISALLOWED_INTENTS` | A privileged intent was requested that the application is not approved for. | no |
+| 4015 | `SERVER_OVERLOADED` | The gateway is short of memory and refuses new connections. Reconnect with backoff. | yes |
 
 ## Intents
 
