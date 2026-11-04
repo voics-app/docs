@@ -27,9 +27,9 @@ Publishing `latest.yml` is therefore what rolls an update out, and only forward:
 
 ## Uninstall and data on your computer
 
-The Windows uninstaller removes the app and **keeps your data by default**, like Discord, so a reinstall picks up where you left off. The uninstaller shows a page with an unchecked box **Also delete my Voics data**. Where things live (Electron's per-user profile, whatever the install location or install mode):
+The Windows uninstaller removes the app and **keeps your data by default**, like Discord, so a reinstall picks up where you left off. The uninstaller asks what should happen to the data on this computer: **Keep my data** (selected) or **Remove everything**. Where things live (Electron's per-user profile, whatever the install location or install mode):
 
-| Location | What is in it | Removed by the checkbox |
+| Location | What is in it | Removed by Remove everything |
 |---|---|---|
 | `%APPDATA%\<productName>` (for example `%APPDATA%\Voics`) | session token vault, local message store and caches, settings, per-user E2EE key files (`crypto/<userId>.key` and `.db`), logs, Chromium caches | Yes |
 | `%LOCALAPPDATA%\@discordydesktop-updater` (package name with `/` removed, plus `-updater`) | downloaded update installers | Yes |
