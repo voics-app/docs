@@ -2,11 +2,11 @@
 
 Summary: what exists of the mobile app today (the M0 skeleton plus the first M1 slices: sign-in, gateway, server list and text channels), how it is built in the client monorepo, how its name and bundle id are configured, how CI checks it, and what comes next. The plan is [Mobile app plan](../plans/2026-11-03-mobile-app.md); the stack choice is [ADR 0024](../adr/0024-mobile-client-stack.md).
 
-Last reviewed: 2026-11-04 ([client#206](https://github.com/discordy-voics/client/issues/206), PRs client#256 and client#257; skeleton: client#205, PR client#232).
+Last reviewed: 2026-11-04 ([client#206](https://github.com/discordy-voics/client/issues/206), PRs client#256, client#257 and client#258; skeleton: client#205, PR client#232).
 
 ## Status
 
-M0 skeleton plus the first M1 slices. `apps/mobile` in the `client` repository is an Expo app with four bottom tabs (Servers, DMs, Notifications, You). You can sign in (email and password, then the authenticator or backup code when the account has two-factor sign-in) and sign out from the You tab. The app keeps a gateway connection and the Servers tab lists your servers and, per server, the text channels you can see, grouped by category. Tapping a text channel opens its messages (see Messages below). DMs and Notifications are still placeholders. All stores, the session manager and the protocol clients come from `@discordy/core`; nothing is published to an app store, and these slices have been tested with mocks only, not yet on a device or simulator.
+M0 skeleton plus the first M1 slices. `apps/mobile` in the `client` repository is an Expo app with four bottom tabs (Servers, DMs, Notifications, You). You can sign in (email and password, then the authenticator or backup code when the account has two-factor sign-in) and sign out from the You tab. The app keeps a gateway connection and the Servers tab lists your servers and, per server, the text channels you can see, grouped by category. Tapping a text channel opens its messages (see Messages below). The DMs tab lists your conversations and the You tab has your account and a few settings (see Direct messages, profiles and settings below). Notifications is still a placeholder. All stores, the session manager and the protocol clients come from `@discordy/core`; nothing is published to an app store, and these slices have been tested with mocks only, not yet on a device or simulator.
 
 ## How it is built
 
@@ -61,6 +61,15 @@ The `client` CI calls the shared node workflow with the root scripts `lint`, `ty
 
 [Run the mobile app](../runbooks/run-the-mobile-app.md) (phone with Expo Go, development builds, Windows without a Mac).
 
+## Direct messages, profiles and settings
+
+| Topic | Behaviour |
+|---|---|
+| DMs tab | Lists your 1:1 and group conversations, most recent activity first, with the person's name (their nickname if they are a friend and you set one), or the group name, or the members' names. DMs you closed on this device stay hidden until a newer message arrives. The order and the hiding come from the core DM model. |
+| Opening | A row opens the same message screen as a server channel (history, composer, replies, edit, delete, reactions); there are no roles in a DM, so every participant may send, react and read. Conversations with private delivery show the same notice as private channels, never messages or an error. |
+| Profile | Tap an author name, or Profile in the header of a 1:1 DM. A sheet shows the avatar (from the CDN, with the initial as fallback), display name, username, About me (refreshed from the profile endpoint, the cached one shows if that fails) and, for friends, Friends since. |
+| You tab | Your avatar, name, username and email, a Show reactions under messages switch (a device-local core preference) and Sign out. |
+
 ## What comes next
 
-The rest of M1: DMs, attachments, push notifications, and TestFlight through EAS (needs the Apple Developer account from the owner decisions). Order and scope are in the [plan](../plans/2026-11-03-mobile-app.md).
+The rest of M1: attachments, push notifications, and TestFlight through EAS (needs the Apple Developer account from the owner decisions). Order and scope are in the [plan](../plans/2026-11-03-mobile-app.md).
