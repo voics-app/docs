@@ -18,4 +18,5 @@
 | [Cloudflare setup](cloudflare-setup.md) | Tunnel, DNS and Access configuration |
 | [How to rebrand](rebrand.md) | Changing the product name or domain: every file and variable, rebuild and redeploy steps, Cloudflare and DNS steps |
 | [Access control (RBAC)](access-control.md) | Who and what may do what in the cluster, how to request access, how to grant, change or revoke it, break-glass |
+| [System load dashboard](system-load-dashboard.md) | Watching a stress test live in Grafana: what each row shows and which metrics are missing |
 | [Ops access](ops-access.md) | Logging in to the ops portal, Headlamp, Grafana, pgweb, MinIO, Redpanda, OpenBao and admin; changing the allowed IP |
