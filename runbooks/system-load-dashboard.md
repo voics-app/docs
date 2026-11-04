@@ -26,8 +26,13 @@ All rows except "Stress test overview" and "Traffic and apps" are collapsed by d
 | Data: ScyllaDB | Coordinator reads and writes/s, read and write latency p95/p99 (microseconds), cache hit rate, pending compactions, disk usage, CQL connections, errors and timeouts, pod CPU and memory | `scylla_*` (job `scylla`) |
 | Data: Valkey | Commands/s, hit rate, memory used versus max, clients, evicted and expired keys, command latency, network, pod CPU and memory | `redis_*` (redis_exporter) |
 | Data: Postgres | Backends by state, commits and rollbacks/s, database size, replication lag, WAL, deadlocks and conflicts, buffer cache hit ratio, pod CPU and memory | `cnpg_*` (job `postgres`) |
-| Messages service and API internals | Messages created, edited and deleted/s, Kafka produce latency and errors by topic, DB query p95 by job, rate-limit decisions | `messages_*`, `kafka_produce_*`, `db_query_duration_seconds`, `rate_limit_decisions_total` |
+| Messages service and API internals | Messages created, edited and deleted/s, Kafka produce latency and errors by topic, DB query p95 by job, rate-limit decisions, rate-limit in-memory fallback | `messages_*`, `kafka_produce_*`, `db_query_duration_seconds`, `rate_limit_decisions_total`, `rate_limit_fallback_total` |
 | Voice | SFU sessions, rooms, ingress and egress bitrate; signaling users, rooms and SFU connections; voice pod CPU and memory | `sfu_*`, `discordy_voice_node_*`, cAdvisor |
+
+## Valkey sizing and the rate-limit fallback
+
+- Valkey runs with `maxmemory 384mb` (limit 512Mi) and `volatile-lru` (gitops#93). The growth is the gateway resume buffer, about 0.2 MiB per session in small guilds and 0.4 to 0.5 MiB in a 200-member guild, so 384 MB holds roughly 700 large-guild sessions. Only keys with a TTL (resume buffers, presence, rate-limit buckets) can be evicted; E2EE inbox streams, call defaults and voice allocations are never evicted. A rising `redis_evicted_keys_total` means resume buffers are being dropped and clients re-identify instead of resuming: raise `maxmemory` and the limit in `infrastructure/data/valkey/valkey.yaml` (dev: the patch in `infrastructure/environments/dev/data`) and keep `scripts/memory-budget.sh` green.
+- When Valkey errors, the api limits from per-pod memory (api#114, at most 50,000 buckets) instead of letting requests through; each pod enforces the configured limit on its own. The panel "API rate limiter in-memory fallback per s" (`rate_limit_fallback_total{result}`) is zero in normal operation; any traffic on it means the shared store is down or full.
 
 ## Known gaps
 

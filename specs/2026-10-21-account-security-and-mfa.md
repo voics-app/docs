@@ -57,7 +57,7 @@ Ten codes of 10 characters (`xxxxx-xxxxx`, unambiguous alphabet, about 49 bits e
 - Second-factor attempts (login, enrolment, disable, backup codes) share one budget per user: 10 per 10 minutes, then `429` with `retry_after` until the bucket refills. The right code is refused while locked.
 - Password confirmations: 10 per 10 minutes per user.
 - Public endpoints add per-caller buckets: forgot-password 5/h, reset-password 10/h, verify-email 20/h, `/auth/mfa/totp` 30/10 min.
-- Limiter outages fail open (as the general limiter does).
+- Limiter outages fall back to a per-pod in-memory limiter (as the general limiter does, api#114); they no longer fail open.
 
 ## Disable and delete
 
