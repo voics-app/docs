@@ -10,6 +10,8 @@ Source: `gitops/infrastructure/controllers/grafana/dashboards/discordy-system-lo
 
 ## Rows
 
+All rows except "Stress test overview" and "Traffic and apps" are collapsed by default; Grafana only queries panels of a row once you expand it.
+
 | Row | Shows | Source |
 |---|---|---|
 | Stress test overview | Stat tiles with green/amber/red thresholds: messages/s, gateway sessions, API p99, produce p99, ingress 5xx %, node CPU % and memory %, pod restarts in 15 m | `messages_created_total`, gateway, ingress-nginx, node-exporter (cAdvisor fallback), kube-state-metrics |
