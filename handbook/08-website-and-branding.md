@@ -30,9 +30,13 @@ The site is a static page set served at `https://discordy.voics.nl` from the Min
 
 The full cross-repository checklist (client, api emails, admin, bots-sdk, gitops hosts, DNS and Cloudflare, what to redeploy) is the [How to rebrand](../runbooks/rebrand.md) runbook. The desktop client has its own `brand.json` with the same idea ([Desktop client release](09-desktop-client-release.md#branding)); rename both to rename the product.
 
+## Product name and logo
+
+The product is named **Voics** (`brand.json` `name`); the site domain stays `discordy.voics.nl` and must never point at the separate `voics.nl` production product. `src/assets/logo.svg` is the V mark, the same geometry and gradient as the desktop app icon, and doubles as the favicon.
+
 ## Download buttons
 
-Every Download button links to `downloads.windows` in `brand.json`, the stable URL of the latest installer (`https://discordy-updates.voics.nl/Discordy-Setup-latest.exe`). macOS and Linux show "coming soon".
+Every Download button links to `downloads.windows` in `brand.json`, the stable URL of the latest installer (`https://discordy-updates.voics.nl/Voics-Setup-latest.exe`). macOS and Linux show "coming soon".
 
 ## Deploy
 
