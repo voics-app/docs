@@ -2,7 +2,8 @@
 
 How to measure message throughput, gateway fan-out latency and concurrent sessions on the production
 cluster (gen-serv). The harness lives in `gitops/loadtest/` (README there has the flags). Results of
-the first run: [capacity baseline 2026-11-04](../reports/2026-11-04-capacity-baseline.md).
+the first run: [capacity baseline 2026-11-04](../reports/2026-11-04-capacity-baseline.md); after the memory
+limit and gateway tuning: [capacity re-run 2026-11-04](../reports/2026-11-04-capacity-rerun.md).
 
 ## Before you start
 
