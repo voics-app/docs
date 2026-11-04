@@ -54,7 +54,7 @@ Message entries (always below the target block):
 | Create Thread | standard delivery, guild channel, CREATE_PUBLIC_THREADS | `POST` thread from message |
 | Copy Text | message has text | none |
 | Mark Unread | always | local read marker plus best-effort `ack` of the previous message; no server mark-unread endpoint |
-| Copy Message Link | always | none (`discordy://channels/{guild or @me}/{channel}/{message}`) |
+| Copy Message Link | always | none (`voics://channels/{guild or @me}/{channel}/{message}`) |
 | Speak Message | text and speech synthesis available | none (Web Speech) |
 | Delete Message | own message, or MANAGE_MESSAGES on standard delivery | privacy sender |
 | Copy Message ID | always | none |
@@ -67,7 +67,7 @@ Ephemeral and P2P messages drop reactions, pin, thread and others-delete (they c
 | --- | --- |
 | Mark As Read | always, disabled without unread or mentions |
 | Invite People | guild channel and CREATE_INSTANT_INVITE |
-| Copy Link | guild channel (`discordy://channels/{guild}/{channel}`) |
+| Copy Link | guild channel (`voics://channels/{guild}/{channel}`) |
 | Mute Channel (submenu) / Unmute Channel | always: 15 minutes, 1 hour, 3 hours, 8 hours, 24 hours, until turned back on |
 | Notification Settings | always (dialog: all, only mentions, nothing) |
 | Edit Channel | guild channel and MANAGE_CHANNELS |
@@ -129,7 +129,7 @@ Client behaviour:
 | Deleted reply | "Original message was deleted" when `referenced_message` is null |
 | Report | disabled "coming soon" entry until the report backend lands (Forward is implemented, see ADR 0020) |
 
-Already covered earlier: Copy Message Link (`discordy://channels/{guild}/{channel}/{message}`, handled by `main/deepLinks.ts`), delete confirmation with Shift to skip, Mark Unread. An https link form is deferred until a web origin for messages exists.
+Already covered earlier: Copy Message Link (`voics://channels/{guild}/{channel}/{message}`, handled by `main/deepLinks.ts`), delete confirmation with Shift to skip, Mark Unread. An https link form is deferred until a web origin for messages exists.
 
 ## System messages (client#87)
 

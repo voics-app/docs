@@ -89,7 +89,7 @@ Settings > Desktop holds device-local options (never synced to the account), sto
 | Close button minimizes to tray | The close button hides the window (default on Windows and macOS, off on Linux). Quit from the tray menu. Without a tray the close button quits. |
 | Hardware acceleration | `app.disableHardwareAcceleration()` runs at startup from the local settings file, so a change needs a restart (the page offers **Restart now**). |
 
-The tray menu shows Open, the unread and mention summary, Mute and Deafen toggles (the renderer reports its self voice state; clicks are sent back as commands), the version, Check for updates and Quit. A single-instance lock makes a second launch (or a `discordy://` link) focus the existing window. The `discordy://` scheme is registered by the installer (`protocols` in `electron-builder.config.cjs`) and again at each start. Update behaviour is described in [Desktop client release and auto-update](09-desktop-client-release.md).
+The tray menu shows Open, the unread and mention summary, Mute and Deafen toggles (the renderer reports its self voice state; clicks are sent back as commands), the version, Check for updates and Quit. A single-instance lock makes a second launch (or a `voics://` link) focus the existing window. The `voics://` scheme is registered by the installer (`protocols` in `electron-builder.config.cjs`) and again at each start. Update behaviour is described in [Desktop client release and auto-update](09-desktop-client-release.md).
 
 ## Friends and direct messages
 
