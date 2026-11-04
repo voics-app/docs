@@ -95,6 +95,10 @@ The tray menu shows Open, the unread and mention summary, Mute and Deafen toggle
 
 When a friend request becomes a friendship (the gateway's `RELATIONSHIP_ADD` with type 1, on either side) the client creates the DM with `POST /users/@me/channels` (idempotent), adds it to Direct Messages and reopens it if it had been closed. The top of an empty or fully loaded 1:1 DM shows a large avatar, the display name, the username and "This is the beginning of your direct message history with @name."; while the DM has no messages, a "Wave to name" button sends a wave message and then disappears. Logic in `domain/dmIntro.ts`, view in `interface/features/chat/DmIntro.tsx`.
 
+## Pinned DMs and pinned channels
+
+Right-click a DM or group DM and choose Pin Conversation to keep it at the top of Direct Messages, marked with a small pin; up to 5 can be pinned (Pin is greyed out when full) and they stay in pin order above the rest, which keep their latest-activity order. Closing a pinned DM unpins it. In any server, right-click a channel and choose Pin Channel: pinned channels appear in a Pinned section above the categories, only for you, up to 10 per server. Both lists follow the account: they are stored as `pinned_dm_channel_ids` and `pinned_channel_ids` (server id to channel ids) in the user settings, validated by the api (limits, no duplicates), applied optimistically with rollback on failure and refreshed on other devices through `USER_SETTINGS_UPDATE`. Logic in `domain/pins.ts`, actions in `interface/app/pinActions.ts`, menus in `domain/dmModel.ts` and `domain/channelMenuModel.ts`.
+
 ## Markdown tables and timestamps
 
 Messages render GitHub-style pipe tables: a header row, a delimiter row (`|---|`, with `:--`, `:-:` and `--:` for left, centre and right alignment) and body rows. Outer pipes are optional, `\|` keeps a pipe inside a cell, short rows are padded and extra cells are dropped. Cells hold inline markdown only and are rendered as elements, never raw HTML. A wide table scrolls horizontally inside the message. Limits: 12 columns (wider input stays literal text) and 50 rows (later rows stay text). The parser is `domain/markdown.ts`.

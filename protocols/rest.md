@@ -1469,6 +1469,8 @@ Account-wide settings of the current user. `default_delivery_mode` is a Discordy
 | `message_display_compact` | `boolean` |  |
 | `accent_color?` | `?integer` |  |
 | `guild_folders` | `array of GuildFolder` | The user's server rail in order, with folders. Synced across devices. |
+| `pinned_dm_channel_ids` | `array of Snowflake` | DM and group DM channels pinned to the top of the DM list (at most 5), most recently pinned last. Synced across devices. |
+| `pinned_channel_ids` | `map of array of Snowflake` | Personal pinned channels per server, at most 10 per server (guild id to channel ids, most recently pinned last), shown at the top of that server's channel list. Visible only to the user. Synced across devices. |
 | `guild_positions` | `array of Snowflake` | Flat server order (legacy mirror of guild_folders). |
 | `preferences` | `UserPreferences` | Synced client preferences (appearance, chat, notification sounds, emoji). Sparse. |
 
@@ -2084,6 +2086,8 @@ PATCH /users/@me/settings body (partial).
 | `accent_color?` | `?integer` |  |
 | `guild_folders?` | `array of GuildFolder` | The user's server rail in order, with folders. Synced across devices. |
 | `guild_positions?` | `array of Snowflake` | Flat server order (legacy mirror of guild_folders). |
+| `pinned_dm_channel_ids?` | `array of Snowflake` | DM and group DM channels pinned to the top of the DM list (at most 5), most recently pinned last. Synced across devices. |
+| `pinned_channel_ids?` | `map of array of Snowflake` | Personal pinned channels per server, at most 10 per server (guild id to channel ids, most recently pinned last), shown at the top of that server's channel list. Visible only to the user. Synced across devices. |
 | `preferences?` | `UserPreferences` | Merged key by key into the stored preferences. |
 
 ### ModifyWebhookRequest
