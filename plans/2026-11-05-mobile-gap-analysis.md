@@ -301,7 +301,7 @@ Discord iOS pixel values are not public (section 2.9), so the table gives our de
 
 ## 7. Implementation plan
 
-Order: what the owner sees first in Expo Go, then depth, then the native build. Sizes are from section 5; no time estimates. Every wave ships behind the existing PR rules: tests, lint, typecheck and the docs update (handbook page 13 and a runbook change where behaviour changes).
+The owner moved the native build forward on 2026-11-05 so calls, Ephemeral and P2P can be tested on an iPhone: Wave 5 runs alongside Waves 1 to 4, not after them. Otherwise the order is what the owner sees first in Expo Go, then depth. Sizes are from section 5; no time estimates. Every wave ships behind the existing PR rules: tests, lint, typecheck and the docs update (handbook page 13 and a runbook change where behaviour changes).
 
 ### Wave 1: the chat looks and behaves like a chat (Expo Go, no server work)
 
