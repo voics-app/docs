@@ -95,6 +95,8 @@ The tray menu shows Open, the unread and mention summary, Mute and Deafen toggle
 
 When a friend request becomes a friendship (the gateway's `RELATIONSHIP_ADD` with type 1, on either side) the client creates the DM with `POST /users/@me/channels` (idempotent), adds it to Direct Messages and reopens it if it had been closed. The top of an empty or fully loaded 1:1 DM shows a large avatar, the display name, the username and "This is the beginning of your direct message history with @name."; while the DM has no messages, a "Wave to name" button sends a wave message and then disappears. Logic in `domain/dmIntro.ts`, view in `interface/features/chat/DmIntro.tsx`.
 
+The profile dialog and the DM profile panel show "Friends since <date>", read from `Relationship.since`. Clicking the avatar in either one opens it full size in the image viewer. The About me field allows 300 characters (`BIO_MAX_LENGTH`); the api stores and validates the same limit from api 0.13.0.
+
 ## Pinned DMs and pinned channels
 
 Right-click a DM or group DM and choose Pin Conversation to keep it at the top of Direct Messages, marked with a small pin; up to 5 can be pinned (Pin is greyed out when full) and they stay in pin order above the rest, which keep their latest-activity order. Closing a pinned DM unpins it. In any server, right-click a channel and choose Pin Channel: pinned channels appear in a Pinned section above the categories, only for you, up to 10 per server. Both lists follow the account: they are stored as `pinned_dm_channel_ids` and `pinned_channel_ids` (server id to channel ids) in the user settings, validated by the api (limits, no duplicates), applied optimistically with rollback on failure and refreshed on other devices through `USER_SETTINGS_UPDATE`. Logic in `domain/pins.ts`, actions in `interface/app/pinActions.ts`, menus in `domain/dmModel.ts` and `domain/channelMenuModel.ts`.
@@ -108,6 +110,10 @@ Dynamic timestamps (`<t:unix:format>`, formats `t T d D f F R`) show in each rea
 ## Media viewer
 
 Images and videos open in one lightbox with the same chrome: Save as, Open original and a Close button; clicking outside the media and Esc also close it. The video player's own fullscreen button is hidden there.
+
+A message with several images shows at most four tiles. With more images the fourth tile shows "+N" and opens the viewer at that image, with all images available as siblings (`gridTiles` in core). In the viewer, arrows, keys and a left or right swipe move between images; swiping only works when the image is not zoomed, so panning stays usable (`swipeDirection` in core).
+
+Screen shares can be zoomed and panned, both the ones you watch and your own. The wheel or a trackpad pinch zooms toward the pointer from 1x to 8x, dragging pans while zoomed, and a double-click or the zoom badge resets. At 1x a double-click still toggles full screen. Cameras and the blurred preview do not zoom, and the zoom resets when entering or leaving full screen. The maths is in core `domain/panZoom`, the desktop hook is `usePanZoom`.
 
 ## Sounds
 
