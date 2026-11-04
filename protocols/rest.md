@@ -89,6 +89,9 @@ Errors use the envelope `{ "code": int, "message": string, "errors"?: object }`.
 | `POST` | `/users/@me/mfa/codes-verification` | api | `BackupCodesVerificationRequest` | `BackupCodesResponse` | List or regenerate backup codes |
 | `GET` | `/users/{user_id}` | api | — | `User` | Get a user |
 | `GET` | `/users/{user_id}/profile` | api | — | `UserProfile` | Get a user's profile with mutual servers and mutual friends |
+| `GET` | `/users/@me/sessions` | api | — | `array of AuthSession` | List the current user's login sessions |
+| `POST` | `/users/@me/sessions/logout-all` | api | — | 204 No Content | Log out every other session |
+| `DELETE` | `/users/@me/sessions/{session_id}` | api | — | 204 No Content | Log out one session |
 | `GET` | `/users/@me/settings` | api | — | `UserSettings` | Get the current user's settings |
 | `PATCH` | `/users/@me/settings` | api | `ModifyUserSettingsRequest` | `UserSettings` | Modify the current user's settings (including default_delivery_mode) |
 | `GET` | `/users/@me/guilds/{guild_id}/settings` | api | — | `GuildNotificationSettings` | Get the current user's notification settings for a guild (or `@me` for DMs) |
@@ -459,6 +462,21 @@ An audit log entry.
 | `action_type` | `integer` | AuditLogEvent. |
 | `options?` | `AuditEntryInfo` |  |
 | `reason?` | `string` |  |
+
+### AuthSession
+
+A login session of the current user (one refresh-token family), as listed by GET /users/@me/sessions. Not to be confused with the gateway Session of SESSIONS_REPLACE.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `id` | `string (uuid)` | Session ID; the `sid` claim of its access tokens. |
+| `client` | `string` | The client that opened the session, derived from its User-Agent (for example `Desktop app` (the desktop client; clients show it with the brand name), `Firefox`). |
+| `os` | `string` | Operating system derived from the User-Agent (for example `Windows`), or `Unknown`. |
+| `device_name` | `?string` | Name of the registered end-to-end encrypted device bound to the session, if any. |
+| `location` | `?string` | Approximate location (an ISO 3166-1 country code from the edge), or null when the edge does not provide one. |
+| `created_at` | `string (date-time)` |  |
+| `last_used_at` | `string (date-time)` | When the session last logged in or refreshed its tokens. |
+| `current` | `boolean` | Whether this is the session making the request. |
 
 ### Ban
 
@@ -1451,6 +1469,8 @@ Account-wide settings of the current user. `default_delivery_mode` is a Discordy
 | `message_display_compact` | `boolean` |  |
 | `accent_color?` | `?integer` |  |
 | `guild_folders` | `array of GuildFolder` | The user's server rail in order, with folders. Synced across devices. |
+| `pinned_dm_channel_ids` | `array of Snowflake` | DM and group DM channels pinned to the top of the DM list (at most 5), most recently pinned last. Synced across devices. |
+| `pinned_channel_ids` | `map of array of Snowflake` | Personal pinned channels per server, at most 10 per server (guild id to channel ids, most recently pinned last), shown at the top of that server's channel list. Visible only to the user. Synced across devices. |
 | `guild_positions` | `array of Snowflake` | Flat server order (legacy mirror of guild_folders). |
 | `preferences` | `UserPreferences` | Synced client preferences (appearance, chat, notification sounds, emoji). Sparse. |
 
@@ -2066,6 +2086,8 @@ PATCH /users/@me/settings body (partial).
 | `accent_color?` | `?integer` |  |
 | `guild_folders?` | `array of GuildFolder` | The user's server rail in order, with folders. Synced across devices. |
 | `guild_positions?` | `array of Snowflake` | Flat server order (legacy mirror of guild_folders). |
+| `pinned_dm_channel_ids?` | `array of Snowflake` | DM and group DM channels pinned to the top of the DM list (at most 5), most recently pinned last. Synced across devices. |
+| `pinned_channel_ids?` | `map of array of Snowflake` | Personal pinned channels per server, at most 10 per server (guild id to channel ids, most recently pinned last), shown at the top of that server's channel list. Visible only to the user. Synced across devices. |
 | `preferences?` | `UserPreferences` | Merged key by key into the stored preferences. |
 
 ### ModifyWebhookRequest
