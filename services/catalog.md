@@ -1,6 +1,6 @@
 # Service catalog
 
-This catalog lists every deployable unit in Discordy. Ports, env vars, topics and images come from the pinned interfaces (P1–P11) in the master plan, so change them there first.
+This catalog lists every deployable unit in Voics. Ports, env vars, topics and images come from the pinned interfaces (P1–P11) in the master plan, so change them there first.
 
 Each production service:
 

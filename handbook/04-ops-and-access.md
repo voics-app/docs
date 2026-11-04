@@ -30,7 +30,7 @@ The admin panel adds a third check: `ADMIN_ALLOWED_EMAILS`.
 | MinIO console | Buckets: attachments, assets, updates, site |
 | Redpanda Console | Topics and consumer groups |
 | OpenBao UI | Secrets under `kv/discordy/*` |
-| Admin panel | The Discordy operator portal ([admin](02-app-admin.md)) |
+| Admin panel | The Voics operator portal ([admin](02-app-admin.md)) |
 
 URLs, login methods and rights per tool: [Ops tools and URLs](../runbooks/ops-access.md#tools).
 

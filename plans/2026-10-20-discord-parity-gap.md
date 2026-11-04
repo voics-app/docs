@@ -1,6 +1,6 @@
 # Discord parity gap audit
 
-Date: 2026-10-20. Scope: the Discordy desktop client and the backend features it needs, compared with the real Discord desktop client. Payments, Nitro and boost billing are out of scope (see "Won't do").
+Date: 2026-10-20. Scope: the Voics desktop client and the backend features it needs, compared with the real Discord desktop client. Payments, Nitro and boost billing are out of scope (see "Won't do").
 
 ## How this audit was done
 
@@ -19,7 +19,7 @@ Status counts in the matrix below: Implemented 32, Partial 25, Missing 50. 66 ne
 
 ## Gap matrix
 
-| Area | Feature | Discord | Discordy status | Gap | Issue link | Priority |
+| Area | Feature | Discord | Voics status | Gap | Issue link | Priority |
 |---|---|---|---|---|---|---|
 | Account and auth | Register, login, refresh, logout | Yes | Implemented | - | - | - |
 | Account and auth | TOTP 2FA, backup codes | Yes | Partial | Use cases and login field exist; no routes, no backup codes, no UI | [api#31](https://github.com/discordy-voics/api/issues/31) | P0 |
@@ -118,7 +118,7 @@ Status counts in the matrix below: Implemented 32, Partial 25, Missing 50. 66 ne
 | App and settings | Keybinds editor (18 actions, global scope, conflicts, reset) | Yes | Yes | - | [client#67](https://github.com/discordy-voics/client/issues/67) | P1 |
 | App and settings | Language / i18n | Yes | Missing | English only | [client#64](https://github.com/discordy-voics/client/issues/64) | P1 |
 | App and settings | Streamer mode | Yes | Missing | - | [client#74](https://github.com/discordy-voics/client/issues/74) | P2 |
-| App and settings | Privacy & delivery (E2EE modes) | Yes | Implemented | Discordy-specific | - | - |
+| App and settings | Privacy & delivery (E2EE modes) | Yes | Implemented | Voics-specific | - | - |
 | App and settings | Developer mode / copy IDs | Yes | Implemented | - | - | - |
 | App and settings | Command palette / quick switcher | Yes | Implemented | - | - | - |
 | Bots and apps | Slash commands, components, modals | Yes | Implemented | - | - | - |

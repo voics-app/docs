@@ -82,7 +82,7 @@ Settings > Desktop holds device-local options (never synced to the account), sto
 
 | Option | Effect |
 | --- | --- |
-| Open Discordy at login | `app.setLoginItemSettings` on Windows and macOS; an XDG autostart entry on Linux. Only packaged builds register, so a dev run never registers the bare Electron binary. |
+| Open Voics at login | `app.setLoginItemSettings` on Windows and macOS; an XDG autostart entry on Linux. Only packaged builds register, so a dev run never registers the bare Electron binary. |
 | Start minimized | The login item passes `--hidden`; the window stays in the tray at login. A normal launch always shows the window. |
 | Show in system tray | Default on. Creates or removes the tray icon live; with it off, the close button quits and Start minimized has no effect. |
 | Minimize to tray | Default off. The minimize button hides the window to the tray instead of the taskbar. |

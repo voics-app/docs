@@ -210,6 +210,6 @@ The bootstrap is idempotent and creates a new key. Then run `flux reconcile sour
 
 ## Notion token
 
-1. Go to notion.so/my-integrations → Discordy docs sync → **Refresh secret**.
+1. Go to notion.so/my-integrations → Voics docs sync → **Refresh secret**.
 2. Run `gh secret set NOTION_TOKEN --org discordy-voics`.
 3. **Verify**: re-run the latest `notion-sync` workflow in `docs`.

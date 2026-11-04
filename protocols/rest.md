@@ -2,7 +2,7 @@
 
 # REST API
 
-Base path `/api/v1`. JSON, snake_case, Discord API v10 object shapes plus Discordy extras. IDs are Snowflakes and permission sets are 64-bit integers, both serialized as decimal strings. Authenticate with `Authorization: Bearer <access token>` or `Authorization: Bot <token>`. The machine-readable description is `openapi/discordy.yaml`.
+Base path `/api/v1`. JSON, snake_case, Discord API v10 object shapes plus Voics extras. IDs are Snowflakes and permission sets are 64-bit integers, both serialized as decimal strings. Authenticate with `Authorization: Bearer <access token>` or `Authorization: Bot <token>`. The machine-readable description is `openapi/discordy.yaml`.
 
 ## Rate limits
 
@@ -35,7 +35,7 @@ Errors use the envelope `{ "code": int, "message": string, "errors"?: object }`.
 | 50001 | `MISSING_ACCESS` | 403 | Missing access. |
 | 50013 | `MISSING_PERMISSIONS` | 403 | You lack permissions to perform that action. |
 | 50035 | `INVALID_FORM_BODY` | 400 | Invalid form body. |
-| 50160 | `DELIVERY_MODE_CONFLICT` | 409 | Discordy: the channel uses a non-standard delivery mode; send over gateway op 20 or op 22. |
+| 50160 | `DELIVERY_MODE_CONFLICT` | 409 | Voics: the channel uses a non-standard delivery mode; send over gateway op 20 or op 22. |
 
 ## Delivery modes
 
@@ -501,7 +501,7 @@ A DM or group DM call: its voice states and the recipients still ringing for it.
 
 ### Channel
 
-A guild channel, DM, group DM or thread. `delivery_mode` and `voice_region` are Discordy extras.
+A guild channel, DM, group DM or thread. `delivery_mode` and `voice_region` are Voics extras.
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -542,8 +542,8 @@ A guild channel, DM, group DM or thread. `delivery_mode` and `voice_region` are 
 | `default_sort_order?` | `?integer` |  |
 | `default_forum_layout?` | `integer` |  |
 | `newly_created?` | `boolean` | Only on THREAD_CREATE. |
-| `delivery_mode?` | `DeliveryMode` | Discordy: effective delivery mode. Always present on full channel objects. |
-| `voice_region?` | `?string` | Discordy: per-channel voice region override; null uses the guild's voice_region. |
+| `delivery_mode?` | `DeliveryMode` | Voics: effective delivery mode. Always present on full channel objects. |
+| `voice_region?` | `?string` | Voics: per-channel voice region override; null uses the guild's voice_region. |
 
 ### ChannelMention
 
@@ -587,13 +587,13 @@ Default reaction emoji of a forum channel.
 
 ### DeliveryMode
 
-Discordy message delivery mode. Strictness: standard (0) < ephemeral (1) < p2p (2).
+Voics message delivery mode. Strictness: standard (0) < ephemeral (1) < p2p (2).
 
 Type: `"standard" or "ephemeral" or "p2p"`
 
 ### Device
 
-A user device with its Ed25519 identity key (Discordy extra).
+A user device with its Ed25519 identity key (Voics extra).
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -612,7 +612,7 @@ Category slugs a guild can be listed under.
 
 ### DiscoveryGuild
 
-One server card of `GET /discovery/guilds` (Discordy extra).
+One server card of `GET /discovery/guilds` (Voics extra).
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -746,7 +746,7 @@ A tag that can be applied to forum threads.
 
 ### Guild
 
-A guild (server). `voice_region` is a Discordy extra.
+A guild (server). `voice_region` is a Voics extra.
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -780,7 +780,7 @@ A guild (server). `voice_region` is a Discordy extra.
 | `nsfw_level?` | `integer` |  |
 | `approximate_member_count?` | `integer` |  |
 | `approximate_presence_count?` | `integer` |  |
-| `voice_region` | `string` | Discordy: voice region ID used to allocate voice nodes. |
+| `voice_region` | `string` | Voics: voice region ID used to allocate voice nodes. |
 
 ### GuildApplicationCommandPermissions
 
@@ -853,7 +853,7 @@ A guild with its full state (GUILD_CREATE payload and the internal guild state e
 | `nsfw_level?` | `integer` |  |
 | `approximate_member_count?` | `integer` |  |
 | `approximate_presence_count?` | `integer` |  |
-| `voice_region` | `string` | Discordy: voice region ID used to allocate voice nodes. |
+| `voice_region` | `string` | Voics: voice region ID used to allocate voice nodes. |
 | `joined_at?` | `string (date-time)` |  |
 | `large?` | `boolean` |  |
 | `unavailable?` | `boolean` |  |
@@ -1296,7 +1296,7 @@ The client that opened the session.
 
 ### Snowflake
 
-A 64-bit Discordy Snowflake ID serialized as a decimal string (42 bits ms since 2026-01-01T00:00:00Z, 10 bits worker, 12 bits sequence).
+A 64-bit Voics Snowflake ID serialized as a decimal string (42 bits ms since 2026-01-01T00:00:00Z, 10 bits worker, 12 bits sequence).
 
 Type: `string`
 
@@ -1395,7 +1395,7 @@ A guild that is unavailable or that the user left.
 
 ### User
 
-A Discordy user (Discord v10 User object).
+A Voics user (Discord v10 User object).
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -1455,7 +1455,7 @@ Client preferences that follow the account across devices (client#123). Sparse: 
 
 ### UserSettings
 
-Account-wide settings of the current user. `default_delivery_mode` is a Discordy extra.
+Account-wide settings of the current user. `default_delivery_mode` is a Voics extra.
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -2024,7 +2024,7 @@ PATCH /users/@me/guilds/{guild_id|@me}/settings body (partial). Muting with mute
 
 ### ModifyGuildRequest
 
-PATCH /guilds/{id} body (partial). `voice_region` is a Discordy extra.
+PATCH /guilds/{id} body (partial). `voice_region` is a Voics extra.
 
 | Field | Type | Description |
 | --- | --- | --- |

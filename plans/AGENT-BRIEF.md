@@ -1,6 +1,6 @@
-# Brief for Discordy workstream agents
+# Brief for Voics workstream agents
 
-You are one of several autonomous agents building **Discordy**, a Discord-equivalent platform, in parallel. Each agent owns exactly one repository and must not modify any other repository.
+You are one of several autonomous agents building **Voics**, a Discord-equivalent platform, in parallel. Each agent owns exactly one repository and must not modify any other repository.
 
 ## Read first, in this order
 1. `C:\Users\Karma\Projects\discordy\voics\docs\specs\2026-10-16-voics-platform-design.md` (the spec)
@@ -53,7 +53,7 @@ Keep it under 300 words:
 - Anything still pending.
 
 ## Kanban board (mandatory)
-The board is the org project "Discordy": https://github.com/orgs/discordy-voics/projects/1. Every issue is assigned to @oussamaelhajoui, and each one carries the label `agent:<your-agent-name>`. Use the helper `bash /c/Users/Karma/.discordy/board.sh`:
+The board is the org project "Voics": https://github.com/orgs/discordy-voics/projects/1. Every issue is assigned to @oussamaelhajoui, and each one carries the label `agent:<your-agent-name>`. Use the helper `bash /c/Users/Karma/.discordy/board.sh`:
 - `board.sh list <repo>` shows your repo's issues and their status.
 - `board.sh claim <issue-url> <agent-name>` runs **before** you start an issue. It adds the label, assigns the owner and moves the card to In progress.
 - Keep only **one** issue In progress at a time. Move the issue you'll do next to Ready with `board.sh move <url> ready`.

@@ -1,6 +1,6 @@
 # System load dashboard
 
-Grafana dashboard "Discordy: System load" for watching a stress test live. URL path: `/d/discordy-system-load` on the Grafana host (see [Ops access](ops-access.md)); it refreshes every 10 s and defaults to the last 30 minutes. Pick the VictoriaMetrics datasource in the `Datasource` variable at the top.
+Grafana dashboard "Voics: System load" for watching a stress test live. URL path: `/d/discordy-system-load` on the Grafana host (see [Ops access](ops-access.md)); it refreshes every 10 s and defaults to the last 30 minutes. Pick the VictoriaMetrics datasource in the `Datasource` variable at the top.
 
 Source: `gitops/infrastructure/controllers/grafana/dashboards/discordy-system-load.json`, deployed as a ConfigMap labelled `grafana_dashboard=1` that the Grafana chart sidecar provisions. Edit the JSON in git (changes made in the UI are not persisted).
 

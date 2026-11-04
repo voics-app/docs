@@ -99,7 +99,7 @@ Each milestone ends with something you can run. Tickets get created on the board
 ### M4: parity polish
 
 - QR login (gateway#17): the phone approves a desktop sign-in.
-- Mobile parity items from the parity gap plan: swipe to reply, long-press menus, haptics, notification grouping, unread badges on the app icon, share to Discordy (share extension), and a home-screen widget (later).
+- Mobile parity items from the parity gap plan: swipe to reply, long-press menus, haptics, notification grouping, unread badges on the app icon, share to Voics (share extension), and a home-screen widget (later).
 
 ## Tickets created with this plan
 

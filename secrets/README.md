@@ -2,7 +2,7 @@
 
 <!-- Generated from inventory.yaml by scripts/render-secrets.mjs. Do not edit by hand. -->
 
-Every secret on the Discordy platform is listed here. The source is [`inventory.yaml`](inventory.yaml). This page records no values: values exist only in GitHub secrets, OpenBao (KV v2 mount `kv`), Kubernetes Secrets and 1Password. The OpenBao paths and keys match `gitops/secrets/inventory.yaml`, which CI enforces.
+Every secret on the Voics platform is listed here. The source is [`inventory.yaml`](inventory.yaml). This page records no values: values exist only in GitHub secrets, OpenBao (KV v2 mount `kv`), Kubernetes Secrets and 1Password. The OpenBao paths and keys match `gitops/secrets/inventory.yaml`, which CI enforces.
 
 **Flow** ([ADR-0006](../adr/0006-secrets-flow.md)):
 
@@ -49,7 +49,7 @@ Every secret on the Discordy platform is listed here. The source is [`inventory.
 
 | Field | Value |
 |---|---|
-| Purpose | Manages DNS records, the Discordy tunnel and Access applications in the voics.nl zone. |
+| Purpose | Manages DNS records, the Voics tunnel and Access applications in the voics.nl zone. |
 | Consumers | bootstrap/40-cloudflare.sh, regionctl, WS9 bring-up |
 | Env vars | `CLOUDFLARE_API_TOKEN` |
 | GitHub secret | `CLOUDFLARE_API_TOKEN` (org) |
