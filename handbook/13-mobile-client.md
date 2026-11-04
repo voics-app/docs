@@ -71,4 +71,5 @@ The `client` CI calls the shared node workflow with the root scripts `lint`, `ty
 | You tab | Your avatar, name, username and email, a Show reactions under messages switch (a device-local core preference) and Sign out. |
 
 ## What comes next
+
 The rest of M1: attachments, push notifications, and TestFlight through EAS (needs the Apple Developer account from the owner decisions). Order and scope are in the [plan](../plans/2026-11-03-mobile-app.md).
