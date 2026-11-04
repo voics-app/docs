@@ -87,8 +87,8 @@ Secret values are never written to git, issues, PRs, logs or Notion. Docs descri
 
 ## Never-touch rules
 
-- The existing **Voics** product (the Proxmox VM at 192.168.1.204, `voics.nl`, `app.voics.nl` and its DNS records) is never modified, not even read from automation. Discordy lives on its own VM `gen-serv` (192.168.1.212) and its own `discordy-*` hostnames.
-- Existing DNS records are never edited; Discordy adds new one-level records only ([Cloudflare setup](../runbooks/cloudflare-setup.md)).
+- The earlier product, also called Voics (the Proxmox VM at 192.168.1.204, `voics.nl`, `app.voics.nl` and its DNS records) is never modified, not even read from automation. This platform lives on its own VM `gen-serv` (192.168.1.212) and its own `discordy-*` hostnames.
+- Existing DNS records are never edited; Voics adds new one-level records only ([Cloudflare setup](../runbooks/cloudflare-setup.md)).
 - Production gen-serv is adopted into Terraform by import only; `destroy` is never run against it ([Environments and IaC](06-environments-and-iac.md)).
 - No payments and no capture of DRM-protected video ([ADR-0011](../adr/0011-no-drm-capture-watch-together.md)).
 

@@ -1,8 +1,8 @@
-# How Discordy works
+# How Voics works
 
 Summary: the end-to-end picture, from a message typed in the client to the data stores, the event bus and the voice path.
 
-Discordy is a Discord-equivalent platform without payments. It is split into small services, one repository each ([ADR-0002](../adr/0002-repo-per-service.md)), and runs on one microk8s cluster on the home server `gen-serv` ([ADR-0008](../adr/0008-microk8s-reuse.md)). This page explains how the pieces fit together. Details live in the [design specification](../specs/2026-10-16-voics-platform-design.md), the [C4 diagrams](../c4/README.md) and the [protocol references](../protocols/README.md).
+Voics is a Discord-equivalent platform without payments. It is split into small services, one repository each ([ADR-0002](../adr/0002-repo-per-service.md)), and runs on one microk8s cluster on the home server `gen-serv` ([ADR-0008](../adr/0008-microk8s-reuse.md)). This page explains how the pieces fit together. Details live in the [design specification](../specs/2026-10-16-voics-platform-design.md), the [C4 diagrams](../c4/README.md) and the [protocol references](../protocols/README.md).
 
 ## The parts
 

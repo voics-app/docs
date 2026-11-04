@@ -1,4 +1,4 @@
-# Discord engineering blog: comparison with Discordy
+# Discord engineering blog: comparison with Voics
 
 - Status: accepted
 - Date: 2026-10-18
@@ -30,7 +30,7 @@ File references are relative to the repository named in the text. Every "missing
 | 9 | Automating ScyllaDB clusters at scale | Missing (single-node today) | [gitops#18](https://github.com/discordy-voics/gitops/issues/18) |
 | 10 | App-wide keyboard navigation | Partial | [client#23](https://github.com/discordy-voics/client/issues/23) |
 
-Issues are filed in the owning repository, labelled `type:feature`, assigned to the owner, set to milestone v0.1.0 and placed in the backlog column of the Discordy project. Two of them are blocked on an owner decision or a dependency (see posts 3 and 1).
+Issues are filed in the owning repository, labelled `type:feature`, assigned to the owner, set to milestone v0.1.0 and placed in the backlog column of the Voics project. Two of them are blocked on an owner decision or a dependency (see posts 3 and 1).
 
 ## 1. How Discord indexes trillions of messages
 

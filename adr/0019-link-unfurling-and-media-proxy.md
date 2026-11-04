@@ -8,7 +8,7 @@
 
 ## Context and Problem Statement
 
-Discord shows a preview (embed) for links in messages, and proxies the images so clients never contact the linked site. Discordy had embed rendering for bot embeds only. Fetching arbitrary user-supplied URLs from a server is a classic SSRF vector, and a proxy that fetches URLs on request is an open relay unless it is authenticated. Ephemeral and P2P chats exist so that content never reaches the server, so they must not be unfurled by it.
+Discord shows a preview (embed) for links in messages, and proxies the images so clients never contact the linked site. Voics had embed rendering for bot embeds only. Fetching arbitrary user-supplied URLs from a server is a classic SSRF vector, and a proxy that fetches URLs on request is an open relay unless it is authenticated. Ephemeral and P2P chats exist so that content never reaches the server, so they must not be unfurled by it.
 
 ## Decision Outcome
 

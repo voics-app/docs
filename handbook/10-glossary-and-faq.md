@@ -1,6 +1,6 @@
 # Glossary and FAQ
 
-Summary: the words used in Discordy and quick answers to "where do I find" and "how do I".
+Summary: the words used in Voics and quick answers to "where do I find" and "how do I".
 
 ## Glossary
 

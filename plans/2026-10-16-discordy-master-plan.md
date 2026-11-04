@@ -1,8 +1,8 @@
-# Discordy Master Implementation Plan
+# Voics Master Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Each workstream (WS) below is executed by one autonomous agent working in its own repo. **The "Pinned interfaces" section is law**: never change a name, port, topic, env var or payload shape defined there without updating this document first.
 
-**Goal:** Build Discordy, a Discord-equivalent platform (minus payments), as a set of repos in the `discordy-voics` GitHub org. It runs locally via docker compose and on microk8s through Flux.
+**Goal:** Build Voics, a Discord-equivalent platform (minus payments), as a set of repos in the `discordy-voics` GitHub org. It runs locally via docker compose and on microk8s through Flux.
 
 **Architecture:**
 - Elixir gateway; Rust `api` and `messages` services.
@@ -18,7 +18,7 @@
 - Node 24 + pnpm 10, TypeScript 5.9, React 19, Vite 7, Electron 38.
 - Postgres 17, ScyllaDB 2025.x, Redpanda 25.x, Valkey 8, etcd 3.6, MinIO.
 
-**Spec:** `docs/specs/2026-10-16-voics-platform-design.md` (product name: **Discordy**)
+**Spec:** `docs/specs/2026-10-16-voics-platform-design.md` (product name: **Voics**)
 
 ## Global Constraints
 
@@ -345,7 +345,7 @@ All calls carry the `X-Internal-Token` header. All IDs are strings.
 
 **Rate-limit headers**: `X-RateLimit-Limit`, `-Remaining`, `-Reset`, `-Reset-After`, `-Bucket`.
 
-**Object shapes**: follow Discord API v10 field names exactly (User, Guild, Channel, Role, Member, Message, Attachment, Embed, Reaction, Emoji, Invite, Application, ApplicationCommand, Interaction, Webhook, VoiceState, PermissionOverwrite). Extra Discordy fields:
+**Object shapes**: follow Discord API v10 field names exactly (User, Guild, Channel, Role, Member, Message, Attachment, Embed, Reaction, Emoji, Invite, Application, ApplicationCommand, Interaction, Webhook, VoiceState, PermissionOverwrite). Extra Voics fields:
 - Channel: `delivery_mode`, `voice_region`
 - UserSettings: `default_delivery_mode`, `e2ee_calls_default` (every call the user starts or joins is E2EE; in mixed calls, any participant with it on makes the call E2EE for everyone)
 - Device: `device_id`, `identity_key_b64`

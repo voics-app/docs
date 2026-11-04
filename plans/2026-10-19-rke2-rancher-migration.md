@@ -32,7 +32,7 @@
 - RKE2 `server`: etcd, control plane and workloads
 - Canal CNI (RKE2 default)
 - local-path storage
-- Flux, then all Discordy layers
+- Flux, then all Voics layers
 - Rancher and cert-manager (Flux HelmReleases)
 - Headlamp, kept as a lightweight UI
 
@@ -53,7 +53,7 @@ Rancher is exposed at `discordy-rancher.voics.nl` through the existing Cloudflar
 | RAM | 8 GB | **16 GB** | 16 GB |
 | Disk | 98 GB | 150 GB SSD | 150 GB SSD (Longhorn keeps replicas) |
 
-Rancher itself needs about 1.5–2 GiB (Rancher, cert-manager, webhooks and fleet), and the RKE2 server about 1.5 GiB. **8 GB cannot hold Discordy plus Rancher, so raise gen-serv to 16 GB before migrating.**
+Rancher itself needs about 1.5–2 GiB (Rancher, cert-manager, webhooks and fleet), and the RKE2 server about 1.5 GiB. **8 GB cannot hold Voics plus Rancher, so raise gen-serv to 16 GB before migrating.**
 
 ## 5. Version pinning (must check at execution time)
 

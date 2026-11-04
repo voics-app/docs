@@ -8,7 +8,7 @@
 
 ## Context and Problem Statement
 
-Discordy has no push delivery to offline devices. The API publishes events through the outbox to Kafka-compatible topics (`api/crates/infrastructure/src/events/kafka.rs`). When push is built, bursts such as a popular event or a large mention storm will arrive faster than a push provider accepts requests. Discord's GenStage post shows the failure mode: the sender stalls, the queue grows, and then the whole system fails. Discord chose demand-driven consumers, a bounded buffer and a deliberate drop policy. What should Discordy do?
+Voics has no push delivery to offline devices. The API publishes events through the outbox to Kafka-compatible topics (`api/crates/infrastructure/src/events/kafka.rs`). When push is built, bursts such as a popular event or a large mention storm will arrive faster than a push provider accepts requests. Discord's GenStage post shows the failure mode: the sender stalls, the queue grows, and then the whole system fails. Discord chose demand-driven consumers, a bounded buffer and a deliberate drop policy. What should Voics do?
 
 ## Decision Drivers
 

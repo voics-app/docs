@@ -1,6 +1,6 @@
 # bots-sdk
 
-Summary: the TypeScript SDK for building bots on Discordy.
+Summary: the TypeScript SDK for building bots on Voics.
 
 | | |
 |---|---|

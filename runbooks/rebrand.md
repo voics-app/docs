@@ -1,8 +1,8 @@
 # How to rebrand
 
-Summary: the checklist for changing the product name (today "Discordy") or its domain: which file or variable to change per repository, what to rebuild or redeploy, and the Cloudflare and DNS steps the owner performs by hand.
+Summary: the checklist for changing the product name (today "Voics") or its domain: which file or variable to change per repository, what to rebuild or redeploy, and the Cloudflare and DNS steps the owner performs by hand.
 
-Defaults today: name `Discordy`, domain `voics.nl`, hosts `discordy-*.voics.nl`. Everything user-visible reads the name and hosts from one brand source per repository. Each repository also has a rebrand check that fails CI when the literal name or domain creeps back into user-visible code ([Guards](#guards)).
+Defaults today: name `Voics`, domain `voics.nl`, hosts `discordy-*.voics.nl`. Everything user-visible reads the name and hosts from one brand source per repository. Each repository also has a rebrand check that fails CI when the literal name or domain creeps back into user-visible code ([Guards](#guards)).
 
 Two kinds of change exist:
 
@@ -70,7 +70,7 @@ These are internal identifiers. They are not user-visible, renaming them is a **
 - Kubernetes namespaces (`voics-apps`, `voics-data`, `voics-system`, `voics-voice`), the IngressClass `discordy-nginx`, ConfigMap and Secret names.
 - Env var prefixes such as `DISCORDY_ENV`, `DISCORDY_PROFILE`, `DISCORDY_DOMAIN`.
 - Object storage buckets (`discordy-site`, `discordy-assets`, `discordy-attachments`, `discordy-updates`), the Scylla keyspace `discordy`, the OpenBao `kv/discordy/*` paths and the `RTC_HOST_PREFIX` value.
-- Seed and local-development data ("Discordy HQ", `alice@discordy.local`, the dev password), the `window.discordy` bridge and the `%USERPROFILE%\.discordy` owner folders.
+- Seed and local-development data ("Voics HQ", `alice@discordy.local`, the dev password), the `window.discordy` bridge and the `%USERPROFILE%\.discordy` owner folders.
 - Voice-region tooling (`regionctl` examples and tests) and the gateway and voice service module names. They appear only in logs, tests and operator output.
 
 ## CI files that still hold the name

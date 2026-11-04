@@ -1,6 +1,6 @@
 # Environments: provisioning, dev/test, disaster recovery
 
-Every Discordy environment is one node (a VM or server) running microk8s, created and brought up by
+Every Voics environment is one node (a VM or server) running microk8s, created and brought up by
 one command from the `gitops` repository:
 
 ```bash
@@ -149,7 +149,7 @@ A second, always-on environment that runs the whole suite from `develop`, separa
 | Secrets | OpenBao `kv/discordy-dev/*` (its own OpenBao), GitHub environment `dev` | `kv/discordy/*`, `production` |
 | Operator hosts | same IP lock (`OPS_ALLOWED_CIDRS`) and Cloudflare Access as production | same |
 | Runners | scale set `discordy-dev`, label `runs-on: discordy-dev` | `discordy` |
-| Seed | demo users `alice`, `bob`, `carol`, server "Discordy HQ" with text and voice channels, placeholder site | none, ever |
+| Seed | demo users `alice`, `bob`, `carol`, server "Voics HQ" with text and voice channels, placeholder site | none, ever |
 | Resource requests | smaller (Scylla and Redpanda 512M, Postgres 192Mi, VictoriaMetrics 3 days) | gen-serv sizing |
 
 The mechanism that keeps the two apart: every ExternalSecret reads `${SECRETS_PREFIX}/...` and the

@@ -8,7 +8,7 @@
 
 ## Context and Problem Statement
 
-The gateway sends uncompressed JSON. `gateway/lib/discordy_gateway/interface/router.ex` (around line 26) sets `compress: false`, and spec section 8 defers ETF and zstd to a later version. Discord reduced gateway outbound bandwidth by about 40% with per-connection zstd streaming and delta-based passive sessions. Should Discordy add compression now, and how?
+The gateway sends uncompressed JSON. `gateway/lib/discordy_gateway/interface/router.ex` (around line 26) sets `compress: false`, and spec section 8 defers ETF and zstd to a later version. Discord reduced gateway outbound bandwidth by about 40% with per-connection zstd streaming and delta-based passive sessions. Should Voics add compression now, and how?
 
 ## Decision Drivers
 

@@ -28,7 +28,7 @@ Standard messages are written once, read mostly as recent history per channel, a
 
 Chosen option: **1**.
 
-- **Schema.** The messages table is `PRIMARY KEY ((channel_id, bucket), message_id)` with `CLUSTERING ORDER BY (message_id DESC)`. The bucket is computed as `bucket = floor((snowflake >> 22) / 864_000_000)`, which is 10 days of milliseconds since the Discordy epoch (2026-01-01). Reactions and pins use the same partition key.
+- **Schema.** The messages table is `PRIMARY KEY ((channel_id, bucket), message_id)` with `CLUSTERING ORDER BY (message_id DESC)`. The bucket is computed as `bucket = floor((snowflake >> 22) / 864_000_000)`, which is 10 days of milliseconds since the Voics epoch (2026-01-01). Reactions and pins use the same partition key.
 - **History reads** walk buckets backwards until they reach `limit` or the channel's creation bucket.
 - **Routing.** The `messages` service routes by consistent hash on `channel_id`, so one instance owns each channel's hot path.
 - **Request coalescing.** A `Coalescer<K, V>` built on a `DashMap` of shared futures merges identical concurrent reads into a single in-flight query. See the [C4 code view](../c4/rendered/structurizr-C4-RequestCoalescer.svg).

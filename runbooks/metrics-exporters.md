@@ -1,6 +1,6 @@
 # Metrics and exporters
 
-Every Discordy component exports Prometheus metrics into VictoriaMetrics (`observability/victoria-metrics`, ClusterIP `victoria-metrics:8428`), and Grafana reads them from there. This page lists every scrape job, its port and its main series. Manifests: `gitops/infrastructure/controllers/victoria-metrics/helmrelease.yaml` (jobs found by label) and the exporters named below (generic `kubernetes-pods` job through `prometheus.io/scrape|port|path` pod annotations).
+Every Voics component exports Prometheus metrics into VictoriaMetrics (`observability/victoria-metrics`, ClusterIP `victoria-metrics:8428`), and Grafana reads them from there. This page lists every scrape job, its port and its main series. Manifests: `gitops/infrastructure/controllers/victoria-metrics/helmrelease.yaml` (jobs found by label) and the exporters named below (generic `kubernetes-pods` job through `prometheus.io/scrape|port|path` pod annotations).
 
 ## Scrape jobs
 

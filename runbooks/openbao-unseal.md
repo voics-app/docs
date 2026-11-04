@@ -10,7 +10,7 @@ OpenBao stores every runtime secret at `kv/discordy/...` ([ADR-0006](../adr/0006
 |---|---|
 | Seal | `seal "static"`: a 32-byte AES key (base64) from env `BAO_SEAL_KEY`, which comes from Secret `voics-system/openbao-seal-key` (key `key`). Created by `bootstrap/20-openbao.sh`, never in git. Owner copy in the key store as `<KEYSTORE_PREFIX> seal key` (`OpenBao seal key.dpapi`, `OpenBao dev seal key.dpapi`) |
 | Recovery keys | The former Shamir shares, **5 shares, threshold 3**, same key store items (`OpenBao unseal key 1..5`; the name is historical). They no longer unseal. They are needed for `generate-root`, `rekey` and seal migrations |
-| Where the keys live | `KEYSTORE=dpapi` (in use on gen-serv): DPAPI files in `%USERPROFILE%\.discordy\openbao\`. `KEYSTORE=op`: 1Password vault **Discordy** |
+| Where the keys live | `KEYSTORE=dpapi` (in use on gen-serv): DPAPI files in `%USERPROFILE%\.discordy\openbao\`. `KEYSTORE=op`: 1Password vault **Voics** |
 | Root token | Revoked after bootstrap. With recovery keys a new one can be minted ([below](#root-token)). For admin work use the `owner` userpass login (`owner-admin` policy) from `gitops/bootstrap/22-openbao-owner-admin.sh` |
 | Kubernetes auth roles | `external-secrets` (ESO, read `kv/discordy/*`), `secrets-sync` (ARC runner, write `kv/discordy/*`) |
 | Namespace / pod | `voics-system` / `openbao-0` (pebbledb storage, single replica) |

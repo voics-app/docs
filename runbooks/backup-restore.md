@@ -1,6 +1,6 @@
 # Backup and restore
 
-Discordy runs on a single VM (`gen-serv`), so backups are the only protection against losing data. This runbook defines what is backed up, where and how often, and how to restore each store.
+Voics runs on a single VM (`gen-serv`), so backups are the only protection against losing data. This runbook defines what is backed up, where and how often, and how to restore each store.
 
 ## Policy
 

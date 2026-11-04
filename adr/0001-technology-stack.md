@@ -7,7 +7,7 @@
 
 ## Context and Problem Statement
 
-Discordy aims at feature parity with Discord, and its architecture is explicitly modelled on Discord's published engineering. Which languages and runtimes should the gateway, the data services, voice and the desktop client use?
+Voics aims at feature parity with Discord, and its architecture is explicitly modelled on Discord's published engineering. Which languages and runtimes should the gateway, the data services, voice and the desktop client use?
 
 ## Decision Drivers
 

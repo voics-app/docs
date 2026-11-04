@@ -1,6 +1,6 @@
 # Voice failover
 
-How Discordy voice recovers from each kind of failure, what happens automatically, and what you must do by hand. The design follows Discord's: the SFU rebuilds its own state, and node loss leads to reallocation by the guild process ([spec §7](../../specs/2026-10-16-voics-platform-design.md#7-voice-video-and-screen-share), [ADR-0004](../../adr/0004-custom-sfu.md)).
+How Voics voice recovers from each kind of failure, what happens automatically, and what you must do by hand. The design follows Discord's: the SFU rebuilds its own state, and node loss leads to reallocation by the guild process ([spec §7](../../specs/2026-10-16-voics-platform-design.md#7-voice-video-and-screen-share), [ADR-0004](../../adr/0004-custom-sfu.md)).
 
 | Failure | Automatic? | User impact | Section |
 |---|---|---|---|
@@ -95,7 +95,7 @@ Cross-region failover is **not automatic in v1**. The allocator only considers t
    - Otherwise, move the guilds.
 3. **Move the guilds** to a healthy region, normally `nl-home`, with the bulk PATCH loop in [draining → whole region](draining-a-region.md#drain-a-whole-region).
 4. **If the dead region is `DEFAULT_VOICE_REGION`**, change the default in `gitops/apps/gateway/production/config.env`. Use the fast path: commit to a `hotfix/*` branch, merge, then run `flux reconcile kustomization apps --with-source`.
-5. **Post a status notice** in the Discordy announcement channel.
+5. **Post a status notice** in the Voics announcement channel.
 6. **When the region recovers**:
    1. The nodes re-register by themselves.
    2. Move the guilds back. Keep the list from step 3.

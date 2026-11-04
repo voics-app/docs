@@ -7,7 +7,7 @@
 
 ## Context and Problem Statement
 
-The owner already runs microk8s 1.35 on the Proxmox VM `gen-serv` (192.168.1.212, 7.6 GB RAM), along with existing workloads and a host Prometheus snap. Should Discordy share that cluster, get a new one, or run somewhere else?
+The owner already runs microk8s 1.35 on the Proxmox VM `gen-serv` (192.168.1.212, 7.6 GB RAM), along with existing workloads and a host Prometheus snap. Should Voics share that cluster, get a new one, or run somewhere else?
 
 ## Decision Drivers
 
@@ -20,7 +20,7 @@ The owner already runs microk8s 1.35 on the Proxmox VM `gen-serv` (192.168.1.212
 ## Considered Options
 
 1. Reuse microk8s on `gen-serv`, isolated by namespaces and managed by Flux
-2. A second VM with k3s dedicated to Discordy
+2. A second VM with k3s dedicated to Voics
 3. Managed Kubernetes in the cloud
 4. docker compose on the VM
 
@@ -29,11 +29,11 @@ The owner already runs microk8s 1.35 on the Proxmox VM `gen-serv` (192.168.1.212
 Chosen option: **1**.
 
 - **Inventory first.** Existing workloads are inventoried before anything is installed and are left untouched.
-- **Isolation.** Discordy lives only in its own namespaces: `voics-apps`, `voics-data`, `voics-voice`, `voics-system`, `observability` and `flux-system`.
+- **Isolation.** Voics lives only in its own namespaces: `voics-apps`, `voics-data`, `voics-voice`, `voics-system`, `observability` and `flux-system`.
 - **Add-ons.** Only `dns`, `hostpath-storage` and `metrics-server` are enabled.
 - **Flux.** Flux is bootstrapped to `discordy-voics/gitops` at `clusters/gen-serv`. Infrastructure controllers and configs are applied before apps, and regions last.
 - **Resource limits.** Every component sets requests and limits. ScyllaDB runs in developer mode with 1 core and about 1.5 GB, and Redpanda runs with `--smp 1 --memory 1G`.
-- **Monitoring.** The host's Prometheus snap is not touched. Discordy brings VictoriaMetrics and Grafana into `observability`.
+- **Monitoring.** The host's Prometheus snap is not touched. Voics brings VictoriaMetrics and Grafana into `observability`.
 
 ### Consequences
 
@@ -45,7 +45,7 @@ Chosen option: **1**.
 ### Confirmation
 
 - In `gitops` CI, kubeconform validates the manifests and a policy check rejects workloads without resource limits.
-- Flux owns only the Discordy namespaces.
+- Flux owns only the Voics namespaces.
 
 ## Pros and Cons of the Options
 
