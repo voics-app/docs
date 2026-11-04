@@ -1,12 +1,12 @@
 # Mobile client (Expo, React Native)
 
-Summary: what exists of the mobile app today (the M0 skeleton), how it is built in the client monorepo, how its name and bundle id are configured, how CI checks it, and what comes next. The plan is [Mobile app plan](../plans/2026-11-03-mobile-app.md); the stack choice is [ADR 0024](../adr/0024-mobile-client-stack.md).
+Summary: what exists of the mobile app today (the M0 skeleton plus the first M1 slice: sign-in, gateway and server list), how it is built in the client monorepo, how its name and bundle id are configured, how CI checks it, and what comes next. The plan is [Mobile app plan](../plans/2026-11-03-mobile-app.md); the stack choice is [ADR 0024](../adr/0024-mobile-client-stack.md).
 
-Last reviewed: 2026-11-04 ([client#205](https://github.com/discordy-voics/client/issues/205), PR client#232).
+Last reviewed: 2026-11-04 ([client#206](https://github.com/discordy-voics/client/issues/206), PR client#256; skeleton: client#205, PR client#232).
 
 ## Status
 
-M0 skeleton only. `apps/mobile` in the `client` repository is an Expo app with a sign-in placeholder and four bottom tabs (Servers, DMs, Notifications, You) holding placeholder screens. It talks to no API yet. The shared `packages/core` (`@discordy/core`) is being extracted in [client#204](https://github.com/discordy-voics/client/issues/204): the domain rules and protocol contracts are in, and persistence goes through a `KeyValueStorage` port so the same code runs on desktop (localStorage) and mobile. The application layer and protocol clients follow. Nothing is published to an app store.
+M0 skeleton plus the first M1 slice. `apps/mobile` in the `client` repository is an Expo app with four bottom tabs (Servers, DMs, Notifications, You). You can sign in (email and password, then the authenticator or backup code when the account has two-factor sign-in) and sign out from the You tab. The app keeps a gateway connection and the Servers tab lists your servers and, per server, the text channels you can see, grouped by category. DMs, Notifications and message screens are still placeholders. All stores, the session manager and the protocol clients come from `@discordy/core`; nothing is published to an app store, and the first slice has been tested with mocks only, not yet on a device or simulator.
 
 ## How it is built
 
@@ -19,6 +19,17 @@ M0 skeleton only. `apps/mobile` in the `client` repository is an Expo app with a
 | React version | Desktop and mobile pin the same React (19.3.0, what React Native 0.88 needs). Two React copies in a hoisted tree broke 144 desktop tests, so keep them equal when either app bumps React |
 | Lint | `eslint.base.mjs` at the repo root holds the shared rules; `apps/desktop` and `apps/mobile` extend it |
 | Tests | Jest (`jest-expo` preset) and React Native Testing Library in `apps/mobile/tests` |
+
+## Sign-in, session and gateway
+
+| Topic | Behaviour |
+|---|---|
+| Tokens | Kept in the iOS Keychain (Android Keystore) through expo-secure-store, readable after the first unlock and never leaving the device. A damaged entry reads as signed out. |
+| Other device-local data | The persisted stores (preferences, drafts) use the key-value store of expo-sqlite behind the core storage port. |
+| Sign-in | Core `SessionManager` does the work. A wrong email or password always shows "Wrong credentials. Please try again.", like desktop. A two-factor account gets a second step for the authenticator or backup code. |
+| Gateway | Connects after sign-in or when the app starts with a stored session, and resumes the session when it can. |
+| Foreground | When the app comes back from the background, a connection that is still connecting or reconnecting is replaced at once, and a ready one is replaced if the app was away for 30 seconds or more, because iOS can kill the socket silently. A short pause such as the control centre changes nothing. |
+| Encrypted modes | Not on mobile yet: no device identity is registered (M3). |
 
 ## Name, scheme and bundle id (branding)
 
@@ -42,4 +53,4 @@ The `client` CI calls the shared node workflow with the root scripts `lint`, `ty
 
 ## What comes next
 
-M1 (text MVP, push notifications, TestFlight through EAS) needs the Apple Developer account from the owner decisions. Order and scope are in the [plan](../plans/2026-11-03-mobile-app.md).
+The rest of M1: message screens (read, send, edit, delete, reply, reactions), DMs, attachments, push notifications, and TestFlight through EAS (needs the Apple Developer account from the owner decisions). Order and scope are in the [plan](../plans/2026-11-03-mobile-app.md).
