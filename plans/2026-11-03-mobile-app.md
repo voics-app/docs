@@ -46,7 +46,7 @@ client/                          (pnpm monorepo, already exists)
 - **Tokens:** iOS Keychain or Android Keystore (`expo-secure-store`). The desktop keeps safeStorage.
 - **Navigation:** `expo-router`. A bottom tab bar (Servers, DMs, Notifications, You), and a server's channel list as a drawer, like Discord mobile.
 - **Lists:** FlashList for messages and members. The message list runs inverted, newest at the bottom.
-- **Deep links:** `discordy://` plus universal links on the website domain for invites (`/invite/<code>`). The website gets an `apple-app-site-association` file.
+- **Deep links:** `voics://` plus universal links on the website domain for invites (`/invite/<code>`). The website gets an `apple-app-site-association` file.
 
 ### Push notifications (new backend work)
 
