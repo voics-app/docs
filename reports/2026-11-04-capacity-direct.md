@@ -66,9 +66,12 @@ instead of crashing. No gateway restart happened in any run.
 - At 300 msg/s the gateway consumed about 250 events/s, so a backlog grew. About 50 events/s of excess over 60 s at
   250 events/s is roughly 12 s of delay, which fits the measured delivery latency.
 - This is not hardware: the gateway used 2 to 3 of 8 cores, and Valkey stayed under 0.25 core.
-- Separate resume connections (gateway#54, in 0.7.1) lowered latency at 200 and 225 msg/s in single runs, but the limit
-  did not move. Dedup still rises to 4 ms at 250 msg/s, so shared connections were not the main cause. The limiter is
-  still unknown ([gateway#53](https://github.com/discordy-voics/gateway/issues/53)).
+- Separate resume connections (gateway#54, in 0.7.1) did not move the limit. They were based on a wrong assumption:
+  dedup is an in-memory process and never used those Valkey connections. Lower latency at 200 and 225 msg/s on 0.7.1
+  rests on single runs and may be noise.
+- Dedup is a cheap in-memory call, yet it rises from 0.2 ms to 4 to 7 ms under load, and every stage slows at once. So
+  the time is spent waiting, not working. Scheduler contention or full-sweep garbage collection are candidates, but the
+  limiter is still unknown ([gateway#53](https://github.com/discordy-voics/gateway/issues/53)).
 - Session memory on the cluster is about 210 KiB per session, against 7 to 15 KiB in the local benchmark
   ([gateway#56](https://github.com/discordy-voics/gateway/issues/56)).
 
