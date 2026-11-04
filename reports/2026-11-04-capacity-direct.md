@@ -75,6 +75,23 @@ instead of crashing. No gateway restart happened in any run.
 - Session memory on the cluster is about 210 KiB per session, against 7 to 15 KiB in the local benchmark
   ([gateway#56](https://github.com/discordy-voics/gateway/issues/56)).
 
+## Gateway CPU request raised to 1000m
+
+The run queue (`vm_total_run_queue_lengths_total`) read 60 to 100 at 250 msg/s and close to 0 below 225, while the pod
+used 2 to 3 of 8 cores. Raising the gateway's CPU request from 50m to 1000m (gitops 0.18.1) gave these results on 0.7.1:
+
+| msg/s | deliveries/s | p95 ms | p99 ms | Result |
+| --- | --- | --- | --- | --- |
+| 200 | 9,978 | 72 | 240 | pass |
+| 225 | 11,227 | 47 | 84 | pass |
+| 250 | 12,472 | 179 | 287 | pass, one run only |
+| 300 | 14,602 (97.5 % delivered) | 8,164 | 8,925 | fail, run stopped |
+
+A partial repeat gave p99 46 ms at about 188 msg/s and 60 ms at about 212 msg/s. Both repeats were stopped by the load
+guard because the api reached 491 MiB of 512 MiB, not by the gateway
+([api issue](https://github.com/discordy-voics/api/issues/119)). Send p99 rose to 24 to 36 ms, from about 15 ms. The run queue still reaches about 100
+at 300 msg/s, so the limiter is not fully explained.
+
 ## Limits of these results
 
 - Each rate had one to three runs of 60 s, so a long soak could give a lower number.
