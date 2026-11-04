@@ -58,6 +58,10 @@ Server Settings, Overview (needs Manage Server) edits the name, description, ico
 
 Two system messages come from the server itself. A new member is announced in the system channel with a randomly picked greeting, and a new thread is announced in its parent channel with the thread's name. Join messages are on by default as soon as a system channel is set (new servers use the general channel); switch the welcome message off or pick no channel to stop them. If the post fails, the join or the thread still succeeds. Vanity URLs are not available yet (api#37).
 
+## Call confirmation
+
+Settings > Voice and video > Confirm before calling (on by default, stored on the device) asks "Start a voice call with X?" or "Start a video call with X?" before a call that nobody is in yet starts ringing, from the DM header, the friends list, profiles and the user menu. Joining a call that is already running never asks. Turn the switch off to ring straight away.
+
 ## Keybinds and shortcuts
 
 Settings > Keybinds lists the actions in four groups (Voice, Calls, Navigation, General): mute, deafen, push to mute, camera, screen share, answer and decline a ringing call, quick switcher, previous and next channel, previous and next unread channel, history back and forward, mark read, search, upload and the member list. Click a shortcut and press the new combination (Esc cancels); Clear unbinds, Reset restores one action, Reset all restores everything. A combination used twice shows a conflict warning on the row. The Global switch (desktop app only; mute, deafen, push to mute, camera, answer, decline) makes the shortcut work while the app is in the background; it needs the native key hook and quietly stays window-only where that is unavailable. Push to talk is set under Voice and video. Ctrl+/ opens the list of every shortcut. Keybinds are saved on the device and are not synced to the account. Details: `specs/2026-10-22-client-keybinds.md`.
@@ -90,6 +94,12 @@ The tray menu shows Open, the unread and mention summary, Mute and Deafen toggle
 ## Friends and direct messages
 
 When a friend request becomes a friendship (the gateway's `RELATIONSHIP_ADD` with type 1, on either side) the client creates the DM with `POST /users/@me/channels` (idempotent), adds it to Direct Messages and reopens it if it had been closed. The top of an empty or fully loaded 1:1 DM shows a large avatar, the display name, the username and "This is the beginning of your direct message history with @name."; while the DM has no messages, a "Wave to name" button sends a wave message and then disappears. Logic in `domain/dmIntro.ts`, view in `interface/features/chat/DmIntro.tsx`.
+
+## Markdown tables and timestamps
+
+Messages render GitHub-style pipe tables: a header row, a delimiter row (`|---|`, with `:--`, `:-:` and `--:` for left, centre and right alignment) and body rows. Outer pipes are optional, `\|` keeps a pipe inside a cell, short rows are padded and extra cells are dropped. Cells hold inline markdown only and are rendered as elements, never raw HTML. A wide table scrolls horizontally inside the message. Limits: 12 columns (wider input stays literal text) and 50 rows (later rows stay text). The parser is `domain/markdown.ts`.
+
+Dynamic timestamps (`<t:unix:format>`, formats `t T d D f F R`) show in each reader's time zone with the full date and time on hover. To write one, type `@time` in the composer or press the clock button: pick a date, a time and a format (the list previews each one) and Insert adds the timestamp at the cursor. The model is `domain/timestampPicker.ts`.
 
 ## Media viewer
 
