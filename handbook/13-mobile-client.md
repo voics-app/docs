@@ -2,7 +2,7 @@
 
 Summary: what exists of the mobile app today (the M0 skeleton plus the first M1 slices: sign-in, gateway, server list and text channels), how it is built in the client monorepo, how its name and bundle id are configured, how CI checks it, and what comes next. The plan is [Mobile app plan](../plans/2026-11-03-mobile-app.md); the stack choice is [ADR 0024](../adr/0024-mobile-client-stack.md).
 
-Last reviewed: 2026-11-04 ([client#206](https://github.com/discordy-voics/client/issues/206), PRs client#256 and the message screens PR; skeleton: client#205, PR client#232).
+Last reviewed: 2026-11-04 ([client#206](https://github.com/discordy-voics/client/issues/206), PRs client#256 and client#257; skeleton: client#205, PR client#232).
 
 ## Status
 
