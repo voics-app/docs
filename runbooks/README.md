@@ -15,6 +15,7 @@
 | [Secret rotation](secret-rotation.md) | Scheduled or emergency rotation of any secret in the inventory |
 | [Environments](environments.md) | Standing up a new environment (Proxmox, Hetzner, AWS) with one command, the dev/test environment, rebuilding production after a disaster |
 | [Release](release.md) | git-flow releases, **how each component reaches production** (pipelines, Flux timings, intervals), hotfixes, rollback, desktop installers, website |
+| [Run the mobile app](run-the-mobile-app.md) | Seeing the Expo mobile app on a phone, an Android emulator or a dev build, on Windows without a Mac |
 | [Local development](local-development.md) | Running the stack on a workstation |
 | [Cloudflare setup](cloudflare-setup.md) | Tunnel, DNS and Access configuration |
 | [How to rebrand](rebrand.md) | Changing the product name or domain: every file and variable, rebuild and redeploy steps, Cloudflare and DNS steps |
