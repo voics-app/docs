@@ -344,7 +344,7 @@ Everything here needs a development build (EAS cloud build, no Mac).
 2. Push: token registration, tap to open a message, badge, notification grouping. Server side first: api#93, messages#56, gitops#69, api#20.
 3. Deep links: `voics://` and universal links for `/invite/<code>` and `/channels/<guild>/<channel>`, an `apple-app-site-association` file on the website.
 4. Voice: `react-native-webrtc`, join and leave, mute and deafen, speaking indicators, audio routing, then CallKit and PushKit for DM calls, then video, watching screen shares, Live Activity and picture in picture.
-5. Encrypted modes: OpenMLS compiled for iOS behind the `PrivacyCrypto` port (Ephemeral and P2P), then a native DAVE frame cryptor for E2EE calls, which Discord has required since March 2026.
+5. Encrypted modes: OpenMLS compiled for iOS behind the `CryptoBridge` port (Ephemeral and P2P), then a native DAVE frame cryptor for E2EE calls, which Discord has required since March 2026. Written in client PR #292 (uniffi layer, XCFramework workflow, Expo module with Keychain storage, private chats and indicators), not yet built on macOS or run on a device; private attachments need a native AES-GCM first.
 6. Share extension, screen sharing from the phone (ReplayKit).
 
 What the build needs from the owner:
