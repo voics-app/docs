@@ -57,7 +57,7 @@ The icon is `apps/desktop/build/icon.png` (512 px; a 1024 px icon without transp
 
 ## CI
 
-The `client` CI calls the shared node workflow with the root scripts `lint`, `typecheck` and `test:unit`. These now run desktop and mobile one after the other, so a mobile failure fails the same job. It runs on Linux and needs no EAS or Apple account. EAS builds are added in M1.
+The `client` CI calls the shared node workflow with the root scripts `lint`, `typecheck` and `test:unit`. These now run desktop and mobile one after the other, so a mobile failure fails the same job. It runs on Linux and needs no EAS or Apple account. EAS builds are started by hand with `eas.json` profiles (see Voice and calls); CI does not build them.
 
 ## Running it
 
@@ -90,7 +90,7 @@ Colours, radii and sizes are desktop's Nightglass tokens (72 pt rail, 48 pt tile
 
 | Topic | Behaviour |
 |---|---|
-| Voice channels | Listed in their category with the speaker icon, the user limit (`2/4`, red when full) and, indented under the row, the people connected right now from voice state: avatar, name (nickname first) and marks for muted, deafened (server ones in red), camera and live. A collapsed category does not hide them in the list on desktop; mobile collapses everything in it. Tapping one opens a screen with the channel name, who is in it and the line "Voice isn't in this test version yet". Joining needs a native build and is a separate ticket. |
+| Voice channels | Listed in their category with the speaker icon, the user limit (`2/4`, red when full) and, indented under the row, the people connected right now from voice state: avatar, name (nickname first) and marks for muted, deafened (server ones in red), camera and live. A collapsed category does not hide them in the list on desktop; mobile collapses everything in it. Tapping one opens a screen with the channel name and who is in it. In Expo Go it says "Voice isn't in this test version yet"; in a development build it has a Join voice button (see Voice and calls). |
 | Other channels | Ephemeral, peer-to-peer and forum channels open on one plain sentence saying they are not in this test version, never on unreadable content or an error. Threads are not listed (as on desktop). |
 | Member list | The people icon at the right of a server channel's header opens the server's member list, which slides in from the right like any pushed screen (back returns to the chat). Groups are hoisted roles (highest first), Online and Offline, each collapsible, built by the core member rules; a row has the avatar with a status dot, the name in the role colour, a crown for the owner, an APP tag for bots, a speaker when in voice and the activity or custom status line. Search filters the loaded members and asks the gateway for more after a short pause. A swipe from the right edge to open it is not built. |
 | Profile sheet | Tapping a person (also an author in a server chat) shows avatar, names, About me, their roles and Member since in the server, Friends since, and a Message button (not on your own profile) that opens or creates the DM and shows it. |
@@ -99,6 +99,21 @@ Colours, radii and sizes are desktop's Nightglass tokens (72 pt rail, 48 pt tile
 | Not built | From desktop's server settings: Emoji, Template, Discovery, Bans (list and unban), Audit log. Inside the pages: banner, invite splash, description, voice region, system messages, inactive channel, default notifications and prune in Overview; role reordering, duplicate, role icon, adding roles to members and members per role in Roles; roles, timeout, nickname and Mod View in Members; permission overwrites, topic, slowmode, age restriction and reordering in Channels. Also pinned channels and the channel context menu. |
 
 The pages run on Expo Go modules only (`expo-clipboard`, `expo-image-picker`). Like the rest of the app they were tested with mocks, not yet on a device.
+
+## Voice and calls
+
+Status: written and tested with fakes, not yet run on a device ([client#275](https://github.com/discordy-voics/client/issues/275), PR client#284). Voice needs a development or preview build, because react-native-webrtc is native and Expo Go does not contain it. The app checks for Expo Go at startup and never loads the native modules there, so Expo Go still works and shows the usual notices.
+
+| Topic | Behaviour |
+|---|---|
+| Builds | `apps/mobile/eas.json` has `development` (development client, internal distribution) and `preview` (internal distribution, build number auto-increment). Run `eas build` from `apps/mobile`; the repo is a pnpm workspace with hoisted node_modules. An iPhone build needs the Apple Developer account, the registered device and the Expo account (owner steps, docs#10). The build adds the microphone and camera usage strings and the `audio` background mode. |
+| Libraries | react-native-webrtc 155 (WebRTC M155) with `@config-plugins/react-native-webrtc` 15, react-native-incall-manager 4.3 (speaker or earpiece), expo-dev-client. react-native-webrtc is a legacy-style native module that React Native 0.88 runs through its interop layer; if a later React Native removes that layer, the library must move first. |
+| Join and leave | Tap a voice channel, then Join voice. The call screen shows who is here, a green ring around whoever speaks, mute, deafen, speaker or earpiece and leave. A bar above the user panel shows the call while you browse and returns to the screen. |
+| DM calls | The voice button in a DM opens the call screen and joins; the server rings the others. An incoming call shows Accept and Decline over any screen while the app is open. Ringing when the app is closed needs CallKit and PushKit (later). |
+| Not yet | Video, screen share, end-to-end encrypted calls (Ephemeral and P2P DMs, accounts with `e2ee_calls_default`: the call closes with a plain message because iOS has no frame cryptor yet), CallKit, PushKit. |
+| Code | The voice session, call controller and media ports live in `@discordy/core` (`application/voice`, `application/ports/media.ts` and `voice.ts`); desktop and mobile each supply the peer connection, microphone and mixer. |
+
+What the Ephemeral and P2P modes need on mobile: the Rust crypto in `native/crypto` built for iOS (a `uniffi` feature next to the napi layer, static libraries for the iOS targets, an XCFramework and an Expo local module behind a core `CryptoBridge` port; build it in a macOS CI job rather than on the EAS worker), and an adapter that gives the P2P service a react-native-webrtc peer connection. Details are in the PR of client#275.
 
 ## What comes next
 
