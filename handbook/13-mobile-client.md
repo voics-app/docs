@@ -2,11 +2,11 @@
 
 Summary: what exists of the mobile app today (the M0 skeleton plus the first M1 slices: sign-in, gateway, server list and text channels), how it is built in the client monorepo, how its name and bundle id are configured, how CI checks it, and what comes next. The plan is [Mobile app plan](../plans/2026-11-03-mobile-app.md); the stack choice is [ADR 0024](../adr/0024-mobile-client-stack.md).
 
-Last reviewed: 2026-11-05 (servers: [client#274](https://github.com/discordy-voics/client/issues/274); [client#206](https://github.com/discordy-voics/client/issues/206), PRs client#256, client#257 and client#258; skeleton: client#205, PR client#232).
+Last reviewed: 2026-11-05 (find and navigate, notifications and DMs: [client#278](https://github.com/discordy-voics/client/issues/278); servers: [client#274](https://github.com/discordy-voics/client/issues/274); [client#206](https://github.com/discordy-voics/client/issues/206), PRs client#256, client#257 and client#258; skeleton: client#205, PR client#232).
 
 ## Status
 
-M0 skeleton plus the first M1 slices. `apps/mobile` in the `client` repository is an Expo app laid out like the desktop client, with no bottom tabs (see Layout below). You can sign in (email and password, then the authenticator or backup code when the account has two-factor sign-in) and sign out from the You screen. The app keeps a gateway connection and the server rail lists your servers and, per server, the text channels you can see, grouped by category. Tapping a text channel opens its messages (see Messages below). The DM column lists your conversations and the You screen has your account and a few settings (see Direct messages, profiles and settings below). Notifications is still a placeholder. All stores, the session manager and the protocol clients come from `@discordy/core`; nothing is published to an app store, and these slices have been tested with mocks only, not yet on a device or simulator.
+M0 skeleton plus the first M1 slices. `apps/mobile` in the `client` repository is an Expo app laid out like the desktop client, with no bottom tabs (see Layout below). You can sign in (email and password, then the authenticator or backup code when the account has two-factor sign-in) and sign out from the You screen. The app keeps a gateway connection and the server rail lists your servers and, per server, the text channels you can see, grouped by category. Tapping a text channel opens its messages (see Messages below). The DM column lists your conversations and the You screen has your account and a few settings (see Direct messages, profiles and settings below). Notifications is the mentions inbox, and DMs, friends, pins, threads, search and joining a server are in (see Notifications, Friends and direct messages, and Find and navigate below). All stores, the session manager and the protocol clients come from `@discordy/core`; nothing is published to an app store, and these slices have been tested with mocks only, not yet on a device or simulator.
 
 ## How it is built
 
@@ -47,7 +47,7 @@ M0 skeleton plus the first M1 slices. `apps/mobile` in the `client` repository i
 | Message menu | Also Copy Message Link and Mark Unread for everyone, and Pin or Unpin with Manage Messages (standard channels only). |
 | Gestures | Drag a message left 64 pt to reply (a light haptic ticks at the threshold). Haptics: light on long press, a tick on reaction toggles, success or error on send. With Reduce Motion on, haptics are off and the message does not follow the finger. |
 | Header menu | The ... button opens Mark as read, Mute channel (15 minutes to until turned off) or Unmute, Notification settings (server default, all messages, only mentions, nothing) and Invite people (with Create Invite). Mute and levels sync through the notification settings of the account. |
-| Not yet | Channels with private delivery (ephemeral, peer to peer) open on a plain message instead of messages, because they need the encryption core (M3). Embeds, threads, a pins panel, search and forwarding are not in this slice yet. |
+| Not yet | Channels with private delivery (ephemeral, peer to peer) open on a plain message instead of messages, because they need the encryption core (M3). Embeds and forwarding are not in this slice yet; pins, threads and search are described in Find and navigate below. |
 
 ## Name, scheme and bundle id (branding)
 
@@ -75,7 +75,7 @@ The main screen follows the desktop shell: a narrow server rail on the left, a c
 
 | Part | Behaviour |
 |---|---|
-| Server rail | Direct messages on top, a separator, then your servers and folders in the order you set on desktop (folders open and close). The selected item has a pill on its left edge and a squarer, accent-coloured tile; a server with unread messages has a short pip; mentions show a red count (Direct messages counts mentions in all conversations). Muted channels never light the pip. Create, join and discover are not on mobile yet. |
+| Server rail | Direct messages on top, a separator, then your servers and folders in the order you set on desktop (folders open and close). The selected item has a pill on its left edge and a squarer, accent-coloured tile; a server with unread messages has a short pip; mentions show a red count (Direct messages counts mentions in all conversations). Muted channels never light the pip. A + at the end joins a server from an invite (see Find and navigate). Create and discover are not on mobile yet. |
 | Column | The selected server's name (tap it for the server menu, see Servers below) and its channels of every kind by category (tap a category to collapse it): text `#`, announcement megaphone, voice and stage speaker (with the people connected and the user limit), forum bubbles. The open channel is highlighted, unread channels bold with a dot, muted ones dimmed, with mention counts; a lock marks private, ephemeral (accent lock) and age-restricted (18+) channels and a link marks peer-to-peer ones. With Direct messages selected it is the conversation list. The bell in the column header opens Notifications. |
 | User panel | Your avatar, name and status (your custom status when set). Tapping it, or the gear, opens the You screen. |
 | Chats | Opening a channel or conversation shows the chat full screen over the rail. The back arrow, the swipe from the left edge (iOS) and the Android back button return to the rail, with the same server and channel still selected. |
@@ -91,6 +91,36 @@ Colours, radii and sizes are desktop's Nightglass tokens (72 pt rail, 48 pt tile
 | Opening | A row opens the same message screen as a server channel (history, composer, replies, edit, delete, reactions); there are no roles in a DM, so every participant may send, react and read. Conversations with private delivery show the same notice as private channels, never messages or an error. |
 | Profile | Tap an author name, or Profile in the header of a 1:1 DM. A sheet shows the avatar (from the CDN, with the initial as fallback), display name, username, About me (refreshed from the profile endpoint, the cached one shows if that fails) and, for friends, Friends since. |
 | You screen | Your avatar, name, username and email, a Show reactions under messages switch (a device-local core preference) and Sign out. |
+
+The DM column also has Friends and New message (below), pinned conversations and a long-press menu.
+
+## Notifications
+
+| Topic | Behaviour |
+|---|---|
+| Mentions inbox | The bell in the column header opens the same list as desktop's Mentions (kept on the device, filled by the gateway): mentions of you, of your roles and @everyone, and replies to you in servers, newest first, grouped by server. Tapping an entry opens the chat at that message; a check marks one read and Mark all read clears the list (neither acknowledges the channel). Entries of servers or channels you no longer have are hidden. |
+| Opening a message | The chat scrolls to the message when it is loaded and otherwise loads the window around it first. While the window is detached from the newest message, scrolling to its newest end loads newer messages, the chat acknowledges nothing, and Jump to latest reloads the newest page. The target flashes briefly. Replies, pins and search hits use the same path; a message that no longer exists shows "That message is no longer available." |
+| In-app banner | While the app is open and you are not in the chat the message belongs to, a new message shows a banner at the top (tap to open it, an x to dismiss, it leaves after a few seconds). The rule is the desktop toast's (core `incomingAlert`): never your own or @silent messages, nothing for muted servers, channels or categories, the level (all, only mentions, nothing, with the server default and the device's only-mentions preference) and Do Not Disturb are respected. Push notifications for a closed app come with the native build. |
+
+## Friends and direct messages
+
+| Topic | Behaviour |
+|---|---|
+| Friends | The Friends row of the DM column opens the Friends page: Online, All, Pending (incoming and outgoing), Blocked and Add friend, with counts on the tabs and a search box. Pending rows have Accept and Decline (outgoing: Cancel), Blocked rows Unblock. Tapping a friend offers Message, Profile, Remove friend and Block, and removing or blocking asks first. Add friend sends a request by username; failures read as plain sentences (not found, not accepting requests, too fast, offline). |
+| New message | The New message row picks people (friends first, then people from your servers, with search): one person opens their DM, several create a group DM (up to 25 people including you). |
+| Pinned and closed | Long-press a conversation for Mark as read, Pin or Unpin (up to five, shown first under Pinned and synced with your other devices), Profile (1:1), Mute (durations), Close DM (hidden until a newer message; a pinned DM is unpinned) and, for groups, Leave group (after confirming). Group settings (name, icon, members) are not on mobile yet. |
+
+## Find and navigate
+
+| Topic | Behaviour |
+|---|---|
+| Channel details | Tap the chat title: name, topic, Search, Pinned messages, Threads (server text channels), Members and Copy link. In a 1:1 DM the title opens the person's profile; in a group DM, details lists the people. |
+| Pinned messages | From details or the link in a pin notice. Each pin shows its author, text and attachments; Jump goes back to the chat at that message, Unpin (after confirming) needs Manage Messages in a server and is open to everyone in a DM. The list reloads when someone pins or unpins. |
+| Profile | The sheet shows the banner colour, avatar with status, names, what they are doing, About me, roles and Member since in a server, your private note (saved when you leave the field, only you see it), mutual servers and mutual friends, and Friends since. Buttons: Message, Add friend, Accept friend request, Request sent, Remove friend, Block (after confirming) or Unblock. Nothing relationship-related shows on your own profile. |
+| Threads | Create Thread in the message menu (needs Create Public Threads, not offered inside a thread or in private channels) suggests a name from the message and opens the new thread. A message that started a thread shows a chip with its name and message count, a thread notice links to it, and a thread opens as a chat named after it (it uses the parent channel's permissions and Send Messages in Threads; a locked thread closes the composer unless you may manage threads). The Threads page lists the threads the app has been told about, active first and archived marked; the server has no list route yet (api#34), so it cannot fetch the others. |
+| Search | Search from channel details or the header menu searches the whole server (or the direct message). It takes words and the desktop filters (from, mentions, in, has, before, after, during, pinned) with suggestions as you type and removable filter chips. Tabs: Messages (hits with the words marked and the messages around them), Media (images and videos in a grid), Files (documents and audio with size) and Links (by site). Tapping a hit goes back to the chat at that message (or opens it in its channel); a file or link opens in the in-app browser. Results load a page at a time. Chats with private delivery cannot be searched on mobile. |
+| Join a server | The + at the end of the rail takes an invite link or code (a web link, the deep link or a bare code), shows the server with its member and online counts, and joins on Accept; a server you are already in just opens. |
+| Voice text chat | A voice channel's screen has Open text chat, which shows the channel's messages with a composer (not for channels with private delivery). |
 
 ## Servers
 
