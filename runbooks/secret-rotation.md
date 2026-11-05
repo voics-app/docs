@@ -117,6 +117,17 @@ Signs attachment download URLs. Links issued under the old key stop working at t
 3. Restart the messages deployment.
 4. **Verify**: open a channel with an attachment (the history call returns fresh links) and download it.
 
+## APNs key
+
+The .p8 key the notifier signs APNs requests with. Apple lets an account hold two active keys, so rotate without a gap.
+
+1. In the Apple Developer account create a second key with the APNs service enabled and download the .p8. Note its Key ID.
+2. Set the three values: `gh secret set NOTIFIER_APNS_KEY --repo discordy-voics/gitops --env production < AuthKey_XXXXXXXXXX.p8`, then `NOTIFIER_APNS_KEY_ID` and `NOTIFIER_APNS_TEAM_ID` the same way (pipe the value, never an argument). Then run `secrets-sync`.
+3. Force-sync `notifier-secrets` in `voics-apps`.
+4. Restart the notifier: `kubectl -n voics-apps rollout restart deploy/notifier`. It reads the key at startup and refuses a file that is not a valid .p8.
+5. **Verify**: `kubectl -n voics-apps logs deploy/notifier` shows no `403` answers, and `notifier_apns_errors_total` stays flat while a test message pushes (runbooks/push-notifications.md).
+6. Revoke the old key in the Apple Developer account.
+
 ## Voice token secret
 
 This HS256 secret is shared by the gateway (signer) and **every voice node in every region** (verifiers). Voice tokens live 60 seconds.
