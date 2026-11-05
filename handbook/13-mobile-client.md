@@ -191,6 +191,29 @@ Block User is in the message menu (not for yourself, bots or people already bloc
 
 Not verified on a device: nothing in wave 3 has run on an iPhone yet; the tests use Jest with mocks.
 
+## Parity polish (wave 4, client#280)
+
+| Topic | Behaviour |
+|---|---|
+| Quick switcher | The magnifier in the column header opens a sheet with a search field over every channel, conversation and server, plus Friends, New message, Notifications, Discover servers and User settings. Prefixes narrow it as on desktop: `@` people, `#` text channels, `!` voice channels, `*` servers (`*server channel` searches one server's channels). With nothing typed it lists chats with mentions, then unread ones, then recent ones. Return opens the first result. The ranking and the channel items are core `quickSwitcher`, shared with desktop's Ctrl+K palette. |
+| Slash commands | In a chat where you may use application commands (and delivery is standard), typing `/` lists the matching commands of the server, or of the bots and your own apps in a direct message. Choosing one opens a sheet with a control per option: choices as chips, true or false as a switch, numbers and text checked by core `validateValues`, people, roles, channels and mentionables from a searchable list inside the sheet. Run sends the interaction; an "app is thinking" row waits at the newest end of the chat until the bot answers (dropped after 15 minutes). File options are not supported on mobile yet. |
+| Message components | Buttons, string selects (one choice sends at once; several choices send on Apply, within the menu's minimum and maximum) and user, role, mentionable and channel selects render under a bot's message. Link buttons open http and https addresses in the in-app browser. A form a bot opens appears as a sheet and Submit sends it back. Failures show the server's message. |
+| Stickers | Not built: desktop has only the Animate stickers setting and no way to send or show stickers, so there is nothing to match. |
+| Tablet layout | iPad and large screens (shorter side of the window at least 600 pt; an iPhone in landscape is not one) keep the 72 pt server rail and a 288 pt channel or conversation column on the left and open every screen, a chat, members, pins, settings, to their right. A channel replaces the chat in the pane rather than stacking; a server in the rail opens the channel you were last in. The app stays portrait (the Expo `orientation` is unchanged) and sets `requireFullScreen`, which Apple requires of an iPad app that does not rotate or support Split View. Landscape and multitasking on iPad are an owner decision. |
+| User panel | The avatar shows the presence dot of your own status (the one the gateway reports, so automatic Idle shows; hollow while Invisible). Tapping the name opens a sheet with Online, Idle, Do not disturb and Invisible (the chosen one ticked), the custom status with when it clears, Edit profile and Settings; the gear still opens settings. |
+| Collapsed categories | A collapsed category keeps what has activity listed, as desktop does: the open channel, mentions, unread text channels and voice channels with people in them. |
+| Theme and accent | Still applied the next time the app starts, because styles are built when each screen loads. Applying them at once would mean rewriting every style to read the theme at render time; the Appearance page says a restart is needed on the Theme and Accent rows. |
+| Server settings for single permissions | Someone with only Ban Members, View Audit Log or Manage Expressions cannot open server settings on desktop either (the entry needs Manage Server, Manage Roles or Manage Channels), so mobile matches desktop. Letting them in is a change to core `canOpenServerSettings` and affects both clients. |
+
+### Owner decision: polls and voice messages
+
+Neither exists on desktop or in the shared contracts, so a joint decision is needed before either client builds them.
+
+- **Polls.** Needs the API and messages service to define a poll (question, its answers with optional emoji, a duration, whether several answers may be chosen), accept it on message create, add and remove a vote, list voters, close and expire it, and emit vote events; the message payload needs the poll with live counts. Both clients then need a create form (desktop's "Create poll" entry exists but is switched off by `COMPOSER_FEATURES.polls`), a poll renderer with voting, and the results after it ends. Mobile can build its half in Expo Go.
+- **Voice messages.** Needs the attachment contract to carry a voice-message flag, `duration_secs` and a `waveform` (the contracts have none today) and the media pipeline to accept short audio recorded as one file. Mobile records with expo-audio (works in Expo Go, needs the microphone permission it already declares) and uploads through the existing attachment path; both clients render a waveform player. Desktop has no recorder, so it would show them only.
+
+Not verified on a device: nothing in wave 4 has run on an iPhone or iPad yet; the tests use Jest with mocks, and the bundle exports for iOS.
+
 ## Voice and calls
 
 Status: written and tested with fakes, not yet run on a device ([client#275](https://github.com/discordy-voics/client/issues/275), PR client#284). Voice needs a development or preview build, because react-native-webrtc is native and Expo Go does not contain it. The app checks for Expo Go at startup and never loads the native modules there, so Expo Go still works and shows the usual notices.
