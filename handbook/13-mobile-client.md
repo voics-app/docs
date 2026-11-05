@@ -2,11 +2,11 @@
 
 Summary: what exists of the mobile app today (the M0 skeleton plus the first M1 slices: sign-in, gateway, server list and text channels), how it is built in the client monorepo, how its name and bundle id are configured, how CI checks it, and what comes next. The plan is [Mobile app plan](../plans/2026-11-03-mobile-app.md); the stack choice is [ADR 0024](../adr/0024-mobile-client-stack.md).
 
-Last reviewed: 2026-11-05 (find and navigate, notifications and DMs: [client#278](https://github.com/discordy-voics/client/issues/278); servers: [client#274](https://github.com/discordy-voics/client/issues/274); [client#206](https://github.com/discordy-voics/client/issues/206), PRs client#256, client#257 and client#258; skeleton: client#205, PR client#232).
+Last reviewed: 2026-11-05 (settings, server administration, forums and offline messages: [client#279](https://github.com/discordy-voics/client/issues/279); find and navigate, notifications and DMs: [client#278](https://github.com/discordy-voics/client/issues/278); servers: [client#274](https://github.com/discordy-voics/client/issues/274); [client#206](https://github.com/discordy-voics/client/issues/206), PRs client#256, client#257 and client#258; skeleton: client#205, PR client#232).
 
 ## Status
 
-M0 skeleton plus the first M1 slices. `apps/mobile` in the `client` repository is an Expo app laid out like the desktop client, with no bottom tabs (see Layout below). You can sign in (email and password, then the authenticator or backup code when the account has two-factor sign-in) and sign out from the You screen. The app keeps a gateway connection and the server rail lists your servers and, per server, the text channels you can see, grouped by category. Tapping a text channel opens its messages (see Messages below). The DM column lists your conversations and the You screen has your account and a few settings (see Direct messages, profiles and settings below). Notifications is the mentions inbox, and DMs, friends, pins, threads, search and joining a server are in (see Notifications, Friends and direct messages, and Find and navigate below). All stores, the session manager and the protocol clients come from `@discordy/core`; nothing is published to an app store, and these slices have been tested with mocks only, not yet on a device or simulator.
+M0 skeleton plus the first M1 slices. `apps/mobile` in the `client` repository is an Expo app laid out like the desktop client, with no bottom tabs (see Layout below). You can sign in (email and password, then the authenticator or backup code when the account has two-factor sign-in) and sign out from the Settings pages (the user panel opens them). The app keeps a gateway connection and the server rail lists your servers and, per server, the text channels you can see, grouped by category. Tapping a text channel opens its messages (see Messages below). The DM column lists your conversations and the You screen has your account and a few settings (see Direct messages, profiles and settings below). Notifications is the mentions inbox, and DMs, friends, pins, threads, search and joining a server are in (see Notifications, Friends and direct messages, and Find and navigate below). All stores, the session manager and the protocol clients come from `@discordy/core`; nothing is published to an app store, and these slices have been tested with mocks only, not yet on a device or simulator.
 
 ## How it is built
 
@@ -90,7 +90,7 @@ Colours, radii and sizes are desktop's Nightglass tokens (72 pt rail, 48 pt tile
 | DM list | Lists your 1:1 and group conversations, most recent activity first, with the person's name (their nickname if they are a friend and you set one), or the group name, or the members' names. DMs you closed on this device stay hidden until a newer message arrives. The order and the hiding come from the core DM model. |
 | Opening | A row opens the same message screen as a server channel (history, composer, replies, edit, delete, reactions); there are no roles in a DM, so every participant may send, react and read. Conversations with private delivery show the same notice as private channels, never messages or an error. |
 | Profile | Tap an author name, or Profile in the header of a 1:1 DM. A sheet shows the avatar (from the CDN, with the initial as fallback), display name, username, About me (refreshed from the profile endpoint, the cached one shows if that fails) and, for friends, Friends since. |
-| You screen | Your avatar, name, username and email, a Show reactions under messages switch (a device-local core preference) and Sign out. |
+| Settings | The user panel opens the user settings (see User settings below); the old You screen is gone. |
 
 The DM column also has Friends and New message (below), pinned conversations and a long-press menu.
 
@@ -127,14 +127,69 @@ The DM column also has Friends and New message (below), pinned conversations and
 | Topic | Behaviour |
 |---|---|
 | Voice channels | Listed in their category with the speaker icon, the user limit (`2/4`, red when full) and, indented under the row, the people connected right now from voice state: avatar, name (nickname first) and marks for muted, deafened (server ones in red), camera and live. A collapsed category does not hide them in the list on desktop; mobile collapses everything in it. Tapping one opens a screen with the channel name and who is in it. In Expo Go it says "Voice isn't in this test version yet"; in a development build it has a Join voice button (see Voice and calls). |
-| Other channels | Ephemeral, peer-to-peer and forum channels open on one plain sentence saying they are not in this test version, never on unreadable content or an error. Threads are not listed (as on desktop). |
+| Other channels | Ephemeral and peer-to-peer channels open on one plain sentence saying they are not in this test version, never on unreadable content or an error. Forum channels open on their posts (see Forums below). Threads are not listed (as on desktop). |
 | Member list | The people icon at the right of a server channel's header opens the server's member list, which slides in from the right like any pushed screen (back returns to the chat). Groups are hoisted roles (highest first), Online and Offline, each collapsible, built by the core member rules; a row has the avatar with a status dot, the name in the role colour, a crown for the owner, an APP tag for bots, a speaker when in voice and the activity or custom status line. Search filters the loaded members and asks the gateway for more after a short pause. A swipe from the right edge to open it is not built. |
 | Profile sheet | Tapping a person (also an author in a server chat) shows avatar, names, About me, their roles and Member since in the server, Friends since, and a Message button (not on your own profile) that opens or creates the DM and shows it. |
 | Server menu | Tapping the server name in the column header. Invite people appears with Create Invite (choose expiry and uses, then Copy link or Share, through the first text channel as on desktop). Server settings appears with Manage Server, Manage Roles or Manage Channels. Leave server (not for the owner) asks first. Delete server, notification settings, mute and mark as read are not on mobile. |
 | Server settings | A list of the pages the user may open, using the same permission rules as desktop's server settings (the shared `serverSettingsTabs` in core): Overview (Manage Server: name, icon from the photo library, only changed fields are sent), Roles (Manage Roles: hierarchy list with member counts and locks; per role name, colour, display separately, mentionable and every permission, with a switch disabled when the user lacks that permission or the role is at or above their highest; create and delete with confirmation), Members (everyone, as on desktop: search, and Kick or Ban only for people the user outranks with the matching permission, after a confirmation), Invites (Manage Server: create, copy, revoke with confirmation) and Channels (Manage Channels: create channel with kind, category and delivery mode or create category, rename, delete with confirmation). A deep link to a page the user may not open shows a note, not controls. |
-| Not built | From desktop's server settings: Emoji, Template, Discovery, Bans (list and unban), Audit log. Inside the pages: banner, invite splash, description, voice region, system messages, inactive channel, default notifications and prune in Overview; role reordering, duplicate, role icon, adding roles to members and members per role in Roles; roles, timeout, nickname and Mod View in Members; permission overwrites, topic, slowmode, age restriction and reordering in Channels. Also pinned channels and the channel context menu. |
+| Not built | From desktop's server settings: Template and Discovery pages. Inside the pages: banner, invite splash, description, voice region, system messages, inactive channel, default notifications and prune in Overview; duplicate role, role icon, members with a role and Mod View. Reordering uses up and down buttons, not drag handles. Server administration added in wave 3 is below. |
 
 The pages run on Expo Go modules only (`expo-clipboard`, `expo-image-picker`). Like the rest of the app they were tested with mocks, not yet on a device.
+
+## User settings, server administration and servers (wave 3, client#279)
+
+Plan: [mobile gap analysis](../plans/2026-11-05-mobile-gap-analysis.md), section 7. Everything here runs in Expo Go; QR login waits for gateway#17.
+
+### User settings
+
+The user panel opens a list with a search field over every page and row (the ranking is core `settingsSearch`, shared with desktop; a result opens its page with the row marked), then the pages in desktop's two groups, then Log out (asks first). Only settings the phone app honours are listed: desktop's Voice and video, Keybinds, Connection, Desktop, Advanced, Developer and About are desktop-only, and desktop has no Language page.
+
+| Page | Behaviour |
+|---|---|
+| My account | Username, email and password changes each ask for the current password, and a new password passes the same rules as desktop. Two-factor setup asks for the password, shows the key to type in (and an Open authenticator app button that follows the `otpauth` link, because there is no QR library in Expo Go), then the six-digit code, then the backup codes once. Turning it off needs the password and an authenticator or backup code. Disable and Delete account need the password, and Delete also the username typed back. The email-verification banner appears while the email is unverified. |
+| Profile | Avatar and banner from the photo library, display name, About me, colour; only changed fields are sent. Status (Online, Idle, Do not disturb, Invisible) and a custom status with an expiry are published to the gateway and saved to the account, as desktop's user panel does. |
+| Privacy and delivery | The default delivery mode with the encrypted modes switched off and explained (the encryption core is not in the app yet), the calls switch (off for the same reason), per-chat overrides with Clear, and Blocked users with Unblock. |
+| Devices and sessions | Logged-in devices (this one first) with Log out per device and Log out all others after a confirmation, and the encrypted-message devices. |
+| Appearance | Theme (Dark, OLED, Light), accent, match the iPhone, and Text size for messages. Styles read the colour object once when their module loads, so a new theme or accent shows from the next start of the app and the page says so. |
+| Accessibility, Notifications, Chat | Reduce motion (also from the iPhone), role colours (name, dot, hidden), always underline links; Only mentions for in-app banners; Display images and videos, spoiler display, reactions and emoticon conversion. Each has an effect in the app. |
+
+Theme, accent, text size, reduce motion, role colours, link underline and only-mentions follow the account (`PrefsSync` runs on mobile as on desktop).
+
+### Report and block
+
+Block User is in the message menu (not for yourself, bots or people already blocked), next to Block in the profile sheet and the Friends tab, always after a confirmation; Privacy lists blocked people. **There is no report function: the api has no report endpoint** (the [moderation spec](../specs/2026-10-22-moderation-tools-and-ban-purge.md) lists one as not built), so the app shows no Report control. App Store review for user-generated content needs one, so it needs an api change first.
+
+### Server administration
+
+| Topic | Behaviour |
+|---|---|
+| Pages | Emoji (Manage Expressions: upload, rename, delete after a question), Bans (Ban Members: search, Unban after a question), Audit log (View Audit Log: filter by action and moderator, older entries). Like desktop, the server menu shows Server settings only with Manage Server, Manage Roles or Manage Channels. |
+| Members | A member's sheet (also Manage member in the profile sheet) offers Roles (roles below your highest), Change nickname or Edit server profile for yourself, Timeout with desktop's presets, Kick and Ban (message history window and a reason), each by the same hierarchy rules as desktop (`memberCapabilities`). A Timed out only filter narrows the list. |
+| Order | Roles and Channels have a Reorder mode with up and down buttons (roles at or above yours never move; channel moves are one bulk request, reverted if refused, with desktop's offer to sync permissions into a new category). |
+| Channel page | Name, topic, slowmode, age restriction, voice limits, Delete channel after a question, and Permissions: allow, inherit or deny per permission for roles and members. Needs Manage Channels. |
+| Server menu | Mark as read, Mute server or Unmute, Notification settings (level, suppress @everyone and role mentions, hide muted channels), and for the owner Delete server, which asks for the name to be typed. |
+
+### Create, discover, organise
+
+| Topic | Behaviour |
+|---|---|
+| Add a server | The + at the end of the rail: Create my own server (empty, a built-in template, or a pasted template link), Join a server, Discover servers. |
+| Discover | Public servers that opted in: search, category and tag filters, Load more, Join or Open. |
+| Rail | Long-press a server or folder: move up and down, add to a folder, make a folder with another server, remove from a folder; for a folder rename, colour and ungroup. Saved to the account through core `saveRail`. |
+| Group DM | Group settings in the chat details: name, icon, add friends, owner removes people, leave. In an encrypted group the member controls are hidden, because changing who is in it needs a membership commit from the encryption core. |
+| Invites | A message with an invite link to this instance shows an invite card (Join or Joined); tapping such a link opens the join sheet inside the app. A `voics://invite/` link opens it too, but only from inside the app: opening it from outside needs the native build. |
+| Search | Sort by newest, oldest or most relevant. |
+
+### Forums, forwarding, drafts and offline
+
+| Topic | Behaviour |
+|---|---|
+| Forums | A forum channel lists its posts (public threads, newest first); New post (title and first message) needs the same Create Public Threads check as starting a thread. |
+| Forward | In the message menu for server-stored messages; a picker of recent DMs, groups and channels you may send in, with an optional comment. Encrypted chats and encrypted server channels are shown disabled. Forwarded messages show a Forwarded block. |
+| Drafts | Unsent text is kept per chat (core `useDraftStore`), restored when the chat opens and cleared on send. Chats with private delivery keep nothing. |
+| Offline cache | The newest 50 sent messages of up to 30 server-stored chats are saved when a chat loads and when it is left. A chat opens on them at once, and offline they stay with a note. Never unsent or private messages; emptied when the session ends. |
+
+Not verified on a device: nothing in wave 3 has run on an iPhone yet; the tests use Jest with mocks.
 
 ## Voice and calls
 
