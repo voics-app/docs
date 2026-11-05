@@ -21,13 +21,16 @@ All manifests live in `gitops/infrastructure/controllers/alerting/` (production 
 |---|---|---|
 | `DeploymentNotReady` | ready replicas < desired, or any unavailable pod (a rollout whose new pod never turns ready) | 5 m |
 | `StatefulSetNotReady` | ready replicas < desired replicas | 5 m |
-| `ServiceDown` | `up == 0` for job api, messages, gateway, admin-bff, voice-signaling or sfu | 3 m |
+| `ServiceDown` | `up == 0` for job api, messages, notifier, gateway, admin-bff, voice-signaling or sfu | 3 m |
 | `ServiceTargetMissing` | one of those jobs has no scrape target at all (no pod) | 3 m |
 | `EndpointProbeFailing` | a blackbox probe fails: `api-auth-gate` (API `/api/v1/users/@me` must answer 401), `gateway-websocket` (upgrade must answer 101), `cdn` (200), `update-feed` (200) | 2 m |
 | `FluxNotReady` | a Kustomization, HelmRelease or GitRepository is not Ready and not suspended | 10 m |
 | `FluxImageScanStale` | an ImageRepository was last scanned more than 30 m ago (interval is 5 m) and is not suspended | 10 m |
 | `PodCrashLooping` | any container, in any namespace including `flux-system`, is in `CrashLoopBackOff` or restarted 3 or more times in 15 m | 5 m |
 | `OpenBaoSealed` | `openbao_sealed == 1` or `openbao_reachable == 0` | 4 m |
+| `PushSendFailures` | more than 5 failed push sends in 10 m and over a fifth of the attempted ones (rejected tokens are housekeeping and do not count); needs traffic to fire | 10 m |
+| `PushDropped` | the notifier's bounded queue is full and pushes are dropped on purpose ([ADR 0016](../adr/0016-push-backpressure.md)) | 5 m |
+| `ApnsCredentialsRejected` | APNs answers 403 other than an expired provider token: the key, Key ID or Team ID is wrong or revoked ([push notifications](push-notifications.md)) | 5 m |
 | `OpenBaoCheckMissing` | no `openbao_sealed` metric (the seal-check CronJob stopped) | 10 m |
 
 Notes on the two image-reflector alerts (gitops#61, from [the 2026-11-02 incident](incident-2026-11-02-image-reflector.md)):

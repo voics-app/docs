@@ -5,7 +5,7 @@ This catalog lists every deployable unit in Voics. Ports, env vars, topics and i
 Each production service:
 
 - Exposes `GET /healthz`, `GET /readyz` and `GET /metrics`.
-- Is scraped by VictoriaMetrics under **its own job name**, which the admin health page groups by (`count by (job) (up)`): `api`, `messages`, `gateway`, `voice-signaling` (port 4100), `sfu` (port 4102) and `admin-bff`. On the cluster these jobs live in `gitops/infrastructure/controllers/victoria-metrics/helmrelease.yaml` (`server.scrape.extraScrapeConfigs`), and the pods set `prometheus.io/scrape: "false"` so the generic `kubernetes-pods` job does not count them twice. Locally they live in `gitops/local/victoriametrics/scrape.yml`. A new service needs a job here too, and its name must match `PLATFORM_SERVICES` in `admin/bff/src/domain/service_health.rs`.
+- Is scraped by VictoriaMetrics under **its own job name**, which the admin health page groups by (`count by (job) (up)`): `api`, `messages`, `notifier` (port 8085, 0 replicas until the Apple key exists, see [push notifications](../runbooks/push-notifications.md); not in the admin health page), `gateway`, `voice-signaling` (port 4100), `sfu` (port 4102) and `admin-bff`. On the cluster these jobs live in `gitops/infrastructure/controllers/victoria-metrics/helmrelease.yaml` (`server.scrape.extraScrapeConfigs`), and the pods set `prometheus.io/scrape: "false"` so the generic `kubernetes-pods` job does not count them twice. Locally they live in `gitops/local/victoriametrics/scrape.yml`. A new service needs a job here too, and its name must match `PLATFORM_SERVICES` in `admin/bff/src/domain/service_health.rs`.
 - Exports the **standard metric set** below (one naming scheme for every service; the `job` label identifies the service, so metric names carry no service prefix).
 - Logs JSON to stdout.
 - Exports OpenTelemetry data when `OTEL_EXPORTER_OTLP_ENDPOINT` is set.
@@ -48,6 +48,7 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 |---|---|---|---|---|---|
 | [api](#api) | `api` | `ghcr.io/discordy-voics/api` | 8080 | `voics-apps` | 99.5 % |
 | [messages](#messages) | `messages` | `ghcr.io/discordy-voics/messages` | 8082 | `voics-apps` | 99.5 % |
+| [notifier](#notifier) | `messages` | `ghcr.io/discordy-voics/messages-notifier` | 8085 | `voics-apps` | 99.0 % while enabled |
 | [gateway](#gateway) | `gateway` | `ghcr.io/discordy-voics/gateway` | 4000 | `voics-apps` | 99.5 % |
 | [voice-signaling](#voice-signaling) | `voice` | `ghcr.io/discordy-voics/voice-signaling` | 4100 | `voics-voice` | 99.0 % per region |
 | [sfu](#sfu) | `voice` | `ghcr.io/discordy-voics/voice-sfu` | UDP 50000, TCP 127.0.0.1:4101 | `voics-voice` | 99.0 % per region |
@@ -61,7 +62,7 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 
 | | |
 |---|---|
-| Purpose | Auth (login, email verification, password recovery, TOTP two-factor with backup codes), account disable and delete, users, devices and MLS key packages, relationships, per-guild notification settings and private user notes, guilds, channels, roles and permissions, invites, applications and bots, slash commands, interactions, webhooks, admin endpoints. Transactional outbox to Redpanda. |
+| Purpose | Auth (login, email verification, password recovery, TOTP two-factor with backup codes), account disable and delete, users, devices, push tokens (APNs and FCM, one per login session) and MLS key packages, relationships, per-guild notification settings and private user notes, guilds, channels, roles and permissions, invites, applications and bots, slash commands, interactions, webhooks, admin endpoints. Transactional outbox to Redpanda. |
 | Repo / image | `discordy-voics/api` / `ghcr.io/discordy-voics/api` |
 | Tech | Rust, axum 0.8, sqlx, Postgres 17 |
 | Ports | 8080: public `/api/v1/*` (via `discordy-api.voics.nl`) and internal `/internal/v1/*` (cluster only) |
@@ -91,6 +92,22 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 | Env vars | common + `SCYLLA_NODES`, `SCYLLA_KEYSPACE`, `API_INTERNAL_URL`, `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY` 🔒, `MINIO_SECRET_KEY` 🔒, `MINIO_BUCKET_ATTACHMENTS`, `CDN_PUBLIC_URL`, `ATTACHMENT_SIGNING_KEY` 🔒, `ATTACHMENT_URL_TTL_SECONDS`, `SEARCH_DATABASE_URL` 🔒 (search is disabled when unset), `SEARCH_BACKFILL_ON_START` |
 | SLOs | Availability 99.5 %; search p95 < 300 ms; history p95 < 100 ms; send p95 < 200 ms; send-to-dispatch p95 < 500 ms (with the gateway) |
 | Runbooks | [backup-restore](../runbooks/backup-restore.md#scylladb), [release](../runbooks/release.md) |
+
+## notifier
+
+| | |
+|---|---|
+| Purpose | Push notifications for the iPhone app: decides who gets a push for a new message with the clients' rules (live session, mute, level, mentions, roles, `@everyone`, `@silent`, the device's only-mentions preference) and sends through APNs. Encrypted and unknown delivery modes carry no message text. Bounded queue, in-flight cap, retries and counted drops ([ADR 0016](../adr/0016-push-backpressure.md)). |
+| Repo / image | `discordy-voics/messages` (second binary `bin/notifier`) / `ghcr.io/discordy-voics/messages-notifier` |
+| Tech | Rust, reqwest (HTTP/2), jsonwebtoken (ES256), rskafka |
+| Ports | 8085: `/healthz`, `/readyz` (Redpanda), `/metrics` |
+| Owns data | None. Device tokens live in the api's Postgres (`push_tokens`). |
+| Consumes | `discordy.message.v1` (all partitions, from the end of the topic, no stored offset: run exactly one replica) |
+| Depends on | Redpanda, api (`/internal/v1/channels/{id}/push-targets`, `DELETE /internal/v1/push-tokens`), APNs |
+| Called by | Nothing |
+| Env vars | `KAFKA_BROKERS`, `API_INTERNAL_URL`, `INTERNAL_SERVICE_TOKEN` 🔒, `APNS_KEY_FILE` (mounted `.p8`, from `APNS_KEY` 🔒), `APNS_KEY_ID` 🔒, `APNS_TEAM_ID` 🔒, `APNS_TOPIC`, `APNS_ENVIRONMENT`, `PUSH_QUEUE_CAPACITY`, `PUSH_MAX_IN_FLIGHT`, `PUSH_MAX_ATTEMPTS`, `PUSH_BASE_BACKOFF_MS`, `PUSH_MAX_BACKOFF_MS`, `PUSH_MAX_EVENT_AGE_SECS`, `PUSH_DEDUPE_CAPACITY` |
+| Deployment | 0 replicas until the owner provides the Apple key; `Recreate`, one replica; 32 Mi request, 96 Mi limit |
+| Runbooks | [push-notifications](../runbooks/push-notifications.md), [secret-rotation](../runbooks/secret-rotation.md#apns-key) |
 
 ## gateway
 
