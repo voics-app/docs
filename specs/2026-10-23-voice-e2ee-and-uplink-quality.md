@@ -38,7 +38,7 @@ cryptor an iPhone can run without a custom WebRTC build, and desktop reproduces 
 | IV | Chosen by the sender and carried in the trailer. The iPhone's native cryptor builds it from ssrc, RTP timestamp and a frame count; desktop uses a random 8-byte prefix per stream and a 32-bit counter that refuses to wrap. |
 | Key index | The epoch number modulo 127. Index 127 never holds a key. |
 | AES key | `HKDF-SHA256(material, salt "voics-frame-key", info = 128 zero bytes)`, 16 bytes. |
-| Key material | 32 bytes of MLS exporter secret, one per sender and key index, with the label `voics-voice-frame-key|<user id>|<key index>`. Every member can derive every sender's key; a new epoch gives new keys. |
+| Key material | 32 bytes of MLS exporter secret, one per sender and key index, with the label `voics-voice-frame-key\|<user id>\|<key index>`. Every member can derive every sender's key; a new epoch gives new keys. |
 
 Receivers drop every frame that does not end in a valid trailer, names a key index they do not hold, or fails the tag; senders send nothing
 until an epoch key is active. A frame is never forwarded or played in clear in an encrypted call, and desktop's earlier "accept clear frames during a
