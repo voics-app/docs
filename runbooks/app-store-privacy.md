@@ -53,3 +53,13 @@ Voics uses industry standard algorithms that iOS does not provide, for end-to-en
 - `ITSAppUsesNonExemptEncryption` stays `false`. With `true`, Apple rejects the upload (error 90592) unless the app also carries an approved `ITSEncryptionExportComplianceCode`.
 - France stays out of the app's availability until a declaration to ANSSI is filed and uploaded.
 - Open for the owner: check whether a yearly self-classification report to the US Bureau of Industry and Security applies. Apple leaves this assessment and its liability with the developer.
+
+## App Store Connect status
+
+- Seller: the Account Holder of the individual Apple account (`M T`), which also appears as controller on the privacy page. The owner chose this on 2026-11-06. Initials may not identify the controller well enough for the GDPR, so a full name is the safer choice.
+- Digital Services Act: non-trader, active. The company name, address and registration number were removed from the website and the beta licence.
+- Availability: every territory except France (no ANSSI declaration yet) and China (CallKit).
+- Price: free. Age rating: 16+. iPhone only for the first release.
+- Reviewers can register in the app, and the owner entered a test login in App Store Connect.
+- Screenshots come from the browser preview with demo data on the local stack. Replace them with real iPhone screenshots when available.
+- App Privacy answers are entered on the website only; this page holds them.
