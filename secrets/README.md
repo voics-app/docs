@@ -249,8 +249,8 @@ Every secret on the Voics platform is listed here. The source is [`inventory.yam
 | Kubernetes Secret | `voics-apps/api-smtp` |
 | Owner | @oussamaelhajoui |
 | Rotation | on-change — [secret-rotation.md](../runbooks/secret-rotation.md) |
-| Generate | Issued by the mail provider (SMTP user and password or app password) |
-| Notes | Owner action, tracked on docs#10. Also set SMTP_HOST, SMTP_PORT, SMTP_TLS and MAIL_FROM in the api ConfigMap and flip MAIL_TRANSPORT to smtp. The api-smtp secret is mounted optionally, so the api runs without it. |
+| Generate | Cloudflare Email Service: SMTP_USERNAME is the literal api_token, SMTP_PASSWORD is a Cloudflare API token with the Email Sending: Edit permission (runbooks/email-cloudflare.md). Any other provider: its SMTP user and password. |
+| Notes | Owner action, tracked on docs#10. The api ConfigMap already carries SMTP_HOST, SMTP_PORT, SMTP_TLS and MAIL_FROM for Cloudflare; after the secret reaches OpenBao, flip MAIL_TRANSPORT to smtp (runbooks/email-cloudflare.md). The api-smtp secret is mounted optionally, so the api runs without it. |
 
 <a id="coturn-static-auth-secret"></a>
 
