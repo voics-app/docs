@@ -91,6 +91,10 @@ Settings > Desktop holds device-local options (never synced to the account), sto
 
 The tray menu shows Open, the unread and mention summary, Mute and Deafen toggles (the renderer reports its self voice state; clicks are sent back as commands), the version, Check for updates and Quit. A single-instance lock makes a second launch (or a `voics://` link) focus the existing window. The `voics://` scheme is registered by the installer (`protocols` in `electron-builder.config.cjs`) and again at each start. Update behaviour is described in [Desktop client release and auto-update](09-desktop-client-release.md).
 
+## Reporting
+
+Report Message (message menu, other people's messages), Report (user menu and profile dialog) open the report dialog: nine categories, an optional note, the text of what the report shares and, for ephemeral and P2P messages, a "Send the text of this message" checkbox (the server holds no copy of such chats). The request goes to `POST /api/v1/reports`; the dialog confirms and never says what happened to the report. The model and the send command are shared with the mobile app in `@discordy/core`; see the [moderation spec](../specs/2026-10-22-moderation-tools-and-ban-purge.md#reporting-a-message-or-a-user-api126).
+
 ## Friends and direct messages
 
 When a friend request becomes a friendship (the gateway's `RELATIONSHIP_ADD` with type 1, on either side) the client creates the DM with `POST /users/@me/channels` (idempotent), adds it to Direct Messages and reopens it if it had been closed. The top of an empty or fully loaded 1:1 DM shows a large avatar, the display name, the username and "This is the beginning of your direct message history with @name."; while the DM has no messages, a "Wave to name" button sends a wave message and then disappears. Logic in `domain/dmIntro.ts`, view in `interface/features/chat/DmIntro.tsx`.
