@@ -271,6 +271,27 @@ Owner decisions this raises: the app now contains encryption beyond HTTPS (OpenM
 
 **Only provable on macOS or a device:** that the XCFramework builds (the workflow has not run), that the Swift compiles and the pod links, Keychain and file-protection behaviour, that the app launches with both native modules, a real Ephemeral exchange and a real P2P link with a desktop client in both directions, and the safety number matching desktop's.
 
+## Design and motion guide
+
+The phone app uses desktop's design tokens and adds touch rules. Screens take sizes from shared scales in `apps/mobile/src/theme.ts` instead of writing their own:
+
+| Scale | Values |
+|---|---|
+| Type | 11, 12, 13, 14, 15, 17, 20, 24, 30 (caption to hero) |
+| Spacing | 4, 8, 12, 16, 24, 32, 48, 64 |
+| Radius | chip 6, control 10, panel 14, sheet and dialog 20 |
+| Touch target | 44 pt minimum (channel rows 44, list rows 52, buttons 44, large form buttons 48) |
+
+Rules that follow from them:
+
+- Text in fixed-height chrome (rows, headers, chips) grows with iOS Dynamic Type up to 1.3 times; message text and settings copy grow freely.
+- Lists show skeleton placeholders while loading and an empty state (icon, headline, one sentence, at most one action) when there is nothing, never a spinner alone or a bare line of text.
+- Every pressable gives feedback: a tint for full-width rows, a scale to 0.97 in 150 ms for buttons and tiles. With Reduce Motion (in the app or on the iPhone) movement becomes an instant change.
+- The composer rides the keyboard frame by frame and the message list stays pinned to the newest message; dragging the list down closes the keyboard. Sheets, swipe to reply (left, 64 pt) and the member-list swipe (from the right edge of a server chat) run on the UI thread. The back swipe works from anywhere on the screen.
+- Four native libraries carry this: `react-native-reanimated`, `react-native-worklets`, `react-native-gesture-handler` and `react-native-keyboard-controller`. Expo Go includes them at the pinned versions, but a development build needs a new build after they were added.
+
+What only a phone shows: the keyboard tracking, the interactive dismissal, swipe feel and haptics, Dynamic Type at the largest sizes and the home-indicator spacing. The browser preview used while designing renders the layout but not these.
+
 ## What comes next
 
 The rest of M1: attachments, and TestFlight through EAS (needs the Apple Developer account from the owner decisions). Order and scope are in the [plan](../plans/2026-11-03-mobile-app.md).
