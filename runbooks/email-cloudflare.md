@@ -54,7 +54,7 @@ Cloudflare adds these itself when the domain is onboarded (zone `voics.nl` is on
 | `SMTP_HOST` | `smtp.mx.cloudflare.net` |
 | `SMTP_PORT` | `465` |
 | `SMTP_TLS` | `tls` (implicit TLS) |
-| `MAIL_FROM` | `Voics <no-reply@voics.nl>` |
+| `MAIL_FROM` | `Voics <no-reply@voics.nl>` (from `BRAND_NAME` and `DISCORDY_DOMAIN`) |
 | `SMTP_USERNAME`, `SMTP_PASSWORD` | OpenBao `discordy/smtp` |
 
 Local development keeps the log transport. To rotate the token, create a new one, update the GitHub secret, run `secrets-sync`, then delete the old token.
