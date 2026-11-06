@@ -45,3 +45,11 @@ Every collected type below is **linked to the user's identity** (it is tied to t
 - Confirm the Product Interaction answer (usage counters).
 - Confirm the account-deletion flow still matches the 14 day schedule in the policy once message deletion and timers ship.
 - Update this page and the policy together whenever a new SDK, permission or data field is added.
+
+## Export compliance
+
+Voics uses industry standard algorithms that iOS does not provide, for end-to-end encryption. Apple's [export documentation](https://developer.apple.com/help/app-store-connect/reference/export-compliance-documentation-for-encryption/) then asks only for a French encryption declaration, and only for distribution in France.
+
+- `ITSAppUsesNonExemptEncryption` stays `false`. With `true`, Apple rejects the upload (error 90592) unless the app also carries an approved `ITSEncryptionExportComplianceCode`.
+- France stays out of the app's availability until a declaration to ANSSI is filed and uploaded.
+- Open for the owner: check whether a yearly self-classification report to the US Bureau of Industry and Security applies. Apple leaves this assessment and its liability with the developer.
