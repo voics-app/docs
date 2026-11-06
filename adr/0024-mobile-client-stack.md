@@ -54,7 +54,7 @@ Proposed: **option 1.**
 - **Good:** iOS and Android ship from one codebase, and the owner needs no Mac.
 - **Good:** the gateway and REST clients get a second consumer, which hardens the protocol.
 - **Bad:** extracting `packages/core` is a real refactor of the desktop client. Modules that touch `window`, `document` or Electron have to move behind ports first: 2 domain modules and 9 application modules today.
-- **Bad:** voice E2EE on mobile needs frame transforms, which `react-native-webrtc` does not expose like browsers do. The first mobile release joins only clear (non-E2EE) calls and shows "join on desktop" for encrypted ones.
+- **Bad:** voice E2EE on mobile needs frame transforms, which `react-native-webrtc` does not expose like browsers do. The first mobile release joined only clear (non-E2EE) calls and showed "join on desktop" for encrypted ones. Update (client#297): the app uses `@livekit/react-native-webrtc`, whose native frame cryptor is the only iPhone option; desktop and phone share its frame layout (DAVE protocol version 2) and encrypted calls work on the phone.
 - **Bad:** the encrypted message modes (ephemeral, P2P) need the Rust crypto core compiled for iOS and Android with a JSI binding (for example uniffi). Until then mobile shows those messages as "open on desktop".
 - **Cost:** an Apple Developer account ($99 a year). Optional: Google Play Console ($25 once), or APK sideloading for Android. EAS has a free tier with queued builds.
 

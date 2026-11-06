@@ -1,11 +1,11 @@
 # Voice: end-to-end encrypted calls and camera uplink quality
 
-Status: implemented (client#155, client#158, client#126; voice#0.1.6 adds the founder flag).
+Status: implemented (client#155, client#158, client#126; voice#0.1.6 adds the founder flag; client#297 and voice#31 move media frames to protocol version 2 and add the iPhone).
 
 ## 1. End-to-end encrypted calls (client#155)
 
 A call is end-to-end encrypted when the gateway marks the voice token `e2ee`: a DM or group whose delivery mode is Ephemeral or
-P2P, or an account with `e2ee_calls_default`. Media frames are then encrypted in a worker (AES-GCM, key derived per sender and
+P2P, or an account with `e2ee_calls_default` (one participant with it on makes the call E2EE for everyone). Media frames are then encrypted (AES-GCM, key derived per sender and
 epoch from the MLS exporter secret), so a member without the group key hears nothing. Voice ops 25-31 carry the MLS control plane;
 the voice node is only the delivery service.
 
@@ -21,6 +21,35 @@ the voice node is only the delivery service.
 
 The node never sends 21/22 (prepare/execute); a client that answered 21 with 21 would loop through the relay, so every epoch is
 activated locally as soon as its key is installed.
+
+### Media frame format (protocol version 2, the only version)
+
+The voice node announces `protocol_version: 2` in SESSION_DESCRIPTION (`e2ee`) and in op 25. A client that sees any other value leaves the
+call with a clear message; there is no negotiation and no fallback. The node never reads frames, so the version only names the layout.
+
+The layout is the one of LiveKit's libwebrtc frame cryptor (`api/crypto/frame_crypto_transformer.cc`), because it is the only frame
+cryptor an iPhone can run without a custom WebRTC build, and desktop reproduces it byte for byte:
+
+`[clear header][AES-128-GCM ciphertext + 16-byte tag][IV, 12 bytes][0x0C][key index u8]`
+
+| Part | Rule |
+| --- | --- |
+| Clear header (also the AES-GCM authenticated data) | Opus: 1 byte (the TOC byte). VP8: 10 bytes on a key frame, 3 on a delta frame. VP9 and AV1: 0. H.264 is refused in an encrypted call (its header needs NAL parsing and RBSP escaping); the call is closed with a message if H.264 is negotiated. |
+| IV | Chosen by the sender and carried in the trailer. The iPhone's native cryptor builds it from ssrc, RTP timestamp and a frame count; desktop uses a random 8-byte prefix per stream and a 32-bit counter that refuses to wrap. |
+| Key index | The epoch number modulo 127. Index 127 never holds a key. |
+| AES key | `HKDF-SHA256(material, salt "voics-frame-key", info = 128 zero bytes)`, 16 bytes. |
+| Key material | 32 bytes of MLS exporter secret, one per sender and key index, with the label `voics-voice-frame-key\|<user id>\|<key index>`. Every member can derive every sender's key; a new epoch gives new keys. |
+
+Receivers drop every frame that does not end in a valid trailer, names a key index they do not hold, or fails the tag; senders send nothing
+until an epoch key is active. A frame is never forwarded or played in clear in an encrypted call, and desktop's earlier "accept clear frames during a
+transition" is gone. The previous layout (counter trailer ending 0xFA 0xFA) is no longer read or written.
+
+On the iPhone the native cryptor passes frames in clear until it is enabled and can only be created on a sender that holds a track, so the
+app attaches and confirms it before the answer is applied (before any media can flow), gives a track to a sender only after that, and keeps remote tracks muted until their
+receiver is protected. Reference vectors computed independently from the C++ steps are in `frameFormat.test.ts` and `frameCrypto.test.ts`
+of the client repo.
+
+Rollout: voice, desktop and mobile ship together, because a desktop on the old layout and the new frames cannot decrypt each other.
 
 ### Group lifecycle
 
