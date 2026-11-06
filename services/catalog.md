@@ -62,13 +62,13 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 
 | | |
 |---|---|
-| Purpose | Auth (login, email verification, password recovery, TOTP two-factor with backup codes), account disable and delete, users, devices, push tokens (APNs and FCM, one per login session) and MLS key packages, relationships, per-guild notification settings and private user notes, guilds, channels, roles and permissions, invites, applications and bots, slash commands, interactions, webhooks, admin endpoints. Transactional outbox to Redpanda. |
+| Purpose | Auth (login, email verification, password recovery, TOTP two-factor with backup codes), account disable and delete, users, devices, push tokens (APNs and FCM, one per login session) and MLS key packages, relationships, per-guild notification settings and private user notes, reports of messages and users (`POST /api/v1/reports`, review through the internal admin routes), guilds, channels, roles and permissions, invites, applications and bots, slash commands, interactions, webhooks, admin endpoints. Transactional outbox to Redpanda. |
 | Repo / image | `discordy-voics/api` / `ghcr.io/discordy-voics/api` |
 | Tech | Rust, axum 0.8, sqlx, Postgres 17 |
 | Ports | 8080: public `/api/v1/*` (via `discordy-api.voics.nl`) and internal `/internal/v1/*` (cluster only) |
-| Owns data | Postgres DB `discordy` (migrations in `api/migrations`); Valkey `rl:*` and `cache:*`; MinIO bucket `discordy-assets` |
+| Owns data | Postgres DB `discordy` (migrations in `api/migrations`; includes `reports`, [spec](../specs/2026-10-22-moderation-tools-and-ban-purge.md#reporting-a-message-or-a-user-api126)); Valkey `rl:*` and `cache:*`; MinIO bucket `discordy-assets` |
 | Publishes | `discordy.guild.v1`, `discordy.user.v1`, `discordy.interaction.v1`, `discordy.audit.v1`; TYPING_START on `discordy.message.v1` |
-| Depends on | Postgres, Valkey, Redpanda, MinIO, messages (internal) |
+| Depends on | Postgres, Valkey, Redpanda, MinIO, messages (internal; also `GET /internal/v1/channels/{id}/messages/{mid}` to copy a reported message) |
 | Called by | client, bots, messages, gateway, admin-bff |
 | Snowflake workers | 0–63 |
 | Env vars | common + `DATABASE_URL` 🔒, `VALKEY_URL` 🔒, `JWT_PRIVATE_KEY` 🔒, `PUBLIC_API_URL`, `PUBLIC_GATEWAY_URL`, `CDN_PUBLIC_URL`, `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY` 🔒, `MINIO_SECRET_KEY` 🔒, `MINIO_BUCKET_ASSETS`, `MESSAGES_INTERNAL_URL`, `MAIL_TRANSPORT` (`log` or `smtp`), `SMTP_HOST`, `SMTP_PORT`, `SMTP_TLS`, `SMTP_USERNAME` 🔒, `SMTP_PASSWORD` 🔒, `MAIL_FROM`, `APP_LINK_BASE`, `ACCOUNT_DELETION_RETENTION_DAYS`, `ACCOUNT_PURGE_INTERVAL_SECS` (see [account security](../specs/2026-10-21-account-security-and-mfa.md)) |
@@ -79,7 +79,7 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 
 | | |
 |---|---|
-| Purpose | Standard messages: CRUD, history, reactions, pins, read states, attachments (alt text, spoiler flag), full-text search ([ADR-0018](../adr/0018-message-search-postgres-fts.md)), link unfurling (OpenGraph/oEmbed, SSRF-guarded, [ADR 0019](../adr/0019-link-unfurling-and-media-proxy.md)) and the embed media proxy. Needs outbound internet on 80/443. Request coalescing; consistent-hash routing on `channel_id`. |
+| Purpose | Standard messages: CRUD, history, reactions, pins, read states, attachments (alt text, spoiler flag), full-text search ([ADR-0018](../adr/0018-message-search-postgres-fts.md)), link unfurling (OpenGraph/oEmbed, SSRF-guarded, [ADR 0019](../adr/0019-link-unfurling-and-media-proxy.md)) and the embed media proxy. Needs outbound internet on 80/443. Internal `GET /internal/v1/channels/{id}/messages/{mid}` serves one stored message to api for reports. Request coalescing; consistent-hash routing on `channel_id`. |
 | Repo / image | `discordy-voics/messages` / `ghcr.io/discordy-voics/messages` |
 | Tech | Rust, axum 0.8, scylla driver |
 | Ports | 8082: public (ingress routes `/api/v1/channels/*/messages*`, `/api/v1/guilds/*/messages/search` and the CDN host's `/attachments/*` signed downloads and `/external/*` signed media proxy here) and internal |
@@ -161,7 +161,7 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 
 | | |
 |---|---|
-| Purpose | **admin-bff:** admin backend with Cloudflare Access JWT verification plus an email allowlist, a usage aggregator (counters only, never content), proxying of P4 admin stats, VictoriaMetrics queries, the voice-node view, drain/undrain, user suspension, feature flags and an admin audit log. **admin-web:** the SPA, served by the BFF. |
+| Purpose | **admin-bff:** admin backend with Cloudflare Access JWT verification plus an email allowlist, a usage aggregator (counters only, never content), proxying of P4 admin stats, VictoriaMetrics queries, the voice-node view, drain/undrain, user suspension, the Reports queue (review, resolve and dismiss reports held by api), feature flags and an admin audit log. **admin-web:** the SPA, served by the BFF. |
 | Repo / image | `discordy-voics/admin` / `ghcr.io/discordy-voics/admin-bff` (bundles the built admin-web) |
 | Tech | Rust, axum, sqlx (BFF); React, TypeScript, Vite, Recharts (web) |
 | Ports | 8090 (`/admin-api/*` and the SPA, via `discordy-admin.voics.nl` behind Cloudflare Access); 5174 for the web dev server |

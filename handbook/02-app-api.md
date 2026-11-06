@@ -13,7 +13,7 @@ Summary: the REST API and owner of the relational data (Postgres), in Rust.
 
 ## What it does
 
-Accounts, users and settings, DMs, relationships, devices and MLS key packages, guilds, channels, roles and permissions, members, bans, invites, emojis, audit log, applications and bots, slash commands, interactions and webhooks. It also serves the internal `/internal/v1` endpoints used by the gateway, messages and admin-bff (header `X-Internal-Token`).
+Accounts, users and settings, DMs, relationships, devices and MLS key packages, guilds, channels, roles and permissions, members, bans, invites, emojis, audit log, reports of messages and users, applications and bots, slash commands, interactions and webhooks. It also serves the internal `/internal/v1` endpoints used by the gateway, messages and admin-bff (header `X-Internal-Token`).
 
 ### Login sessions and remote logout
 
@@ -24,6 +24,10 @@ Revoking takes effect at once: every request checks the session row, so its acce
 ### Push tokens
 
 The mobile app registers its APNs (or FCM) token with `POST /users/@me/devices/push` `{platform, token, environment?, previews?, only_mentions?}` and removes it with `DELETE` on the same path. There is one token per login session: registering again replaces it, a token that shows up on another session moves there, and a user keeps at most 20. A token is removed with its session (logout, remote revoke, logout everywhere, suspension), with its encrypted-message device, when the notifier reports that the provider rejected it, and by the stale-device prune when it was not refreshed for `DEVICE_MAX_IDLE_DAYS`. For the notifier, `GET /internal/v1/channels/{id}/push-targets?author_id=` lists the members who can view the channel, are not the author and hold a token on a live session, with their effective notification level and mute (channel, category, guild, server default), suppression flags, roles, and whether they have a live gateway session; `DELETE /internal/v1/push-tokens` removes a rejected token. See the [push notifications runbook](../runbooks/push-notifications.md).
+
+### Reports
+
+`POST /api/v1/reports` files a report of a message or a user for the Trust and Safety queue: a category, an optional note and the target. It answers 204 whether the report is new or a repeat, is limited to 10 per user per hour and is never visible to the reported user. For Standard chats the api copies the message from messages when the report is filed; for ephemeral and P2P chats the server has no copy, so the report holds only what the reporter submits. Operators review reports in the admin portal (internal routes `GET /internal/v1/admin/reports` and `POST /internal/v1/admin/reports/{id}/resolve`). Details and fields: [moderation spec](../specs/2026-10-22-moderation-tools-and-ban-purge.md#reporting-a-message-or-a-user-api126).
 
 ### Group DMs, roles and moderation
 

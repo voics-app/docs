@@ -17,7 +17,7 @@ Stores messages in **10-day ScyllaDB buckets** with request coalescing ([ADR-001
 
 ## Endpoints
 
-Public under `/api/v1`: messages CRUD and bulk delete, ack, reactions, pins, `POST /channels/{id}/attachments`. Internal under `/internal/v1`: bot, webhook and interaction messages, last message id, read states, admin stats. The full list is in the README and the [REST reference](../protocols/rest.md).
+Public under `/api/v1`: messages CRUD and bulk delete, ack, reactions, pins, `POST /channels/{id}/attachments`. Internal under `/internal/v1`: bot, webhook and interaction messages, one stored message (used by api to copy a reported message), last message id, read states, admin stats. The full list is in the README and the [REST reference](../protocols/rest.md).
 
 ## Notifier (push notifications)
 

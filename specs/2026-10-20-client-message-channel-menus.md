@@ -127,7 +127,7 @@ Client behaviour:
 | External emoji | other servers' emoji (animated included) only with USE_EXTERNAL_EMOJIS in the channel |
 | Edited marker | `(edited)` with a full-date tooltip |
 | Deleted reply | "Original message was deleted" when `referenced_message` is null |
-| Report | disabled "coming soon" entry until the report backend lands (Forward is implemented, see ADR 0020) |
+| Report | "Report Message" on other people's messages, in every delivery mode; opens the report dialog ([moderation spec](2026-10-22-moderation-tools-and-ban-purge.md#reporting-a-message-or-a-user-api126)). Forward is implemented, see ADR 0020 |
 
 Already covered earlier: Copy Message Link (`voics://channels/{guild}/{channel}/{message}`, handled by `main/deepLinks.ts`), delete confirmation with Shift to skip, Mark Unread. An https link form is deferred until a web origin for messages exists.
 
