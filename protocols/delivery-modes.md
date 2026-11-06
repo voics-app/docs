@@ -17,11 +17,14 @@ What each message delivery mode promises, where the data lives and what survives
 | After app restart | History from the server plus nothing lost | History restored from the encrypted local store; nothing is replayed from the server (entries were ACKed) | History restored from the encrypted local store on both sides |
 | Edit | Yes | No (control not offered) | No (control not offered) |
 | Reactions | Yes | No (control not offered) | No (control not offered) |
-| Delete | For everyone | No: the UI answers "Messages in private chats cannot be deleted after sending" | Same as Ephemeral |
+| Delete | For everyone | Your own messages only, for everyone: a control message inside the MLS ciphertext, honoured by each device only when its authenticated sender wrote the target. Offline devices apply it when the inbox replays. Copies and screenshots stay out of reach | Your own messages only: a control frame over the verified DataChannel. A device that is offline gets it the next time the devices connect (the sender keeps a pending list in its local store) |
+| Disappearing messages | Not available | Per-chat timer (off, 5 minutes, 1 hour, 1 day, 1 week, 4 weeks), stamped on each message; every device removes it from the screen and the encrypted store when the time is up, counted from arrival (sender: from sending) | Same as Ephemeral |
 | Attachments | Yes (CDN) | Yes: AES-256-GCM on the device, ciphertext on the CDN, key inside the encrypted message | Yes: encrypted and streamed over the data channel; the peer must be online |
 | Mode switch in the same chat | Messages keep the mode they were sent in; history from different modes interleaves by time | same | same |
 
 ## Notes and limits
+
+- Delete and disappearing messages (client#315): both ride on the existing private channels, so the gateway relays them without seeing anything. The control message is `{v:1, ctl:'delete', target}` or `{v:1, ctl:'timer', ttl_ms}` (Ephemeral: base64 plaintext of the MLS application message; P2P: `{t:'ctl', ...}` on the DataChannel). The receiver takes the sender from the same authentication as a chat message (the owner of the sending device for Ephemeral, the identity-verified link peer for P2P) and refuses a delete when that user did not author the target. A delete that arrives before its message is kept as a tombstone `{messageId: userId}` and the message is dropped on arrival if the same user sent it. The timer travels on each message as `ttl_ms` (5 s to 28 days; anything else is ignored), so a peer that missed the timer change still enforces it. The native store runs SQLite `secure_delete`, so removed rows are zeroed in the file. The apps tell people that a delete cannot reach a copy or screenshot someone already made.
 
 - The strictest participant preference wins in a DM or group DM (P2P over Ephemeral over Standard). Guild channels can be Standard or Ephemeral (at most 100 viewers); P2P is DMs and group DMs only.
 - Private modes never fall back to plaintext: with no usable crypto module a send fails loudly.
