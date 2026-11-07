@@ -1,4 +1,4 @@
-# Contributing to Discordy
+# Contributing to Voics
 
 These rules apply to **every** repository in `discordy-voics`. The goal is a codebase any software engineer can pick up: predictable structure, small intention-revealing units, and decisions written down.
 

@@ -7,7 +7,7 @@
 
 ## Context and Problem Statement
 
-Voice, video and screen share need a media server. Discord built its own on top of WebRTC primitives and documented the design. Should Discordy do the same, or adopt an off-the-shelf SFU?
+Voice, video and screen share need a media server. Discord built its own on top of WebRTC primitives and documented the design. Should Voics do the same, or adopt an off-the-shelf SFU?
 
 ## Decision Drivers
 

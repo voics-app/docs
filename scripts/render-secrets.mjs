@@ -90,7 +90,7 @@ function render(inventory) {
     "",
     "<!-- Generated from inventory.yaml by scripts/render-secrets.mjs. Do not edit by hand. -->",
     "",
-    `Every secret on the Discordy platform is listed here. The source is [\`inventory.yaml\`](inventory.yaml). This page records no values: values exist only in GitHub secrets, OpenBao (KV v2 mount \`${inventory.mount}\`), Kubernetes Secrets and 1Password. The OpenBao paths and keys match \`gitops/secrets/inventory.yaml\`, which CI enforces.`,
+    `Every secret on the Voics platform is listed here. The source is [\`inventory.yaml\`](inventory.yaml). This page records no values: values exist only in GitHub secrets, OpenBao (KV v2 mount \`${inventory.mount}\`), Kubernetes Secrets and 1Password. The OpenBao paths and keys match \`gitops/secrets/inventory.yaml\`, which CI enforces.`,
     "",
     "**Flow** ([ADR-0006](../adr/0006-secrets-flow.md)):",
     "",

@@ -2,7 +2,7 @@
   "name": "@discordy-voics/docs",
   "version": "0.1.0",
   "private": true,
-  "description": "Discordy architecture, decisions, references and runbooks",
+  "description": "Voics architecture, decisions, references and runbooks",
   "license": "UNLICENSED",
   "type": "module",
   "packageManager": "pnpm@10.18.0",

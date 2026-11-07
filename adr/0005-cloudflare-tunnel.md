@@ -41,7 +41,7 @@ Chosen option: **1**.
 ### Consequences
 
 - Good, because the home network has no inbound TCP exposure, and TLS and DDoS protection come free.
-- Good, because the Discordy records are additive in the zone and never touch `voics.nl` or `app.voics.nl`.
+- Good, because the Voics records are additive in the zone and never touch `voics.nl` or `app.voics.nl`.
 - Bad, because the hyphenated names (`discordy-api`) are less elegant than a subzone.
 - Bad, because the voice UDP ports are directly exposed. The SFU accepts only ICE-authenticated, DTLS-SRTP traffic.
 - Bad, because the platform depends on Cloudflare's availability for every TCP surface.

@@ -1,6 +1,6 @@
 # Metrics and exporters
 
-Every Discordy component exports Prometheus metrics into VictoriaMetrics (`observability/victoria-metrics`, ClusterIP `victoria-metrics:8428`), and Grafana reads them from there. This page lists every scrape job, its port and its main series. Manifests: `gitops/infrastructure/controllers/victoria-metrics/helmrelease.yaml` (jobs found by label) and the exporters named below (generic `kubernetes-pods` job through `prometheus.io/scrape|port|path` pod annotations).
+Every Voics component exports Prometheus metrics into VictoriaMetrics (`observability/victoria-metrics`, ClusterIP `victoria-metrics:8428`), and Grafana reads them from there. This page lists every scrape job, its port and its main series. Manifests: `gitops/infrastructure/controllers/victoria-metrics/helmrelease.yaml` (jobs found by label) and the exporters named below (generic `kubernetes-pods` job through `prometheus.io/scrape|port|path` pod annotations).
 
 ## Scrape jobs
 
@@ -8,6 +8,7 @@ Every Discordy component exports Prometheus metrics into VictoriaMetrics (`obser
 |---|---|---|---|
 | `api` | api service | 8080 `/metrics` | `http_requests_total`, `http_request_duration_seconds`, `db_query_duration_seconds{db="postgres"}`, `rate_limit_decisions_total{scope,result}` |
 | `messages` | messages service | 8082 `/metrics` | `http_requests_total`, `http_request_duration_seconds`, `db_query_duration_seconds{db="scylla\|postgres"}`, `messages_created_total`, `messages_edited_total`, `messages_deleted_total`, `kafka_produce_duration_seconds{topic}`, `kafka_produce_errors_total{topic}` |
+| `notifier` | push notifier (0 replicas until the Apple key exists, see [push notifications](push-notifications.md); not in the admin health page) | 8085 `/metrics` | `notifier_events_total{result}`, `notifier_decisions_total{verdict}`, `notifier_pushes_total{provider,outcome}`, `notifier_push_retries_total`, `notifier_push_duration_seconds`, `notifier_queue_depth`, `notifier_apns_errors_total{status,reason}`, `notifier_apns_host_corrections_total` |
 | `gateway` | gateway | 4000 | `http_*`, `discordy_gateway_*` (sessions, dispatch, consumed events) |
 | `admin-bff` | admin backend | 8090 | `http_*` |
 | `voice-signaling`, `sfu` | voice node | 4100, 4102 | `discordy_voice_node_*` |

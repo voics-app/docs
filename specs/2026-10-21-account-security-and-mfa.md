@@ -31,7 +31,7 @@ argon2id as at registration, 8 to 128 characters. A password change (or reset) r
 - An email change stores the new address in the token, not on the account. The account keeps the old address until the new one is verified, so a typo or hijack cannot lock the owner out. The old address gets a notice. The address is re-checked for uniqueness when verified.
 - Tokens: 24 random bytes, only the SHA-256 is stored, single use, 24 h (verification) or 1 h (reset). A newer token of the same kind voids the older ones.
 - `POST /auth/forgot-password` always answers 204 and sends nothing for unknown addresses, so it cannot enumerate accounts.
-- Links use `APP_LINK_BASE` (default `discordy://`); every mail also carries the raw token to paste into the client.
+- Links use `APP_LINK_BASE` (default `voics://`); every mail also carries the raw token to paste into the client.
 - Outbound mail is limited to 5 per recipient per hour (Valkey), plus per-caller buckets on the public endpoints.
 
 ## TOTP (RFC 6238)
@@ -57,7 +57,7 @@ Ten codes of 10 characters (`xxxxx-xxxxx`, unambiguous alphabet, about 49 bits e
 - Second-factor attempts (login, enrolment, disable, backup codes) share one budget per user: 10 per 10 minutes, then `429` with `retry_after` until the bucket refills. The right code is refused while locked.
 - Password confirmations: 10 per 10 minutes per user.
 - Public endpoints add per-caller buckets: forgot-password 5/h, reset-password 10/h, verify-email 20/h, `/auth/mfa/totp` 30/10 min.
-- Limiter outages fail open (as the general limiter does).
+- Limiter outages fall back to a per-pod in-memory limiter (as the general limiter does, api#114); they no longer fail open.
 
 ## Disable and delete
 

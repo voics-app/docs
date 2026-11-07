@@ -1,6 +1,6 @@
 # Moderation tools and ban message purge
 
-Status: implemented (api#52, client#62). Owner workstreams: api, messages, gateway, client.
+Status: implemented (api#52, client#62, api#126). Owner workstreams: api, messages, gateway, client.
 
 ## Ban: delete message history (api#52)
 
@@ -38,10 +38,70 @@ Built on the user menu of [client user menu](2026-10-20-client-user-menu.md) (ki
 | Ban list | Server settings, Bans | Already listed reason and Unban; adds a search over name, id and reason. |
 | Audit log | Server settings, Audit log | Filter by action type and by moderator (server-side `action_type`, `user_id`), "Load older entries" paging with `before`. |
 
-Not built (need backend work, tracked as follow-ups): reporting a message to a moderation channel (needs
-`POST /channels/{id}/messages/{id}/report` and a community moderation-channel setting) and member pruning (no
-`/guilds/{id}/prune` route in the API). Bulk role assignment from the member list is covered by the existing per-member
-role picker.
+Not built: reporting a message to a community moderation channel (needs a moderation-channel setting; platform-level
+reports are built, see below). Member pruning is built in api (`/guilds/{id}/prune`). Bulk role assignment from the member
+list is covered by the existing per-member role picker.
+
+## Reporting a message or a user (api#126)
+
+Apple requires apps with user content to let people report content and block users; block already existed. Reports go to
+the platform operators (the Trust and Safety queue in the admin portal), not to server moderators.
+
+### API
+
+`POST /api/v1/reports` (not under `/channels/{id}/messages`, which the ingress sends to messages). Body:
+
+| Field | Message report | User report |
+| --- | --- | --- |
+| `target` | `message` | `user` |
+| `category` | `spam`, `harassment`, `hate_speech`, `violence`, `sexual_content`, `self_harm`, `illegal`, `impersonation`, `other` | same |
+| `note` | optional, trimmed, at most 500 characters | same |
+| `channel_id`, `message_id` | required | not used |
+| `user_id` | not used | required |
+| `author_id`, `content` | only for ephemeral and P2P chats (below) | not used |
+
+The answer is always `204 No Content` for an accepted report, new or repeated: one open report per reporter and target is
+kept (partial unique indexes), so a repeat is a silent no-op and a reporter learns nothing about other reports. Errors are
+the usual 50035 form errors (unknown category, long note, own message or self, malformed ids), 404 (unknown message or
+user), 403 (the reporter cannot see the channel) and 429 (10 reports per user per hour). Bots cannot report.
+
+| Delivery mode of the channel | What is stored |
+| --- | --- |
+| Standard | The api reads the message from messages (`GET /internal/v1/channels/{id}/messages/{mid}`) when the report is filed and stores its author and text (`content_source` = `server`). The reporter cannot choose the text. Later edits or deletes do not change the report. Attachments are not copied. |
+| Ephemeral, P2P | The server has no copy. The request must carry `author_id` (a participant of the channel) and may carry `content` (at most 4000 characters, stored as `content_source` = `reporter`, unverified). Without `content` only the author, ids and category are known. |
+
+Table `reports` (api migration 0021): ids, category, note, delivery mode, content and its source, `status`
+(`open`, `resolved`, `dismissed`), `resolved_by`, `resolution_note`. No user-facing route reads it, so the reported user
+never learns who reported them. There is no automatic retention yet; reports stay until an operator deletes them in the
+database (owner decision pending for the privacy policy).
+
+### Admin portal
+
+api internal routes: `GET /internal/v1/admin/reports?status=&limit=&after=` (newest first, cursor by id, includes the
+reporter and reported usernames) and `POST /internal/v1/admin/reports/{id}/resolve` (`resolution` `resolved` or
+`dismissed`, `resolved_by`, optional note; an already closed report is a 409). admin-bff exposes them as
+`GET /admin-api/reports` and `POST /admin-api/reports/{id}/resolve` and writes the audit entries `report.resolve` and
+`report.dismiss` with the report id, kind, category, reported account and note, never the message text. The Reports page
+lists reports by status and shows the evidence with its source: "Copied by server" or "From reporter" (unverified). All
+allow-listed operators can review; there is no separate role.
+
+### Clients
+
+Shared in `@discordy/core`: `domain/reportModel` (categories, draft, validation, the disclosure text, the request body) and
+`application/reportCommands` (`submitReport`). Desktop: the Report Message entry of the message menu, Report in the user
+menu and the profile dialog open the report dialog. Mobile: Report Message in the message action sheet and Report in the
+profile sheet open the report sheet. The dialog says what the server receives: for a Standard message a copy, for an
+ephemeral or P2P message nothing unless the person leaves "Send the text of this message" on, and always that the person
+reported is not told who reported them. After sending, the dialog confirms and does not promise an outcome.
+
+### Verification (api#126)
+
+- api: `domain::report` unit tests; HTTP tests `http_reports` (snapshot, deduplication, validation, ephemeral evidence,
+  user reports, rate limit, queue paging and closing).
+- messages: HTTP test for the internal single-message route (token, content, 404).
+- admin: use-case tests for list and resolve (audit never carries content), router and adapter tests, Reports page tests.
+- client: core model and command tests, menu model tests, desktop dialog and menu tests, mobile sheet, profile and action
+  tests.
 
 ## Verification
 

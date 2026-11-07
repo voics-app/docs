@@ -1,6 +1,6 @@
 # Architecture Decision Records
 
-This directory holds Discordy's architecture decisions. The records use the [MADR](https://adr.github.io/madr/) format, and each one captures the context, the options considered and the decision taken.
+This directory holds Voics's architecture decisions. The records use the [MADR](https://adr.github.io/madr/) format, and each one captures the context, the options considered and the decision taken.
 
 | # | Decision | Status |
 |---|---|---|

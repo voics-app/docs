@@ -1,8 +1,8 @@
-# Discordy docs
+# Voics docs
 
-Architecture, decisions, references and runbooks for **Discordy**, a Discord-equivalent platform (without payments) built in the `discordy-voics` GitHub org. Git is the source of truth; the content is mirrored to Notion on every merge to `main`.
+Architecture, decisions, references and runbooks for **Voics**, a Discord-equivalent platform (without payments) built in the `discordy-voics` GitHub org. Git is the source of truth; the content is mirrored to Notion on every merge to `main`.
 
-> Discordy lives at `discordy.voics.nl`. It is unrelated to the existing `voics.nl` / `app.voics.nl` product, which must never be touched.
+> This platform currently lives at `discordy.voics.nl`. It is separate from the earlier product on `voics.nl` / `app.voics.nl`, which must never be touched (the hostnames move in [docs#135](https://github.com/discordy-voics/docs/issues/135)).
 
 ## Start here
 
@@ -23,7 +23,7 @@ Architecture, decisions, references and runbooks for **Discordy**, a Discord-equ
 ## Repository layout
 
 ```text
-handbook/     how Discordy works, per-application guides, how we work, runners, regions, branding, client release
+handbook/     how Voics works, per-application guides, how we work, runners, regions, branding, client release
 specs/        design specification (owned by the coordinator)
 plans/        master implementation plan (owned by the coordinator)
 c4/           Structurizr workspace.dsl, PlantUML code diagrams, rendered SVG/PNG

@@ -9,12 +9,15 @@
 | [Voice troubleshooting](voice-regions/troubleshooting.md) | Symptom-driven diagnosis of voice problems |
 | [OpenBao unseal](openbao-unseal.md) | After every OpenBao restart; bootstrap; rekeying |
 | [Alerting](alerting.md) | Which alerts exist, adding the owner webhook (`ops-alerts`), what to do when one fires |
+| [Push notifications](push-notifications.md) | How a message becomes a push, what the owner must provide (Apple key), turning it on, smoke test, troubleshooting the notifier |
 | [Metrics and exporters](metrics-exporters.md) | Which components export metrics, scrape jobs, ports and main series; verifying a target is up |
 | [ScyllaDB maintenance](scylla-maintenance.md) | Adding a node, rolling restart, repair or draining ScyllaDB |
 | [Backup and restore](backup-restore.md) | Backup policy, restore drills and disaster recovery |
 | [Secret rotation](secret-rotation.md) | Scheduled or emergency rotation of any secret in the inventory |
 | [Environments](environments.md) | Standing up a new environment (Proxmox, Hetzner, AWS) with one command, the dev/test environment, rebuilding production after a disaster |
+| [Load testing](load-testing.md) | Measuring messages per second and concurrent sessions on production (harness, safety, cleanup) |
 | [Release](release.md) | git-flow releases, **how each component reaches production** (pipelines, Flux timings, intervals), hotfixes, rollback, desktop installers, website |
+| [Run the mobile app](run-the-mobile-app.md) | Seeing the Expo mobile app on a phone, an Android emulator or a dev build, on Windows without a Mac |
 | [Local development](local-development.md) | Running the stack on a workstation |
 | [Cloudflare setup](cloudflare-setup.md) | Tunnel, DNS and Access configuration |
 | [How to rebrand](rebrand.md) | Changing the product name or domain: every file and variable, rebuild and redeploy steps, Cloudflare and DNS steps |

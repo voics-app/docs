@@ -1,11 +1,11 @@
 # Service catalog
 
-This catalog lists every deployable unit in Discordy. Ports, env vars, topics and images come from the pinned interfaces (P1–P11) in the master plan, so change them there first.
+This catalog lists every deployable unit in Voics. Ports, env vars, topics and images come from the pinned interfaces (P1–P11) in the master plan, so change them there first.
 
 Each production service:
 
 - Exposes `GET /healthz`, `GET /readyz` and `GET /metrics`.
-- Is scraped by VictoriaMetrics under **its own job name**, which the admin health page groups by (`count by (job) (up)`): `api`, `messages`, `gateway`, `voice-signaling` (port 4100), `sfu` (port 4102) and `admin-bff`. On the cluster these jobs live in `gitops/infrastructure/controllers/victoria-metrics/helmrelease.yaml` (`server.scrape.extraScrapeConfigs`), and the pods set `prometheus.io/scrape: "false"` so the generic `kubernetes-pods` job does not count them twice. Locally they live in `gitops/local/victoriametrics/scrape.yml`. A new service needs a job here too, and its name must match `PLATFORM_SERVICES` in `admin/bff/src/domain/service_health.rs`.
+- Is scraped by VictoriaMetrics under **its own job name**, which the admin health page groups by (`count by (job) (up)`): `api`, `messages`, `notifier` (port 8085, 0 replicas until the Apple key exists, see [push notifications](../runbooks/push-notifications.md); not in the admin health page), `gateway`, `voice-signaling` (port 4100), `sfu` (port 4102) and `admin-bff`. On the cluster these jobs live in `gitops/infrastructure/controllers/victoria-metrics/helmrelease.yaml` (`server.scrape.extraScrapeConfigs`), and the pods set `prometheus.io/scrape: "false"` so the generic `kubernetes-pods` job does not count them twice. Locally they live in `gitops/local/victoriametrics/scrape.yml`. A new service needs a job here too, and its name must match `PLATFORM_SERVICES` in `admin/bff/src/domain/service_health.rs`.
 - Exports the **standard metric set** below (one naming scheme for every service; the `job` label identifies the service, so metric names carry no service prefix).
 - Logs JSON to stdout.
 - Exports OpenTelemetry data when `OTEL_EXPORTER_OTLP_ENDPOINT` is set.
@@ -48,6 +48,7 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 |---|---|---|---|---|---|
 | [api](#api) | `api` | `ghcr.io/discordy-voics/api` | 8080 | `voics-apps` | 99.5 % |
 | [messages](#messages) | `messages` | `ghcr.io/discordy-voics/messages` | 8082 | `voics-apps` | 99.5 % |
+| [notifier](#notifier) | `messages` | `ghcr.io/discordy-voics/messages-notifier` | 8085 | `voics-apps` | 99.0 % while enabled |
 | [gateway](#gateway) | `gateway` | `ghcr.io/discordy-voics/gateway` | 4000 | `voics-apps` | 99.5 % |
 | [voice-signaling](#voice-signaling) | `voice` | `ghcr.io/discordy-voics/voice-signaling` | 4100 | `voics-voice` | 99.0 % per region |
 | [sfu](#sfu) | `voice` | `ghcr.io/discordy-voics/voice-sfu` | UDP 50000, TCP 127.0.0.1:4101 | `voics-voice` | 99.0 % per region |
@@ -61,13 +62,13 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 
 | | |
 |---|---|
-| Purpose | Auth (login, email verification, password recovery, TOTP two-factor with backup codes), account disable and delete, users, devices and MLS key packages, relationships, per-guild notification settings and private user notes, guilds, channels, roles and permissions, invites, applications and bots, slash commands, interactions, webhooks, admin endpoints. Transactional outbox to Redpanda. |
+| Purpose | Auth (login, email verification, password recovery, TOTP two-factor with backup codes), account disable and delete, users, devices, push tokens (APNs and FCM, one per login session) and MLS key packages, relationships, per-guild notification settings and private user notes, reports of messages and users (`POST /api/v1/reports`, review through the internal admin routes), guilds, channels, roles and permissions, invites, applications and bots, slash commands, interactions, webhooks, admin endpoints. Transactional outbox to Redpanda. |
 | Repo / image | `discordy-voics/api` / `ghcr.io/discordy-voics/api` |
 | Tech | Rust, axum 0.8, sqlx, Postgres 17 |
 | Ports | 8080: public `/api/v1/*` (via `discordy-api.voics.nl`) and internal `/internal/v1/*` (cluster only) |
-| Owns data | Postgres DB `discordy` (migrations in `api/migrations`); Valkey `rl:*` and `cache:*`; MinIO bucket `discordy-assets` |
+| Owns data | Postgres DB `discordy` (migrations in `api/migrations`; includes `reports`, [spec](../specs/2026-10-22-moderation-tools-and-ban-purge.md#reporting-a-message-or-a-user-api126)); Valkey `rl:*` and `cache:*`; MinIO bucket `discordy-assets` |
 | Publishes | `discordy.guild.v1`, `discordy.user.v1`, `discordy.interaction.v1`, `discordy.audit.v1`; TYPING_START on `discordy.message.v1` |
-| Depends on | Postgres, Valkey, Redpanda, MinIO, messages (internal) |
+| Depends on | Postgres, Valkey, Redpanda, MinIO, messages (internal; also `GET /internal/v1/channels/{id}/messages/{mid}` to copy a reported message) |
 | Called by | client, bots, messages, gateway, admin-bff |
 | Snowflake workers | 0–63 |
 | Env vars | common + `DATABASE_URL` 🔒, `VALKEY_URL` 🔒, `JWT_PRIVATE_KEY` 🔒, `PUBLIC_API_URL`, `PUBLIC_GATEWAY_URL`, `CDN_PUBLIC_URL`, `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY` 🔒, `MINIO_SECRET_KEY` 🔒, `MINIO_BUCKET_ASSETS`, `MESSAGES_INTERNAL_URL`, `MAIL_TRANSPORT` (`log` or `smtp`), `SMTP_HOST`, `SMTP_PORT`, `SMTP_TLS`, `SMTP_USERNAME` 🔒, `SMTP_PASSWORD` 🔒, `MAIL_FROM`, `APP_LINK_BASE`, `ACCOUNT_DELETION_RETENTION_DAYS`, `ACCOUNT_PURGE_INTERVAL_SECS` (see [account security](../specs/2026-10-21-account-security-and-mfa.md)) |
@@ -78,7 +79,7 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 
 | | |
 |---|---|
-| Purpose | Standard messages: CRUD, history, reactions, pins, read states, attachments (alt text, spoiler flag), full-text search ([ADR-0018](../adr/0018-message-search-postgres-fts.md)), link unfurling (OpenGraph/oEmbed, SSRF-guarded, [ADR 0019](../adr/0019-link-unfurling-and-media-proxy.md)) and the embed media proxy. Needs outbound internet on 80/443. Request coalescing; consistent-hash routing on `channel_id`. |
+| Purpose | Standard messages: CRUD, history, reactions, pins, read states, attachments (alt text, spoiler flag), full-text search ([ADR-0018](../adr/0018-message-search-postgres-fts.md)), link unfurling (OpenGraph/oEmbed, SSRF-guarded, [ADR 0019](../adr/0019-link-unfurling-and-media-proxy.md)) and the embed media proxy. Needs outbound internet on 80/443. Internal `GET /internal/v1/channels/{id}/messages/{mid}` serves one stored message to api for reports. Request coalescing; consistent-hash routing on `channel_id`. |
 | Repo / image | `discordy-voics/messages` / `ghcr.io/discordy-voics/messages` |
 | Tech | Rust, axum 0.8, scylla driver |
 | Ports | 8082: public (ingress routes `/api/v1/channels/*/messages*`, `/api/v1/guilds/*/messages/search` and the CDN host's `/attachments/*` signed downloads and `/external/*` signed media proxy here) and internal |
@@ -91,6 +92,22 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 | Env vars | common + `SCYLLA_NODES`, `SCYLLA_KEYSPACE`, `API_INTERNAL_URL`, `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY` 🔒, `MINIO_SECRET_KEY` 🔒, `MINIO_BUCKET_ATTACHMENTS`, `CDN_PUBLIC_URL`, `ATTACHMENT_SIGNING_KEY` 🔒, `ATTACHMENT_URL_TTL_SECONDS`, `SEARCH_DATABASE_URL` 🔒 (search is disabled when unset), `SEARCH_BACKFILL_ON_START` |
 | SLOs | Availability 99.5 %; search p95 < 300 ms; history p95 < 100 ms; send p95 < 200 ms; send-to-dispatch p95 < 500 ms (with the gateway) |
 | Runbooks | [backup-restore](../runbooks/backup-restore.md#scylladb), [release](../runbooks/release.md) |
+
+## notifier
+
+| | |
+|---|---|
+| Purpose | Push notifications for the iPhone app: decides who gets a push for a new message with the clients' rules (live session, mute, level, mentions, roles, `@everyone`, `@silent`, the device's only-mentions preference) and sends through APNs. Encrypted and unknown delivery modes carry no message text. Bounded queue, in-flight cap, retries and counted drops ([ADR 0016](../adr/0016-push-backpressure.md)). |
+| Repo / image | `discordy-voics/messages` (second binary `bin/notifier`) / `ghcr.io/discordy-voics/messages-notifier` |
+| Tech | Rust, reqwest (HTTP/2), jsonwebtoken (ES256), rskafka |
+| Ports | 8085: `/healthz`, `/readyz` (Redpanda), `/metrics` |
+| Owns data | None. Device tokens live in the api's Postgres (`push_tokens`). |
+| Consumes | `discordy.message.v1` (all partitions, from the end of the topic, no stored offset: run exactly one replica) |
+| Depends on | Redpanda, api (`/internal/v1/channels/{id}/push-targets`, `DELETE /internal/v1/push-tokens`), APNs |
+| Called by | Nothing |
+| Env vars | `KAFKA_BROKERS`, `API_INTERNAL_URL`, `INTERNAL_SERVICE_TOKEN` 🔒, `APNS_KEY_FILE` (mounted `.p8`, from `APNS_KEY` 🔒), `APNS_KEY_ID` 🔒, `APNS_TEAM_ID` 🔒, `APNS_TOPIC`, `APNS_ENVIRONMENT`, `PUSH_QUEUE_CAPACITY`, `PUSH_MAX_IN_FLIGHT`, `PUSH_MAX_ATTEMPTS`, `PUSH_BASE_BACKOFF_MS`, `PUSH_MAX_BACKOFF_MS`, `PUSH_MAX_EVENT_AGE_SECS`, `PUSH_DEDUPE_CAPACITY` |
+| Deployment | 0 replicas until the owner provides the Apple key; `Recreate`, one replica; 32 Mi request, 96 Mi limit |
+| Runbooks | [push-notifications](../runbooks/push-notifications.md), [secret-rotation](../runbooks/secret-rotation.md#apns-key) |
 
 ## gateway
 
@@ -144,7 +161,7 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 
 | | |
 |---|---|
-| Purpose | **admin-bff:** admin backend with Cloudflare Access JWT verification plus an email allowlist, a usage aggregator (counters only, never content), proxying of P4 admin stats, VictoriaMetrics queries, the voice-node view, drain/undrain, user suspension, feature flags and an admin audit log. **admin-web:** the SPA, served by the BFF. |
+| Purpose | **admin-bff:** admin backend with Cloudflare Access JWT verification plus an email allowlist, a usage aggregator (counters only, never content), proxying of P4 admin stats, VictoriaMetrics queries, the voice-node view, drain/undrain, user suspension, the Reports queue (review, resolve and dismiss reports held by api), feature flags and an admin audit log. **admin-web:** the SPA, served by the BFF. |
 | Repo / image | `discordy-voics/admin` / `ghcr.io/discordy-voics/admin-bff` (bundles the built admin-web) |
 | Tech | Rust, axum, sqlx (BFF); React, TypeScript, Vite, Recharts (web) |
 | Ports | 8090 (`/admin-api/*` and the SPA, via `discordy-admin.voics.nl` behind Cloudflare Access); 5174 for the web dev server |

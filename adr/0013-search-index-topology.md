@@ -8,7 +8,7 @@
 
 ## Context and Problem Statement
 
-ADR-0012 defers search and names the likely engine (Tantivy or Quickwit). It does not fix how messages are split into indexes, when indexing happens or when the index is refreshed. Discord's posts show that these choices decide cost and blast radius more than the engine does. Discord runs Elasticsearch with one shard per index for most guilds, a persisted guild-to-shard mapping, lazy indexing on first search and application-controlled refresh. Which of these should Discordy adopt before search is built?
+ADR-0012 defers search and names the likely engine (Tantivy or Quickwit). It does not fix how messages are split into indexes, when indexing happens or when the index is refreshed. Discord's posts show that these choices decide cost and blast radius more than the engine does. Discord runs Elasticsearch with one shard per index for most guilds, a persisted guild-to-shard mapping, lazy indexing on first search and application-controlled refresh. Which of these should Voics adopt before search is built?
 
 ## Decision Drivers
 

@@ -16,7 +16,7 @@ Summary: everything that runs the platform: Flux manifests, bootstrap scripts, T
 | `infrastructure/controllers/` | ingress-nginx, external-secrets, openbao, actions-runner-controller, headlamp, victoria-metrics, grafana, cloudflared, coturn, etcd, the ops portal. |
 | `infrastructure/data/` | Postgres (CloudNativePG), Scylla, Redpanda, Valkey, MinIO. |
 | `infrastructure/configs/` | `cluster-config` (every hostname, substituted into manifests), ClusterSecretStore, namespaces. |
-| `apps/` | api, messages, gateway, admin (base and production overlay) and image automation. |
+| `apps/` | api, messages, notifier (0 replicas until the Apple key exists, [push notifications](../runbooks/push-notifications.md)), gateway, admin (base and production overlay) and image automation. |
 | `regions/` | `_template`, `nl-home`, `nl-dev`, `dev`: voice regions. |
 | `secrets/inventory.yaml` | Every OpenBao key read by an ExternalSecret and the GitHub secret that feeds it. |
 | `bootstrap/` | Idempotent bring-up scripts `00` to `60` (microk8s, OpenBao, Flux, Cloudflare, seed, verify). |

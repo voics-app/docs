@@ -8,7 +8,7 @@
 
 ## Context and Problem Statement
 
-Login uses argon2id passwords and optional TOTP (spec section 5). The `api` service implements TOTP through `TotpVerifier` (`api/crates/application/src/ports/services.rs`) and `totp-rs` (`api/Cargo.toml`). Discord moved MFA to WebAuthn, which resists phishing because credentials are bound to the origin and never leave the device. Should Discordy add WebAuthn, and what does recovery look like?
+Login uses argon2id passwords and optional TOTP (spec section 5). The `api` service implements TOTP through `TotpVerifier` (`api/crates/application/src/ports/services.rs`) and `totp-rs` (`api/Cargo.toml`). Discord moved MFA to WebAuthn, which resists phishing because credentials are bound to the origin and never leave the device. Should Voics add WebAuthn, and what does recovery look like?
 
 ## Decision Drivers
 
@@ -33,7 +33,7 @@ Proposed: **option 2.** WebAuthn is added as a second factor. TOTP remains.
 - **Challenges.** Server-issued, single use, with a short expiry. A successful MFA result may be cached for a few minutes, as Discord does.
 - **Recovery.** One-time backup codes, stored hashed. Losing every factor means an admin-assisted reset, documented in a runbook when built.
 - **Desktop.** The Electron client must reach the platform authenticator. The approach is decided in the client issue, not here.
-- **No hosted IdP.** Discordy keeps identity in its own API.
+- **No hosted IdP.** Voics keeps identity in its own API.
 
 ### Consequences
 

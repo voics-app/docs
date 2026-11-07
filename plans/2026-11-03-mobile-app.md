@@ -1,6 +1,6 @@
 # Mobile app (iOS first, Android from the same code): plan (2026-11-03)
 
-Summary: a React Native (Expo) app in the `client` monorepo that shares the desktop client's TypeScript core. It ships to iPhones through TestFlight. It comes in milestones: shared core, text MVP with push notifications, voice, encrypted modes, then parity polish. **This page is the plan only; nothing is implemented yet.** The stack choice is [ADR 0024](../adr/0024-mobile-client-stack.md) (proposed).
+Summary: a React Native (Expo) app in the `client` monorepo that shares the desktop client's TypeScript core. It ships to iPhones through TestFlight. It comes in milestones: shared core, text MVP with push notifications, voice, encrypted modes, then parity polish. **This page is the plan; the M0 `apps/mobile` skeleton exists (see [Mobile client](../handbook/13-mobile-client.md)), the rest is not implemented yet.** The stack choice is [ADR 0024](../adr/0024-mobile-client-stack.md) (proposed).
 
 Why now: mobile was a written non-goal of the v1 spec ("Web and mobile clients in v1. The protocol is designed so they can be added later"). On 2026-11-03 the owner asked for an iOS app.
 
@@ -46,7 +46,7 @@ client/                          (pnpm monorepo, already exists)
 - **Tokens:** iOS Keychain or Android Keystore (`expo-secure-store`). The desktop keeps safeStorage.
 - **Navigation:** `expo-router`. A bottom tab bar (Servers, DMs, Notifications, You), and a server's channel list as a drawer, like Discord mobile.
 - **Lists:** FlashList for messages and members. The message list runs inverted, newest at the bottom.
-- **Deep links:** `discordy://` plus universal links on the website domain for invites (`/invite/<code>`). The website gets an `apple-app-site-association` file.
+- **Deep links:** `voics://` plus universal links on the website domain for invites (`/invite/<code>`). The website gets an `apple-app-site-association` file.
 
 ### Push notifications (new backend work)
 
@@ -99,7 +99,7 @@ Each milestone ends with something you can run. Tickets get created on the board
 ### M4: parity polish
 
 - QR login (gateway#17): the phone approves a desktop sign-in.
-- Mobile parity items from the parity gap plan: swipe to reply, long-press menus, haptics, notification grouping, unread badges on the app icon, share to Discordy (share extension), and a home-screen widget (later).
+- Mobile parity items from the parity gap plan: swipe to reply, long-press menus, haptics, notification grouping, unread badges on the app icon, share to Voics (share extension), and a home-screen widget (later).
 
 ## Tickets created with this plan
 

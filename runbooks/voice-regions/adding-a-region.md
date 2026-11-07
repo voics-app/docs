@@ -71,7 +71,7 @@ A region therefore needs four things:
 - [ ] **Credentials**:
   - The `CLOUDFLARE_API_TOKEN` scope (see [secrets](../../secrets/README.md#cloudflare-api-token)).
   - Write access to `discordy-voics/gitops`.
-  - `op` signed in to the Discordy vault.
+  - `op` signed in to the Voics vault.
 - [ ] For **standalone**: the region's locally managed tunnel exists, and its credentials secret is in the [inventory](../../secrets/README.md) and in gitops (see [region tunnels](../cloudflare-setup.md#region-tunnels-standalone-clusters)).
 
 ## Step 1: Size the hardware
@@ -339,7 +339,7 @@ regionctl undrain <node_id>
 You then commit the change and open the PR yourself.
 
 ```bash
-export CLOUDFLARE_API_TOKEN="$(op read 'op://Discordy/Cloudflare API token/credential')"
+export CLOUDFLARE_API_TOKEN="$(op read 'op://Voics/Cloudflare API token/credential')"
 export CLOUDFLARE_ZONE_ID="$(curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN"   'https://api.cloudflare.com/client/v4/zones?name=voics.nl' | jq -r '.result[0].id')"
 
 gh repo clone discordy-voics/gitops ~/src/gitops -- --branch main

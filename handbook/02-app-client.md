@@ -40,7 +40,7 @@ pnpm test:unit && pnpm typecheck && pnpm lint
 pnpm test:e2e        # Playwright against the real Electron app and a fake backend
 ```
 
-Releases and the auto-updater are explained in [Desktop client release and auto-update](09-desktop-client-release.md). Renaming the app is a `brand.json` edit.
+Releases and the auto-updater are explained in [Desktop client release and auto-update](09-desktop-client-release.md). Renaming the app is a `brand.json` edit. The mobile app skeleton in the same repository is described in [Mobile client](13-mobile-client.md).
 
 ## Appearance and accessibility
 
@@ -82,22 +82,32 @@ Settings > Desktop holds device-local options (never synced to the account), sto
 
 | Option | Effect |
 | --- | --- |
-| Open Discordy at login | `app.setLoginItemSettings` on Windows and macOS; an XDG autostart entry on Linux. Only packaged builds register, so a dev run never registers the bare Electron binary. |
+| Open Voics at login | `app.setLoginItemSettings` on Windows and macOS; an XDG autostart entry on Linux. Only packaged builds register, so a dev run never registers the bare Electron binary. |
 | Start minimized | The login item passes `--hidden`; the window stays in the tray at login. A normal launch always shows the window. |
 | Show in system tray | Default on. Creates or removes the tray icon live; with it off, the close button quits and Start minimized has no effect. |
 | Minimize to tray | Default off. The minimize button hides the window to the tray instead of the taskbar. |
 | Close button minimizes to tray | The close button hides the window (default on Windows and macOS, off on Linux). Quit from the tray menu. Without a tray the close button quits. |
 | Hardware acceleration | `app.disableHardwareAcceleration()` runs at startup from the local settings file, so a change needs a restart (the page offers **Restart now**). |
 
-The tray menu shows Open, the unread and mention summary, Mute and Deafen toggles (the renderer reports its self voice state; clicks are sent back as commands), the version, Check for updates and Quit. A single-instance lock makes a second launch (or a `discordy://` link) focus the existing window. The `discordy://` scheme is registered by the installer (`protocols` in `electron-builder.config.cjs`) and again at each start. Update behaviour is described in [Desktop client release and auto-update](09-desktop-client-release.md).
+In Ephemeral and P2P chats the delivery-mode popover (the badge in the header) has a Disappearing messages timer, and Delete on your own message deletes it for everyone (see [delivery modes](../protocols/delivery-modes.md)). The tray menu shows Open, the unread and mention summary, Mute and Deafen toggles (the renderer reports its self voice state; clicks are sent back as commands), the version, Check for updates and Quit. A single-instance lock makes a second launch (or a `voics://` link) focus the existing window. Links in account emails work too: `voics://reset-password?token=...` opens the sign-in screen on the new-password form with the token filled in, and `voics://verify-email?token=...` verifies the address (a notice on the sign-in screen when signed out, a toast when signed in; a reset link while signed in asks you to sign out first). The token must be 16 to 128 base64url characters, otherwise the link is dropped, and it is never logged. The `voics://` scheme is registered by the installer (`protocols` in `electron-builder.config.cjs`) and again at each start. Update behaviour is described in [Desktop client release and auto-update](09-desktop-client-release.md).
+
+## Reporting
+
+Report Message (message menu, other people's messages), Report (user menu and profile dialog) open the report dialog: nine categories, an optional note, the text of what the report shares and, for ephemeral and P2P messages, a "Send the text of this message" checkbox (the server holds no copy of such chats). The request goes to `POST /api/v1/reports`; the dialog confirms and never says what happened to the report. The model and the send command are shared with the mobile app in `@discordy/core`; see the [moderation spec](../specs/2026-10-22-moderation-tools-and-ban-purge.md#reporting-a-message-or-a-user-api126).
 
 ## Friends and direct messages
 
 When a friend request becomes a friendship (the gateway's `RELATIONSHIP_ADD` with type 1, on either side) the client creates the DM with `POST /users/@me/channels` (idempotent), adds it to Direct Messages and reopens it if it had been closed. The top of an empty or fully loaded 1:1 DM shows a large avatar, the display name, the username and "This is the beginning of your direct message history with @name."; while the DM has no messages, a "Wave to name" button sends a wave message and then disappears. Logic in `domain/dmIntro.ts`, view in `interface/features/chat/DmIntro.tsx`.
 
+The profile dialog and the DM profile panel show "Friends since" with the date, read from `Relationship.since`. Clicking the avatar in either one opens it full size in the image viewer. The About me field allows 300 characters (`BIO_MAX_LENGTH`); the api stores and validates the same limit from api 0.13.0.
+
 ## Pinned DMs and pinned channels
 
 Right-click a DM or group DM and choose Pin Conversation to keep it at the top of Direct Messages, marked with a small pin; up to 5 can be pinned (Pin is greyed out when full) and they stay in pin order above the rest, which keep their latest-activity order. Closing a pinned DM unpins it. In any server, right-click a channel and choose Pin Channel: pinned channels appear in a Pinned section above the categories, only for you, up to 10 per server. Both lists follow the account: they are stored as `pinned_dm_channel_ids` and `pinned_channel_ids` (server id to channel ids) in the user settings, validated by the api (limits, no duplicates), applied optimistically with rollback on failure and refreshed on other devices through `USER_SETTINGS_UPDATE`. Logic in `domain/pins.ts`, actions in `interface/app/pinActions.ts`, menus in `domain/dmModel.ts` and `domain/channelMenuModel.ts`.
+
+## Leaving several group DMs at once
+
+In the Direct Messages header, the select button (checklist icon, shown when you have at least one group DM) turns on selection mode: group DMs get a checkbox, 1:1 DMs are dimmed and cannot be selected. A bar at the bottom shows Cancel and Leave N. Leave N opens one confirmation titled with the number of group DMs to be left; on confirm they are left one after another (to respect rate limits) with the same call as the single Leave Group. If some fail, the rest still complete and one toast lists the groups that could not be left. Selection ids that disappear from the list meanwhile are dropped. There is no automatic Leave inactive group DMs option yet. Logic in `domain/groupDmSelection.ts`, action in `interface/app/dmActions.ts`, view in `interface/features/home/HomeSidebar.tsx`.
 
 ## Markdown tables and timestamps
 
@@ -108,6 +118,10 @@ Dynamic timestamps (`<t:unix:format>`, formats `t T d D f F R`) show in each rea
 ## Media viewer
 
 Images and videos open in one lightbox with the same chrome: Save as, Open original and a Close button; clicking outside the media and Esc also close it. The video player's own fullscreen button is hidden there.
+
+A message with several images shows at most four tiles. With more images the fourth tile shows "+N" and opens the viewer at that image, with all images available as siblings (`gridTiles` in core). In the viewer, arrows, keys and a left or right swipe move between images; swiping only works when the image is not zoomed, so panning stays usable (`swipeDirection` in core).
+
+Screen shares can be zoomed and panned, both the ones you watch and your own. The wheel or a trackpad pinch zooms toward the pointer from 1x to 8x, dragging pans while zoomed, and a double-click or the zoom badge resets. At 1x a double-click still toggles full screen. Cameras and the blurred preview do not zoom, and the zoom resets when entering or leaving full screen. The maths is in core `domain/panZoom`, the desktop hook is `usePanZoom`.
 
 ## Sounds
 

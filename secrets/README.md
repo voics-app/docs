@@ -2,7 +2,7 @@
 
 <!-- Generated from inventory.yaml by scripts/render-secrets.mjs. Do not edit by hand. -->
 
-Every secret on the Discordy platform is listed here. The source is [`inventory.yaml`](inventory.yaml). This page records no values: values exist only in GitHub secrets, OpenBao (KV v2 mount `kv`), Kubernetes Secrets and 1Password. The OpenBao paths and keys match `gitops/secrets/inventory.yaml`, which CI enforces.
+Every secret on the Voics platform is listed here. The source is [`inventory.yaml`](inventory.yaml). This page records no values: values exist only in GitHub secrets, OpenBao (KV v2 mount `kv`), Kubernetes Secrets and 1Password. The OpenBao paths and keys match `gitops/secrets/inventory.yaml`, which CI enforces.
 
 **Flow** ([ADR-0006](../adr/0006-secrets-flow.md)):
 
@@ -24,7 +24,8 @@ Every secret on the Discordy platform is listed here. The source is [`inventory.
 | [OpenBao root token](#openbao-root-token) | OpenBao | platform admin | not in GitHub | on-use |
 | [JWT signing key pair (Ed25519)](#jwt-signing-key) | Authentication and service-to-service | api (private), messages, gateway, voice-signaling, admin-bff (public) | `API_JWT_PRIVATE_KEY`, `SHARED_JWT_PUBLIC_KEY` (env:production) | 180d |
 | [Attachment download signing key](#attachment-signing-key) | Authentication and service-to-service | messages | `MESSAGES_ATTACHMENT_SIGNING_KEY` (env:production) | 365d |
-| [Internal service token](#internal-service-token) | Authentication and service-to-service | api, messages, gateway, voice-signaling, admin-bff | `SHARED_INTERNAL_SERVICE_TOKEN` (env:production) | 90d |
+| [Apple push (APNs) key, Key ID and Team ID](#apns-credentials) | Authentication and service-to-service | notifier | `NOTIFIER_APNS_KEY`, `NOTIFIER_APNS_KEY_ID`, `NOTIFIER_APNS_TEAM_ID` (env:production) | 365d |
+| [Internal service token](#internal-service-token) | Authentication and service-to-service | api, messages, notifier, gateway, voice-signaling, admin-bff | `SHARED_INTERNAL_SERVICE_TOKEN` (env:production) | 90d |
 | [Voice token secret (HS256)](#voice-token-secret) | Authentication and service-to-service | gateway, voice-signaling | `SHARED_VOICE_TOKEN_SECRET` (env:production) | 90d |
 | [Erlang distribution cookie](#release-cookie) | Runtime | gateway | `GATEWAY_RELEASE_COOKIE` (env:production) | 180d |
 | [SMTP credentials](#smtp-credentials) | Runtime | api | `SMTP_USERNAME`, `SMTP_PASSWORD` (env:production) | on-change |
@@ -49,7 +50,7 @@ Every secret on the Discordy platform is listed here. The source is [`inventory.
 
 | Field | Value |
 |---|---|
-| Purpose | Manages DNS records, the Discordy tunnel and Access applications in the voics.nl zone. |
+| Purpose | Manages DNS records, the Voics tunnel and Access applications in the voics.nl zone. |
 | Consumers | bootstrap/40-cloudflare.sh, regionctl, WS9 bring-up |
 | Env vars | `CLOUDFLARE_API_TOKEN` |
 | GitHub secret | `CLOUDFLARE_API_TOKEN` (org) |
@@ -149,6 +150,23 @@ Every secret on the Discordy platform is listed here. The source is [`inventory.
 | Generate | openssl rand -hex 32 |
 | Notes | Dev reads kv/discordy-dev/messages with its own value. Rotating invalidates outstanding links; clients refresh by refetching messages. The local compose stack generates its own into local/.env. |
 
+<a id="apns-credentials"></a>
+
+### Apple push (APNs) key, Key ID and Team ID
+
+| Field | Value |
+|---|---|
+| Purpose | Lets the notifier send push notifications to the iPhone app through APNs with token-based authentication (the .p8 signing key, its Key ID and the Apple Team ID). |
+| Consumers | notifier |
+| Env vars | `APNS_KEY_FILE`, `APNS_KEY_ID`, `APNS_TEAM_ID` |
+| GitHub secret | `NOTIFIER_APNS_KEY`, `NOTIFIER_APNS_KEY_ID`, `NOTIFIER_APNS_TEAM_ID` (env:production) |
+| OpenBao | `discordy/notifier` → `APNS_KEY` (from `NOTIFIER_APNS_KEY`); `discordy/notifier` → `APNS_KEY_ID` (from `NOTIFIER_APNS_KEY_ID`); `discordy/notifier` → `APNS_TEAM_ID` (from `NOTIFIER_APNS_TEAM_ID`) |
+| Kubernetes Secret | `voics-apps/notifier-secrets` |
+| Owner | @oussamaelhajoui |
+| Rotation | 365d — [secret-rotation.md#apns-key](../runbooks/secret-rotation.md#apns-key) |
+| Generate | Apple Developer, Certificates, Identifiers & Profiles, Keys: create a key with Apple Push Notifications service (APNs) enabled and download the .p8 once. The Key ID is shown next to the key; the Team ID is under Membership details. Owner action: nothing here can be generated. |
+| Notes | The notifier runs at 0 replicas until this path exists (runbooks/push-notifications.md). NOTIFIER_APNS_KEY holds the whole .p8 file, BEGIN and END lines included. One key serves sandbox and production. Dev reads kv/discordy-dev/notifier and 25-secrets.sh skips it: provide it the same way. |
+
 <a id="internal-service-token"></a>
 
 ### Internal service token
@@ -156,11 +174,11 @@ Every secret on the Discordy platform is listed here. The source is [`inventory.
 | Field | Value |
 |---|---|
 | Purpose | Shared secret sent as X-Internal-Token on every /internal/* call between services. |
-| Consumers | api, messages, gateway, voice-signaling, admin-bff |
+| Consumers | api, messages, notifier, gateway, voice-signaling, admin-bff |
 | Env vars | `INTERNAL_SERVICE_TOKEN` |
 | GitHub secret | `SHARED_INTERNAL_SERVICE_TOKEN` (env:production) |
 | OpenBao | `discordy/shared` → `INTERNAL_SERVICE_TOKEN` (from `SHARED_INTERNAL_SERVICE_TOKEN`) |
-| Kubernetes Secret | `voics-apps/admin-secrets`, `voics-apps/api-secrets`, `voics-apps/gateway-secrets`, `voics-apps/messages-secrets`, `voics-voice/voice-secrets` |
+| Kubernetes Secret | `voics-apps/admin-secrets`, `voics-apps/api-secrets`, `voics-apps/gateway-secrets`, `voics-apps/messages-secrets`, `voics-apps/notifier-secrets`, `voics-voice/voice-secrets` |
 | Owner | @oussamaelhajoui |
 | Rotation | 90d — [secret-rotation.md#internal-service-token](../runbooks/secret-rotation.md#internal-service-token) |
 | Generate | openssl rand -base64 48 |
@@ -231,8 +249,8 @@ Every secret on the Discordy platform is listed here. The source is [`inventory.
 | Kubernetes Secret | `voics-apps/api-smtp` |
 | Owner | @oussamaelhajoui |
 | Rotation | on-change — [secret-rotation.md](../runbooks/secret-rotation.md) |
-| Generate | Issued by the mail provider (SMTP user and password or app password) |
-| Notes | Owner action, tracked on docs#10. Also set SMTP_HOST, SMTP_PORT, SMTP_TLS and MAIL_FROM in the api ConfigMap and flip MAIL_TRANSPORT to smtp. The api-smtp secret is mounted optionally, so the api runs without it. |
+| Generate | Cloudflare Email Service: SMTP_USERNAME is the literal api_token, SMTP_PASSWORD is a Cloudflare API token with the Email Sending: Edit permission (runbooks/email-cloudflare.md). Any other provider: its SMTP user and password. |
+| Notes | Owner action, tracked on docs#10. The api ConfigMap already carries SMTP_HOST, SMTP_PORT, SMTP_TLS and MAIL_FROM for Cloudflare; after the secret reaches OpenBao, flip MAIL_TRANSPORT to smtp (runbooks/email-cloudflare.md). The api-smtp secret is mounted optionally, so the api runs without it. |
 
 <a id="coturn-static-auth-secret"></a>
 

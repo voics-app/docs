@@ -1,4 +1,4 @@
-# Discordy Platform — Design Specification
+# Voics Platform — Design Specification
 
 | | |
 |---|---|
@@ -6,7 +6,7 @@
 | Date | 2026-10-16 |
 | Owner | @oussamaelhajoui |
 | GitHub org | `discordy-voics` (private repos) |
-| Product name | **Discordy** (lives at `discordy.voics.nl`; the existing `voics.nl` / `app.voics.nl` product is unrelated and untouched) |
+| Product name | **Voics** (lives at `discordy.voics.nl`; the earlier product on `voics.nl` / `app.voics.nl` is separate and untouched) |
 | Scope | Full Discord-equivalent platform, excluding payments (Nitro, boosts, shop) |
 
 ## 1. Goals
@@ -343,5 +343,5 @@ Modelled on *How Discord Handles 2.5M Concurrent Voice Users Using WebRTC*. Each
 1. **Create the org** `discordy-voics` on GitHub Free.
 2. **Widen the token scopes**: `gh auth refresh -s admin:org,workflow,write:packages,delete:packages`.
 3. **On the VM**: `sudo usermod -aG microk8s karma && sudo chown -R karma ~/.kube`. Passwordless sudo is optional.
-4. **Cloudflare**: an API token (Zone:DNS:Edit + Account:Cloudflare Tunnel:Edit + Access:Edit) for the `voics.nl` zone, stored as the GitHub org secret `CLOUDFLARE_API_TOKEN`. Discordy creates its own tunnel and DNS records.
+4. **Cloudflare**: an API token (Zone:DNS:Edit + Account:Cloudflare Tunnel:Edit + Access:Edit) for the `voics.nl` zone, stored as the GitHub org secret `CLOUDFLARE_API_TOKEN`. Voics creates its own tunnel and DNS records.
 5. **Router**: forward UDP 50000 and 3478 to 192.168.1.212.

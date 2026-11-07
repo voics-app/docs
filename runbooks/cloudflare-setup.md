@@ -1,6 +1,6 @@
 # Cloudflare setup
 
-This runbook sets up Discordy's Cloudflare resources in the account that already hosts `voics.nl` ([ADR-0005](../adr/0005-cloudflare-tunnel.md)). It is used during WS9 bring-up, and again when hostnames or regions change.
+This runbook sets up Voics's Cloudflare resources in the account that already hosts `voics.nl` ([ADR-0005](../adr/0005-cloudflare-tunnel.md)). It is used during WS9 bring-up, and again when hostnames or regions change.
 
 The bring-up procedure is the gitops bootstrap scripts: `gitops/bootstrap/40-cloudflare.sh` creates the tunnel and the DNS records, and `gitops/bootstrap/50-public-ip.sh` sets the home IP. Read `gitops/bootstrap/README.md` for the order and the prerequisites. The steps below show what the script does, so you can debug or repeat one step by hand.
 
@@ -10,7 +10,7 @@ The bring-up procedure is the gitops bootstrap scripts: `gitops/bootstrap/40-clo
 
 | Resource | Name | Purpose |
 |---|---|---|
-| API token | "Discordy automation" | DNS, tunnel and Access automation ([inventory](../secrets/README.md#cloudflare-api-token)) |
+| API token | "Voics automation" | DNS, tunnel and Access automation ([inventory](../secrets/README.md#cloudflare-api-token)) |
 | Tunnel (locally managed) | `discordy-gen-serv` | Outbound connector from `cloudflared` in `voics-system`. Its credentials JSON is the secret `CLOUDFLARED_CREDENTIALS_JSON` ([inventory](../secrets/README.md#cloudflared-credentials)) |
 | DNS (proxied CNAME → tunnel) | `discordy`, `discordy-api`, `discordy-gateway`, `discordy-admin`, `discordy-headlamp`, `discordy-updates`, `discordy-cdn`, `discordy-rtc-<region>` | Public hostnames, each exactly one level under `voics.nl` |
 | Access applications | `discordy-admin`, `discordy-headlamp` | Identity gate for the admin surfaces |
@@ -53,7 +53,7 @@ This is an owner action (spec §17.4):
 ## 2. Common variables
 
 ```bash
-export CLOUDFLARE_API_TOKEN="$(op read 'op://Discordy/Cloudflare API token/credential')"
+export CLOUDFLARE_API_TOKEN="$(op read 'op://Voics/Cloudflare API token/credential')"
 CF=https://api.cloudflare.com/client/v4
 AUTH="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
 export CLOUDFLARE_ZONE_ID=$(curl -s -H "$AUTH" "$CF/zones?name=voics.nl" | jq -r '.result[0].id')
@@ -179,7 +179,7 @@ In the Cloudflare dashboard, go to Zero Trust → Networks → Tunnels. `discord
 
 ## Teardown
 
-To remove Discordy from the zone:
+To remove Voics from the zone:
 
 1. Delete the `discordy*` DNS records.
 2. Delete the Access apps `discordy-admin` and `discordy-headlamp`.

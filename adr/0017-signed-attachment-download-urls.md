@@ -8,7 +8,7 @@
 
 ## Context and Problem Statement
 
-Message attachments were returned as plain path-style MinIO URLs (`{CDN}/discordy-attachments/attachments/<channel>/<id>/<file>`). The bucket is private, so every Standard attachment download and every Ephemeral ciphertext download answered 403. The live delivery matrix (client#45) found it. The bucket must not become public: a leaked or guessed URL would expose a file from a private channel forever. Discord's CDN solves this with links that carry `ex` (expiry), `is` (issued) and `hm` (HMAC) query parameters, valid for about a day, and re-issued whenever the message is fetched. How should Discordy serve attachment downloads?
+Message attachments were returned as plain path-style MinIO URLs (`{CDN}/discordy-attachments/attachments/<channel>/<id>/<file>`). The bucket is private, so every Standard attachment download and every Ephemeral ciphertext download answered 403. The live delivery matrix (client#45) found it. The bucket must not become public: a leaked or guessed URL would expose a file from a private channel forever. Discord's CDN solves this with links that carry `ex` (expiry), `is` (issued) and `hm` (HMAC) query parameters, valid for about a day, and re-issued whenever the message is fetched. How should Voics serve attachment downloads?
 
 ## Decision Drivers
 
