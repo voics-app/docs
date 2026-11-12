@@ -25,6 +25,7 @@ Every secret on the Voics platform is listed here. The source is [`inventory.yam
 | [JWT signing key pair (Ed25519)](#jwt-signing-key) | Authentication and service-to-service | api (private), messages, gateway, voice-signaling, admin-bff (public) | `API_JWT_PRIVATE_KEY`, `SHARED_JWT_PUBLIC_KEY` (env:production) | 180d |
 | [Attachment download signing key](#attachment-signing-key) | Authentication and service-to-service | messages | `MESSAGES_ATTACHMENT_SIGNING_KEY` (env:production) | 365d |
 | [Apple push (APNs) key, Key ID and Team ID](#apns-credentials) | Authentication and service-to-service | notifier | `NOTIFIER_APNS_KEY`, `NOTIFIER_APNS_KEY_ID`, `NOTIFIER_APNS_TEAM_ID` (env:production) | 365d |
+| [Firebase service-account key (FCM)](#fcm-service-account) | Authentication and service-to-service | notifier | `NOTIFIER_FCM_SERVICE_ACCOUNT` (env:production) | 365d |
 | [Internal service token](#internal-service-token) | Authentication and service-to-service | api, messages, notifier, gateway, voice-signaling, admin-bff | `SHARED_INTERNAL_SERVICE_TOKEN` (env:production) | 90d |
 | [Voice token secret (HS256)](#voice-token-secret) | Authentication and service-to-service | gateway, voice-signaling | `SHARED_VOICE_TOKEN_SECRET` (env:production) | 90d |
 | [Erlang distribution cookie](#release-cookie) | Runtime | gateway | `GATEWAY_RELEASE_COOKIE` (env:production) | 180d |
@@ -166,6 +167,23 @@ Every secret on the Voics platform is listed here. The source is [`inventory.yam
 | Rotation | 365d — [secret-rotation.md#apns-key](../runbooks/secret-rotation.md#apns-key) |
 | Generate | Apple Developer, Certificates, Identifiers & Profiles, Keys: create a key with Apple Push Notifications service (APNs) enabled and download the .p8 once. The Key ID is shown next to the key; the Team ID is under Membership details. Owner action: nothing here can be generated. |
 | Notes | The notifier runs at 0 replicas until this path exists (runbooks/push-notifications.md). NOTIFIER_APNS_KEY holds the whole .p8 file, BEGIN and END lines included. One key serves sandbox and production. Dev reads kv/discordy-dev/notifier and 25-secrets.sh skips it: provide it the same way. |
+
+<a id="fcm-service-account"></a>
+
+### Firebase service-account key (FCM)
+
+| Field | Value |
+|---|---|
+| Purpose | Lets the notifier send push notifications and call rings to the Android app through Firebase Cloud Messaging HTTP v1 (project voics-cf336). |
+| Consumers | notifier |
+| Env vars | `NOTIFIER_FCM_SERVICE_ACCOUNT` |
+| GitHub secret | `NOTIFIER_FCM_SERVICE_ACCOUNT` (env:production) |
+| OpenBao | `discordy/notifier-fcm` → `FCM_SERVICE_ACCOUNT` (from `NOTIFIER_FCM_SERVICE_ACCOUNT`) |
+| Kubernetes Secret | `voics-apps/notifier-fcm` |
+| Owner | @oussamaelhajoui |
+| Rotation | 365d — [secret-rotation.md#fcm-service-account-key](../runbooks/secret-rotation.md#fcm-service-account-key) |
+| Generate | Firebase console, Project settings, Service accounts, Generate new private key (project voics-cf336). Owner action: nothing here can be generated. |
+| Notes | Optional: the notifier starts without it and skips Android tokens. NOTIFIER_FCM_SERVICE_ACCOUNT holds the whole JSON file. Own OpenBao path so it can be provided independently of the APNs values; secrets-sync lists it under optional_paths and does not fail while it is unset. Dev reads kv/discordy-dev/notifier-fcm and 25-secrets.sh skips it: provide it the same way. |
 
 <a id="internal-service-token"></a>
 

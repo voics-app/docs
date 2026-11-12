@@ -1,6 +1,6 @@
 # Push notifications
 
-How a message becomes a notification on an iPhone, what the owner must provide before it works, how to turn it on, and what to check when it does not. Plan: [mobile app](../plans/2026-11-03-mobile-app.md) (Notifier, Back-pressure and Privacy rows). Decision record for the bounded queue: [ADR 0016](../adr/0016-push-backpressure.md).
+How a message becomes a notification on an iPhone or an Android phone, what the owner must provide before it works, how to turn it on, and what to check when it does not. Plan: [mobile app](../plans/2026-11-03-mobile-app.md) (Notifier, Back-pressure and Privacy rows). Decision record for the bounded queue: [ADR 0016](../adr/0016-push-backpressure.md).
 
 ## How it works
 
@@ -12,13 +12,19 @@ flowchart LR
     rp --> notifier
     notifier -->|GET /internal/v1/channels/id/push-targets| api
     notifier -->|HTTP/2, token auth| apns[APNs]
+    notifier -->|HTTPS, OAuth2| fcm[FCM]
     apns --> app
+    fcm --> app
 ```
 
 1. The app registers its APNs device token with the api, one per login session, together with the APNs environment it was issued for (`sandbox` or `production`) and two device preferences (message previews, only mentions). It registers again on every start. The api removes the token with its session (logout, remote revoke, logout everywhere, suspension), with its encrypted-message device, and when it was not refreshed for `DEVICE_MAX_IDLE_DAYS`.
 2. The **notifier** (`messages` repo, image `ghcr.io/discordy-voics/messages-notifier`, namespace `voics-apps`, port 8085) reads `MESSAGE_CREATE` from `discordy.message.v1`. For each message it asks the api for the members who can view the channel, are not the author and hold a token on a live session.
 3. It applies the clients' rules to each of them: no push while the user has a live gateway session (the app shows its own banner), then mute (guild, channel or category), the effective level (channel, category, guild, server default), direct messages, direct mentions, role mentions, `@everyone` (unless suppressed), `@here` (never reaches an offline member), `@silent`, and the device's own only-mentions preference.
 4. It sends through APNs over HTTP/2 with a provider token signed by the `.p8` key. Each token goes to the sandbox or the production host it was issued for; on `BadDeviceToken` the other host gets one try, and a host that works is remembered. A token APNs rejects for good (`410`, `BadDeviceToken` on both hosts, `DeviceTokenNotForTopic`) is deleted through the api.
+
+Android goes the same way with Firebase Cloud Messaging (HTTP v1): the app registers its FCM token with `platform: "fcm"`, and the notifier signs a JWT with the Firebase service-account key, exchanges it at `oauth2.googleapis.com/token` for an access token (scope `firebase.messaging`, cached until two minutes before it expires) and posts to `fcm.googleapis.com/v1/projects/{project_id}/messages:send`. A message push is a notification plus data message (Android priority high, notification channel `messages`, data `type=message`, `channel_id`, `message_id`, `guild_id` when there is one). A rejected FCM token (`UNREGISTERED`, `INVALID_ARGUMENT`, `SENDER_ID_MISMATCH`, 404) is deleted through the api; `401` drops the cached access token; `429` and `5xx` are retried. Each provider is optional: a provider without credentials has no sender and its tokens are counted `unsupported` while the other provider keeps working (a partial APNs setup is still a startup error, and an unusable FCM key stops the pod at startup with `FCM service account ...`).
+
+**Calls on Android.** A DM call has no PushKit on Android, so the ring is a **data-only** FCM message with Android priority high and a 30 second time to live, sent to the user's FCM tokens (no notification permission, mute and in-call rules as for the iPhone ring). The app wakes on it and shows its own full-screen incoming-call screen. Data (all values are strings): `type=call`, `channel_id`, `call_message_id` and `call_id` (the same value), `caller_id`, `private` (`true`/`false`), `ring_seconds` (`30`), and `caller_name` only when the channel's delivery mode is exactly `standard`.
 
 **Privacy.** Only a channel whose delivery mode is exactly `standard` may put message text, the author or the channel and server names into a push. Every other mode, and any mode the notifier does not know, gets the title "New message" and nothing else. A device that turned previews off gets "New message" as the body in standard chats too. Encrypted (Ephemeral) and peer-to-peer messages do not travel on the message topic at all (the gateway relays them), so today no push is produced for them; the rule is in place for the day one is.
 
@@ -37,6 +43,19 @@ The deployment ships at **0 replicas** and the `notifier-secrets` ExternalSecret
 | The Team ID (10 characters) | Apple Developer account, Membership details | GitHub secret `NOTIFIER_APNS_TEAM_ID` |
 
 One key serves the sandbox and production hosts. The bundle id (`nl.voics.app`, the APNs topic) is not a secret and is already in the ConfigMap. The app's App ID must also have the **Push Notifications** capability: the first iOS build after this change adds the `aps-environment` entitlement, and EAS syncs the capability and regenerates the provisioning profile when you build interactively (owner steps, [docs#10](https://github.com/discordy-voics/docs/issues/10)). Nothing in the repositories can create these values.
+
+### Android (FCM)
+
+| What | Where it comes from | Where it goes |
+|---|---|---|
+| The Firebase service-account key, a JSON file | Firebase console, Project settings (project `voics-cf336`), Service accounts, **Generate new private key** | GitHub secret `NOTIFIER_FCM_SERVICE_ACCOUNT` (the whole file) |
+
+```bash
+gh secret set NOTIFIER_FCM_SERVICE_ACCOUNT --repo discordy-voics/gitops --env production < key.json
+gh workflow run secrets-sync.yml --repo discordy-voics/gitops -f paths=discordy/notifier-fcm
+```
+
+The project id is read from the key file. The value lands in `kv/discordy/notifier-fcm` (dev: `kv/discordy-dev/notifier-fcm`, written by hand) and the ExternalSecret `notifier-fcm` turns it into the Secret `notifier-fcm`, which the notifier reads as the optional env var `NOTIFIER_FCM_SERVICE_ACCOUNT` (locally `FCM_SERVICE_ACCOUNT_FILE` may name a file instead). It is a separate path on purpose: iOS and Android credentials can be provided in either order, and until this one exists `secrets-sync` reports `skip kv/discordy/notifier-fcm: optional` without failing. Restart the notifier after the Secret appears (`kubectl -n voics-apps rollout restart deploy/notifier`); the log line `FCM is not configured` is gone once it works. The notifier must be scaled to 1 as in the steps below, which needs either provider's credentials. The Android app registers the token with `POST /users/@me/devices/push` `{"platform":"fcm","token":"<FCM registration token>"}` (`environment` is ignored for FCM; `previews` and `only_mentions` work as on iOS).
 
 ## Turning push on
 
@@ -81,10 +100,11 @@ Scrape job `notifier` on port 8085 (not listed in the admin health page while it
 |---|---|
 | `notifier_events_total{result}` | `processed`, `duplicate`, `stale`, `unparsable`, `not_pushable`, `directory_error` |
 | `notifier_decisions_total{verdict}` | `notify`, `online`, `muted`, `level_nothing`, `not_mentioned`, `device_only_mentions` |
-| `notifier_pushes_total{provider,outcome}` | `sent`, `failed`, `invalid_token` (token removed), `dropped` (queue full), `unsupported` (FCM tokens, not sent yet) |
+| `notifier_pushes_total{provider,outcome}` | `sent`, `failed`, `invalid_token` (token removed), `dropped` (queue full), `unsupported` (no sender configured for that provider) |
 | `notifier_push_retries_total`, `notifier_push_duration_seconds` | retries and provider latency |
 | `notifier_queue_depth` | jobs waiting for a free slot |
 | `notifier_apns_errors_total{status,reason}` | APNs error answers |
+| `notifier_fcm_errors_total{status,reason}` | FCM and OAuth error answers (`reason` is the FCM error code, or `oauth`) |
 | `notifier_apns_host_corrections_total` | tokens found on the other APNs host |
 
 Alerts (`push` group, [alerting](alerting.md)): `PushSendFailures`, `PushDropped`, `ApnsCredentialsRejected`; `ServiceDown` and `PodCrashLooping` cover the pod itself.
@@ -103,7 +123,7 @@ Alerts (`push` group, [alerting](alerting.md)): `PushSendFailures`, `PushDropped
 
 ## Not covered yet
 
-- FCM (Android): tokens can be registered but are counted `unsupported` and not sent.
+- Android: a rejected service-account key (`oauth` errors) shows as `notifier_fcm_errors_total{reason="oauth"}` and failed pushes, no alert rule yet.
 - VoIP pushes for calls ([separate ticket](https://github.com/discordy-voics/messages/issues/56)): the APNs sender already supports the `.voip` topic and `OutboundPush::Voip`; nothing produces them.
 - A badge count in the push payload: the app sets its own badge from the unread mentions while it runs.
 - Pushes for Ephemeral and peer-to-peer messages: they bypass the message topic, so there is nothing for the notifier to read.
