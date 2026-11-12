@@ -77,6 +77,31 @@ Do this once the three values are in hand. Production first, dev the same way wi
 
 Turning it off again is the same one-line change back to `0`.
 
+## Sending a notification by hand
+
+The owner can push a notification to one user or to everyone from the admin panel: <https://discordy-admin.voics.nl/notify> (sidebar *Send notification*, [admin handbook](../handbook/02-app-admin.md#send-notification)).
+
+1. Choose **One user** (search by username, email or id, then *Choose*) or **Everyone**. Write the title (at most 64 characters) and the message (at most 240). The preview shows what the lock screen will roughly look like.
+2. Press **Review and send**. The dialog states how many devices will receive it. For everyone this is the exact number of devices with a live token (iOS and Android, one per login session, PushKit call tokens excluded). A user with no registered device cannot be sent to (the button stays off).
+3. Press **Send**. The page then reports how many devices were handed to the push queue and, if any, how many could not be queued.
+
+What happens behind it: the admin BFF checks the admin (Cloudflare Access plus allow-list), writes the audit entry `notification.send`, and calls the notifier's `POST /internal/v1/manual-push` (cluster-internal, `X-Internal-Token`, no ingress route; the cluster has no NetworkPolicies, so none is involved). The notifier asks the api for the devices (`GET /internal/v1/users/{id}/push-tokens`, or `GET /internal/v1/push-tokens` page by page), and submits each device to the same bounded queue as message pushes: at most `PUSH_MAX_IN_FLIGHT` provider requests at once, retries with backoff, dead tokens removed. A broadcast waits up to 30 seconds per device for room in the queue instead of bypassing it, only one broadcast to everyone runs at a time (a second one gets "still being sent"), and one send covers at most 50000 devices.
+
+Good to know:
+
+- It ignores the users' mute, level and only-mentions settings and a live gateway session on purpose: it is an announcement. A notification cannot be recalled once sent.
+- The push carries data `type=manual` and no channel, so tapping it only opens the app.
+- It reaches only devices that registered a token (the app asks for permission when a chat is first opened). "Everyone" therefore means everyone with a live push token, not every account.
+- Audit and logs: the entry is in the admin *Audit log* (actor, time, target, title, never the message). The notifier logs each request (`manual push`: actor, target, title, devices, queued, dropped) and counts every queued device in `notifier_pushes_total{outcome="manual"}`; the usual `sent`, `failed`, `invalid_token` counters follow as the queue drains. `manual` is not part of the `PushSendFailures` ratio.
+- Without a running notifier (0 replicas, see above) or without `NOTIFIER_INTERNAL_URL` the page shows a dependency error and nothing is sent.
+
+| Symptom | Check |
+|---|---|
+| "dependency unavailable" on review | Notifier at 0 replicas, or `NOTIFIER_INTERNAL_URL` missing in `admin-config` |
+| 0 devices for a user | No row in `push_tokens` for that user, or the session was revoked (see the smoke test query) |
+| "still being sent" | Another broadcast is running; wait for it to finish |
+| Some devices "could not be queued" | The queue stayed full for 30 seconds per device: look at `notifier_queue_depth` and `notifier_push_duration_seconds` |
+
 ## Smoke test
 
 Needs an iPhone with a development or preview build of the app, signed in, notifications allowed.
@@ -100,7 +125,7 @@ Scrape job `notifier` on port 8085 (not listed in the admin health page while it
 |---|---|
 | `notifier_events_total{result}` | `processed`, `duplicate`, `stale`, `unparsable`, `not_pushable`, `directory_error` |
 | `notifier_decisions_total{verdict}` | `notify`, `online`, `muted`, `level_nothing`, `not_mentioned`, `device_only_mentions` |
-| `notifier_pushes_total{provider,outcome}` | `sent`, `failed`, `invalid_token` (token removed), `dropped` (queue full), `unsupported` (no sender configured for that provider) |
+| `notifier_pushes_total{provider,outcome}` | `sent`, `failed`, `invalid_token` (token removed), `dropped` (queue full), `unsupported` (no sender configured for that provider), `manual` (a device accepted for a notification sent by hand; counted on top of the final outcome) |
 | `notifier_push_retries_total`, `notifier_push_duration_seconds` | retries and provider latency |
 | `notifier_queue_depth` | jobs waiting for a free slot |
 | `notifier_apns_errors_total{status,reason}` | APNs error answers |
