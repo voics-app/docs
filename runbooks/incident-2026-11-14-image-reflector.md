@@ -51,6 +51,11 @@ Follow the [release runbook](release.md): merge the hotfix into `main` only afte
 bring the change back into `develop`. Flux follows gitops `main` and rolls out the Deployment.
 Do not patch the live resource or disable the alerts.
 
+Flux applied commit `49aa6fbc35d9b63087670d59622eff80c4162160` on 17 November at 17:01 UTC.
+The replacement pod became Ready with the 1Gi limit and no initial restarts. Its first scan
+attempts then exposed a separate GitHub authentication failure, described below. A healthy
+controller alone therefore did not restore image discovery.
+
 Verify against the production kubeconfig:
 
 ```sh
@@ -64,14 +69,24 @@ Confirm all seven timestamps advance, the new pod has no restarts, and stale-sca
 and crash-loop alerts clear. Observe at least several scan intervals; continue watching the
 memory trend over subsequent days. A short healthy rollout alone cannot exclude slow growth.
 
-## Separate ARC authentication failure
+## Separate GitHub authentication failure
 
 During the same inspection, `voics-system/discordy-56d88649-listener` repeatedly exited because
 GitHub returned `401 Unauthorized: Bad credentials` while obtaining a runner registration token.
 This was not an OOM. OpenBao and ExternalSecrets were healthy; syncing an invalid credential
 does not make it valid. Three other VM runners were online, so this did not mean all CI was down.
 
-The memory hotfix does not repair ARC authentication. Follow
+After the reflector restarted successfully, all seven registry scans failed with GHCR `DENIED`.
+The `flux-system/ghcr-pull` secret comes from `kv/discordy/ghcr` (`USERNAME`, `TOKEN`), while
+`voics-system/arc-github` comes from `kv/discordy/arc` (`GITHUB_TOKEN`). A comparison in memory
+confirmed that both contain the same token. Read-only GitHub `/user` checks returned HTTP 401
+for both credentials. No token values were logged or changed. This proves the shared credential
+is invalid; it does not distinguish expiration from revocation. The authentication failure
+also prevents new authenticated image pulls, independently of the controller memory limit.
+
+The memory hotfix does not repair GitHub authentication. Rotate the relevant stored credentials
+through the documented secret-management path, refresh ExternalSecrets, then confirm the ARC
+listener stays running and all seven image-scan timestamps advance. Follow
 [ARC credential rotation](secret-rotation.md#arc-github-credentials), including the documented
 OpenBao recovery path when the in-cluster runner cannot run `secrets-sync` itself.
 
