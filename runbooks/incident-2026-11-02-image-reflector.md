@@ -29,5 +29,6 @@ A `SCANNED` time older than a few intervals means image automation is frozen.
 
 ## Follow-ups
 
+- [Recurrence on 2026-11-14](incident-2026-11-14-image-reflector.md): the 256Mi limit also became insufficient; the production hotfix restores the upstream 1Gi limit.
 - `ops-alerts` webhook Secret: done 2026-11-03 (gitops#56 closed); alerts now reach Discord.
 - `FluxImageScanStale` and `PodCrashLooping` alerts (gitops#61, gitops#66): an ImageRepository scan older than 30 minutes, or any crash-looping pod, now alerts.
