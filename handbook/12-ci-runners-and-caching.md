@@ -2,7 +2,7 @@
 
 Summary: everything you need to run, change and debug CI on its own: where jobs run, what is preinstalled, what is cached and how it is keyed, how to switch caching on and off, what to do when you change a cached thing, the quirks we hit, and the measured speeds.
 
-Last reviewed: 2026-11-03 (`.github` v0.6.3). Story: [gitops#59](https://github.com/discordy-voics/gitops/issues/59) (persistent cache), [gitops#63](https://github.com/discordy-voics/gitops/issues/63) (speed and inefficiency review). Safety rules: [ADR 0022](../adr/0022-ci-cache-safety-rules.md). Runner setup commands: [CI/CD and runners](05-ci-cd-and-runners.md).
+Last reviewed: 2026-11-18 (capacity preflight on `.github` develop; original toolchain inventory from v0.6.3). Story: [gitops#59](https://github.com/discordy-voics/gitops/issues/59) (persistent cache), [gitops#63](https://github.com/discordy-voics/gitops/issues/63) (speed and inefficiency review). Safety rules: [ADR 0022](../adr/0022-ci-cache-safety-rules.md). Runner setup commands: [CI/CD and runners](05-ci-cd-and-runners.md).
 
 ## The big picture in five sentences
 
@@ -11,6 +11,11 @@ Runner admission was updated on 18 November 2026: use the
 script checkout. It counts all host runners before builds/tokens, rejects excess
 CPU/RAM demand and never automatically drains a pool. Historical timing figures
 below remain observations of their stated runs, not current capacity guidance.
+
+The preflight is merged in [.github PR44](https://github.com/discordy-voics/.github/pull/44)
+at develop commit `1f7cbf132856130c75256929e991bd67eda98c5d`. Its release to `main`
+is separate. Fetch and check out that reviewed revision when using these commands;
+do not assume an older downloaded script implements `preflight` or `--dry-run`.
 
 1. Every repository's `ci.yml` calls reusable workflows in the `.github` repository (`rust.yml`, `elixir.yml`, `node.yml`, `docker.yml`, `gitflow-guard.yml`), always `@main`. A change there affects every repository at once.
 2. Jobs run on the self-hosted VM pool (label `vm-runner`, VM `192.168.1.219`) within its host capacity, or on GitHub-hosted `ubuntu-latest` when the variable `CI_RUNNER` is unset or `github`.
@@ -27,8 +32,9 @@ runs-on = (CI_RUNNER set and != "github") ? CI_RUNNER : "ubuntu-latest"
 | `CI_RUNNER` value | Jobs go to |
 |---|---|
 | `vm-runner` | online VM runners carrying that label; inspect current routing and capacity |
-| `ubuntu-latest` (docs, since 2026-11-03: its lint jobs are tiny and were clogging the VM queue) | GitHub-hosted |
-| unset, or `github` | GitHub-hosted `ubuntu-latest` (costs GitHub minutes; $15/month budget) |
+| `ubuntu-latest` | GitHub-hosted; also works in workflows that use the variable directly |
+| unset | GitHub-hosted `ubuntu-latest` where the workflow uses the documented default |
+| `github` | Alias supported by the shared workflows; direct `runs-on: vars.CI_RUNNER` jobs would instead wait for a runner literally named `github` |
 | any other label | runners registered with that label (a PC, another VM) |
 
 - `CI_RUNNER` is declared per repository; see the next section.
@@ -42,7 +48,7 @@ runs-on = (CI_RUNNER set and != "github") ? CI_RUNNER : "ubuntu-latest"
 - **To see it:** GitHub → the repository → **Settings → Secrets and variables → Actions → Variables** tab. On the CLI: `gh variable list -R discordy-voics/<repo>`. All repos at once: `for r in api messages gateway voice admin client website gitops docs contracts .github bots-sdk; do echo "$r=$(gh variable get CI_RUNNER -R discordy-voics/$r)"; done`.
 - **Who writes it:** `scripts/runner.sh` in `.github` (function `set_runner_var`). `use <label>` and a local `up` that actually starts runners route the selected heavy repositories. An unchanged `up` and every preflight leave routing untouched. `use github` deletes the variable everywhere.
 - **Who reads it:** the `runs-on:` line of every reusable workflow in `.github/.github/workflows/*.yml`, plus `notion-sync.yml` and `runner-maintenance.yml`. The expression is shown above.
-- **Moving one repo:** `gh variable set CI_RUNNER -R discordy-voics/<repo> -b github`.
+- **Moving one repo to hosted runners:** `gh variable set CI_RUNNER -R discordy-voics/<repo> -b ubuntu-latest`. Read back the value and check every direct/reusable job in that repository. Hosted runs consume GitHub minutes under the existing $15/month budget.
 - **Moving it back:** set it to `vm-runner` again. **Do not `delete` it**: there is no organization fallback, so deleting it also sends the repo to GitHub-hosted runners. On 2026-11-03 a measurement script deleted it on four repos after a hosted test, and their CI quietly ran on paid runners until it was restored.
 
 ## What is preinstalled where

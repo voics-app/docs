@@ -104,6 +104,11 @@ The shared workflows' default `runs-on` follows the caller repository variable *
 
 ### Build a runner
 
+These capacity-aware commands require [.github PR44](https://github.com/discordy-voics/.github/pull/44),
+merged to develop as `1f7cbf132856130c75256929e991bd67eda98c5d` on 18 November.
+They are not a claim that the older `main` download already has this behavior.
+Use that reviewed checkout before invoking the commands below.
+
 The capacity-aware `scripts/runner.sh` first inspects the Docker daemon's CPU/RAM
 and all `discordy-runner-*` containers, across labels and indices. `--count N`
 means N total active runners for the requested label. Existing runner #2 satisfies
@@ -169,11 +174,22 @@ On a Linux VM the runners use host networking, so integration tests (testcontain
 
 | Runners | Repos | Cost |
 |---|---|---|
-| Self-hosted VM (`vm-runner`, 2 runners) | all repos (`CI_RUNNER=vm-runner`) | free |
-| GitHub-hosted `ubuntu-latest` | fallback only: all 12 repos have `CI_RUNNER=vm-runner` (`runner.sh use github` switches back) | GitHub minutes, $15/month budget (org Settings → Billing → Budgets) |
+| Self-hosted VM (`vm-runner`, count limited by host capacity) | repositories whose current `CI_RUNNER` names that pool | existing VM resources |
+| GitHub-hosted `ubuntu-latest` | repositories explicitly routed there or using their hosted default | GitHub minutes, existing $15/month budget (org Settings → Billing → Budgets) |
 | GitHub-hosted `windows-latest` | client installer, on client releases (merge to main or tag) | about $0.30 per release |
 
 `runner.sh up` and `use <label>` switch only the heavy repos; `use github` resets all. Change the set with `SELF_HOSTED_REPOS="api messages" scripts/runner.sh up`.
+
+At 10:03 UTC on 18 November, root read back `ubuntu-latest` for api, messages,
+voice, docs, contracts and .github; client used the shared-workflow alias `github`.
+Gateway, admin, website, gitops and bots-sdk still used `vm-runner`. The CI VM
+retained one online runner and two drained runners; no new VM or server was
+started. The old API develop run `44262412359`, occupying the VM since 08:40 UTC,
+was cancelled after a newer develop revision existed. Its replacement began on
+hosted runners. Frozen voice PR36/PR37 and .github PR44 were rerun on their
+unchanged heads and passed before merge. This dated routing snapshot is not a
+capacity increase or a change to the spending budget; inspect the live variables
+before changing routing again.
 
 The runner VM's Proxmox CPU type must be `host`. ScyllaDB needs SSE4.2 and PCLMUL, which `x86-64-v2-AES` and qemu64 lack, and the Scylla integration tests skip themselves without it.
 
