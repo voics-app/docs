@@ -100,7 +100,7 @@ Een botantwoord dat alleen voor jou is bedoeld kan een **only you**-melding hebb
 
 ## 8. Een server beheren
 
-Open **Server settings** via de servernaam. De beschikbare pagina’s volgen jouw rollen en rechten. Een roleerder laag geplaatst lid kan niet zomaar een hoger geplaatst lid aanpassen.
+Open **Server settings** via de servernaam. De beschikbare pagina’s volgen jouw rollen en rechten. Een lid met een lager geplaatste rol kan niet zomaar een hoger geplaatst lid aanpassen.
 
 | Pagina | Gebruik |
 |---|---|

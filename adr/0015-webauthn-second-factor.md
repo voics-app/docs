@@ -73,7 +73,7 @@ The acceptance criteria in api#19 require a software-authenticator integration t
 The routes and schemas below specify the implementation to build. The API adapter,
 runtime configuration and client authenticator flow are not delivered yet.
 
-- Library: `webauthn-rs` 0.6.2 behind the verifier port. Serialized ceremony state is retained only in Postgres; it is never trusted from a client.
+- Library: patched upstream `webauthn-rs` 0.5.5 with vendored OpenSSL 3.6.3 behind the verifier port. This is compatible with the existing JWT 12 dependency graph; 0.6.2's crypto-glue/RSA requirements conflict with it. Serialized ceremony state is retained only in Postgres; it is never trusted from a client. Runtime implementation and client integration still require their own verification before release.
 - Registration requires an authenticated session and password confirmation. Assertion requires a password-authenticated MFA ticket. Both ceremonies expire after five minutes and are single use.
 - Each credential has an account-private name, creation time and last-used time. Authenticators with nonzero counters must advance them; a database compare-and-set prevents concurrent assertions from accepting a stale counter.
 - TOTP remains available. Passkey-only users can log in with their passkey or a hashed, single-use recovery code. Removing the final factor disables MFA only after password and second-factor confirmation.
