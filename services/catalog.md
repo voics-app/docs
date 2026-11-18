@@ -86,14 +86,15 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 | Repo / image | `discordy-voics/messages` / `ghcr.io/discordy-voics/messages` |
 | Tech | Rust, axum 0.8, scylla driver |
 | Ports | 8082: public (ingress routes `/api/v1/channels/*/messages*`, `/api/v1/guilds/*/messages/search` and the CDN host's `/attachments/*` signed downloads and `/external/*` signed media proxy here) and internal |
-| Owns data | ScyllaDB keyspace `discordy` (messages, reactions, pins, read_states, channel_last_message); MinIO bucket `discordy-attachments`; Postgres database `discordy_search` (`search_messages` index, `search_offsets`, `search_state`; rebuildable, text not stored) |
+| Owns data | ScyllaDB keyspace `discordy` (messages, reactions, pins, read_states discovery, channel_last_message) plus the proposed companion vnode keyspace `<SCYLLA_KEYSPACE>_reads` (atomic read metadata/ledger/contributions, same replication; paired backups required); MinIO bucket `discordy-attachments`; Postgres database `discordy_search` (`search_messages` index, `search_offsets`, `search_state`; rebuildable, text not stored) |
 | Publishes | `discordy.message.v1` (keyed by `channel_id`) |
 | Consumes | `discordy.message.v1` (all partitions, own offsets in Postgres) to keep the search index current; `discordy.guild.v1` `BAN_MESSAGE_PURGE` (offsets in the same Postgres, start at the end of the topic) to purge a banned user's recent messages, see [spec](../specs/2026-10-22-moderation-tools-and-ban-purge.md) |
 | Depends on | ScyllaDB, Redpanda, MinIO, Postgres (search, optional), api (`/internal/v1/channels/{id}/access/{user}` with a 5 s cache; bot token introspection with a 60 s cache) |
 | Called by | client, bots, api, gateway, admin-bff |
 | Snowflake workers | Intended messages range 64–127; fixed worker IDs must not be duplicated across concurrent replicas |
-| Env vars | common + `SCYLLA_NODES`, `SCYLLA_KEYSPACE`, `API_INTERNAL_URL`, `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY` 🔒, `MINIO_SECRET_KEY` 🔒, `MINIO_BUCKET_ATTACHMENTS`, `CDN_PUBLIC_URL`, `ATTACHMENT_SIGNING_KEY` 🔒, `ATTACHMENT_URL_TTL_SECONDS`, `SEARCH_DATABASE_URL` 🔒 (search is disabled when unset), `SEARCH_BACKFILL_ON_START` |
+| Env vars | common + `SCYLLA_NODES`, `SCYLLA_KEYSPACE`, `SCYLLA_READ_STATE_KEYSPACE` (distinct same-cluster companion, defaults to `<SCYLLA_KEYSPACE>_reads`), `API_INTERNAL_URL`, `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY` 🔒, `MINIO_SECRET_KEY` 🔒, `MINIO_BUCKET_ATTACHMENTS`, `CDN_PUBLIC_URL`, `ATTACHMENT_SIGNING_KEY` 🔒, `ATTACHMENT_URL_TTL_SECONDS`, `SEARCH_DATABASE_URL` 🔒 (search is disabled when unset), `SEARCH_BACKFILL_ON_START` |
 | SLOs | Availability 99.5 %; search p95 < 300 ms; history p95 < 100 ms; send p95 < 200 ms; send-to-dispatch p95 < 500 ms (with the gateway) |
+| Read-accounting prerequisite | Token-independent uncached API recipient directory (contracts#44/API#146); coordinated old-writer drain, both-keyspace readiness and backups; [rollout and rollback](../runbooks/read-accounting.md) |
 | Runbooks | [backup-restore](../runbooks/backup-restore.md#scylladb), [release](../runbooks/release.md) |
 
 ## notifier
