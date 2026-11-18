@@ -22,6 +22,18 @@
 
 ## Global Constraints
 
+### Community discovery increment (api#45, 18 November 2026)
+
+Pinned before implementation: `PATCH /guilds/{id}` accepts `features` as `[]` or
+`["COMMUNITY"]`, with `rules_channel_id` and `public_updates_channel_id`. Community
+requires same-guild, non-NSFW, standard text/announcement channels. Disabling it
+clears the pair and removes the discovery listing transactionally. Discovery
+adds `COMMUNITY_REQUIRED`; existing ineligible listings are hidden at rollout.
+`POST /discovery/guilds/{id}/reports` accepts category and optional note, returns
+204, and routes server-captured public listing evidence into the existing admin
+report queue. It never auto-delists. See the [discovery specification](../specs/2026-11-03-server-discovery.md)
+for constraints, migrations, moderation policy and independent acceptance scope.
+
 - **Org and repos**: GitHub org `discordy-voics`; all repos private. Local root is `C:\Users\Karma\Projects\discordy\voics\<repo>`, with one git repo per directory.
 - **Repo names**: `api`, `gateway`, `messages`, `voice`, `admin`, `client`, `bots-sdk`, `contracts`, `gitops`, `docs`, `.github`.
 - **git-flow**: branches `main` + `develop`; work on `feature/<ws>-<topic>` branches, merged into `develop` with `--no-ff`.

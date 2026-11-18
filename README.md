@@ -17,6 +17,10 @@ Publicatie volgt de bestaande [Notion-mirror en inhoudscontrole](runbooks/notion
 
 ## Start here
 
+The [Community and discovery specification](specs/2026-11-03-server-discovery.md)
+pins Community channel setup and listing reports for api#45. Implementation and
+independent UI acceptance are tracked separately from the existing directory.
+
 | If you want to… | Read |
 |---|---|
 | Learn how everything works and where to find it | [Handbook](handbook/01-how-discordy-works.md) |
