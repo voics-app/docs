@@ -29,6 +29,8 @@ This directory holds Voics's architecture decisions. The records use the [MADR](
 | [0023](0023-openbao-transit-seal.md) | OpenBao transit seal against a second OpenBao | proposed |
 | [0024](0024-mobile-client-stack.md) | Mobile client stack: React Native with Expo, inside the client monorepo | proposed |
 | [0025](0025-active-voice-health-probes.md) | Active voice media probes with isolated sessions and lease-fenced allocation health | proposed |
+| [0026](0026-atomic-read-accounting.md) | Atomic mention accounting in a companion Scylla keyspace | proposed |
+| [0027](0027-versioned-read-state-snapshots.md) | Versioned read-state snapshots across gateway sessions | proposed |
 
 ## Writing a new ADR
 

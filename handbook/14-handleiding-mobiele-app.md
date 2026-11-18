@@ -61,6 +61,8 @@ Gebruik **+** voor Photo library, Take photo or video of Files. Je kunt maximaal
 
 Tik op een foto of video om die groter te bekijken. Spoilers worden pas zichtbaar nadat je erop tikt. Een link kan eerst een bevestiging tonen wanneer de zichtbare tekst en het doeladres niet overeenkomen.
 
+In de volgende appversie kun je bij een eigen bericht in een Standard-chat ook **Edit Attachments** kiezen. Wijzig de beschrijving of **Mark as spoiler** en kies **Save changes**. Het bestand wordt niet opnieuw geüpload. **Cancel** laat de opgeslagen waarden staan. Een fout bij opslaan houdt je concept beschikbaar om opnieuw te proberen. Deze bediening is op de Android-QA-app gecontroleerd met een tweede account; de publieke app en berichtendienst moeten de bijbehorende update nog krijgen.
+
 Via het menu **…** bij een kanaal vind je onder andere Mark as read, Mute channel en Notification settings. Gebruik **Mark Unread** bij een bericht als je daar later verder wilt lezen. Zoekacties, vastgezette berichten en threads zijn vanuit de bijbehorende chatbediening bereikbaar. Een forum toont onderwerpen als berichtenreeksen.
 
 ## 5. Vrienden en servers
@@ -141,4 +143,4 @@ Geef bij een fout je appversie/build, telefoonmodel, OS-versie, tijdstip, stappe
 
 ## Controle en beperkingen
 
-De handleiding is vergeleken met de mobiele schermen, instellingenindex en spraakbediening in de clientrepo. Lokaal is in een geïsoleerde Android-QA-app ingelogd en een via de UI verzonden bericht door een tweede client via de API bevestigd. Dat bewijst geen productiepush of fysieke iPhone-werking. De [actuele verificatiestatus](16-status-en-beheerkeuzes.md) en het [opleverprogramma](../plans/2026-11-18-completion-programme.md) scheiden code, release en praktijkproef.
+De handleiding is vergeleken met de mobiele schermen, instellingenindex en spraakbediening in de clientrepo. De geïsoleerde Android-QA-app is geïnstalleerd en gecontroleerd op aanmelden, berichten, opgeslagen bijlagewijzigingen, achtergrondstatus en tweerichtingsvideo met een desktopdeelnemer. De video bleef na de reparatie werken tijdens twee vertrek-/terugkeercycli van die deelnemer. De iOS-simulator heeft de native app en ReplayKit-uitbreiding gebouwd en de start-/aanmeldschermen doorlopen. Dit bewijst geen productiepush of fysieke iPhone-schermuitzending. Het [testverslag](../plans/2026-11-18-acceptance-evidence.md), de [actuele verificatiestatus](16-status-en-beheerkeuzes.md) en het [opleverprogramma](../plans/2026-11-18-completion-programme.md) onderscheiden deze controles van een uitgebrachte versie.

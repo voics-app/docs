@@ -79,6 +79,8 @@ Oud herstel kan afgehandelde outboxevents opnieuw aanbieden en latere sessie-int
 
 ### ScyllaDB
 
+Voor de voorgestelde [atomische read-accounting](read-accounting.md) horen de hoofdkeyspace en `SCYLLA_READ_STATE_KEYSPACE` (standaard `<hoofdkeyspace>_reads`) bij **één herstelset**. Neem beide schema's, alle tabellen/migratiemarkers, replicatie-instellingen en de effectieve namen mee. Fence alle messages-schrijvers tijdens een coherent checkpoint en restore. Herstel van maar één keyspace kan discovery, tellers en deduplicatie uit elkaar trekken. Oude en nieuwe schrijvers mogen niet overlappen; een binary-only rollback na nieuwe writes leest verouderde legacy-tellers. Volg het gekoppelde runbook; deze tekst bewijst geen bestaande backupjob.
+
 Plan een native snapshot met expliciete tag, schema en manifest van alle SSTablecomponenten per tabel. Upload na integriteitscontrole; ruim lokale snapshots pas op als de externe set compleet is. Een snapshot op dezelfde schijf beschermt niet tegen schijfverlies.
 
 Herstel eerst naar een geïsoleerde passende Scylla-versie/topologie met een geteste importprocedure en juiste tabelidentiteit. Controleer geschiedenis, reacties, pins, read states en bijlagereferenties. Er is hier geen bewezen `messages-migrate`-CronJob of algemene replaytool die verloren berichten automatisch uit Redpanda terugzet.

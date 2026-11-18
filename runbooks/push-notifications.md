@@ -124,6 +124,10 @@ Good to know:
 
 ## Smoke test
 
+De onafhankelijke [controle van 18 november 2026](notification-verificatie-2026-11-18.md)
+legt de geteste notificatieregels, leestellers en synchronisatie tussen Android en
+desktop vast. De onderstaande controles blijven nodig voor werkelijke providerbezorging.
+
 Needs an iPhone with a development or preview build of the app, signed in, notifications allowed.
 
 1. Open a chat once (the app then holds a registered token). Check in pgweb: `select user_id, platform, environment, previews, only_mentions, updated_at from push_tokens order by updated_at desc limit 5;`.

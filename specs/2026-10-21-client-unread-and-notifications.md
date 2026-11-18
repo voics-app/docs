@@ -5,7 +5,8 @@ Covers client#48 and client#50.
 ## Read state and navigation
 
 - The read marker is per channel on the server. `POST /channels/{id}/messages/{mid}/ack` moves it forward only. With body `{"manual": true, "mention_count": n}` it is set to exactly that message, backwards included (Mark Unread; the client acks `id - 1` of the chosen message).
-- `MESSAGE_ACK` carries `message_id` and `mention_count` of the resulting marker and goes to the user's other sessions only. Clients set their marker to exactly that value.
+- `MESSAGE_ACK` carries `message_id` and `mention_count` of the resulting marker to the user's sessions. The proposed [versioned snapshot protocol](../adr/0027-versioned-read-state-snapshots.md) adds `read_state_version`: certified clients apply only a newer channel version, including backwards manual unread, and never increment standard counts from CREATE. Legacy unversioned clients retain the existing ordering limitation.
+- Certified READY initializes authoritative counts, including an empty account. READ_STATE_UPDATE supplies full user-targeted channel snapshots. READ_STATE_SYNC after resume merges fetched snapshots by version so a stale fetch cannot undo newer replayed updates. Failed hydration is retryable; it never certifies zero counts. Private decrypted messages continue to count locally.
 - On opening a channel the client captures the marker. The red "New" divider sits above the first message after it written by someone else, and a bar at the top reads "N new messages since T" with "Jump to first unread" and "Mark as read". Esc / marking read hides the bar but keeps the divider until the next visit.
 - Jump to message (reply header, pin card, `discordy://channels/<guild|@me>/<channel>/<message>`, mentions inbox): if the message is not loaded the client replaces the timeline with `GET messages?around=<id>`, marks it detached (`hasMoreAfter`) and pages towards the present on scroll. Live messages are not appended while detached; "Jump to present" and sending reload the latest page.
 
@@ -15,8 +16,8 @@ All mutes, levels and suppression flags are the synced per-guild settings resour
 
 - Server menu: Mute server (15m, 1h, 3h, 8h, 24h, until off) and Notification settings dialog (level, suppress @everyone/@here, suppress role mentions, hide muted channels, channel overrides list).
 - Channel and category menus use the same overrides.
-- `@silent` messages (flag `1 << 12`) never count as mentions and fire no notification, sound or taskbar flash; a reply with the ping turned off lists nobody in `mentions` ([composer spec](2026-10-20-client-markdown-and-composer.md)).
-- Muted channels render dimmed and do not count as unread; mentions in them still count (Discord behaviour).
+- `@silent` messages (flag `1 << 12`) never count as mentions and fire no notification, sound or taskbar flash; turning off a reply ping removes only its implicit author mention, preserving explicit mentions ([composer spec](2026-10-20-client-markdown-and-composer.md)).
+- Muted channels render dimmed and do not count as unread. The notification-accounting policy suppresses mention badges when the resolved mute is active or level is Nothing; role/everyone suppression also applies. Current API policy is evaluated per recipient page. See [read accounting](../runbooks/read-accounting.md) for the proposed server writer and migration limits.
 - Notes use `PUT /users/@me/notes/{id}` via the synced notes store, saved on blur.
 
 ## Mentions inbox (Ctrl+I, title bar button)
