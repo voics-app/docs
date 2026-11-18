@@ -20,6 +20,8 @@ Observe failed-accounting warnings by message/channel, `read_state_cas_conflicts
 
 Stored counts and event publication are not one transaction. Include in-flight/reordered MESSAGE_ACK snapshots versus MESSAGE_CREATE in client QA: applying a snapshot before an already-included create can temporarily diverge until reconciliation. The unchanged payload has no accounting revision or snapshot-delivery watermark. Database tests alone do not establish exactly-once live UI state.
 
+The separate proposed [ADR 0027](../adr/0027-versioned-read-state-snapshots.md) closes that inference gap with versioned authoritative snapshots, actual gateway READY hydration and a fresh snapshot during resume. Roll out its compatible messages writer under the same old-writer fence, then gateway, then client. Never overlap writers that increment the version with writers that leave it unchanged. The additive wire protocol retains legacy operation until certified hydration succeeds; it does not repair failed accounting before a commit or provide durable publication. QA must prove reordered/duplicate snapshots and lost-event recovery, not just stored counts.
+
 ## Data semantics and limits
 
 - The old `read_states` table remains the channel discovery index and preserved migration baseline. READY resolves companion metadata for every initialized channel, with at most 16 concurrent reads.
@@ -34,6 +36,8 @@ Stored counts and event publication are not one transaction. Include in-flight/r
 Treat the original keyspace and the configured companion as **one recovery unit**. Back up schema, replication/durable-write settings, every table's SSTable components, both migration tables and the configured-name manifest. A complete restore must include discovery rows and authoritative metadata/ledger from a compatible point in time. A companion-only or original-only restore can hide channels, revive counts or permit duplicate contributions.
 
 Fence all messages writers before a coherent recovery checkpoint and throughout restore. Restore into an isolated version-compatible cluster first; verify both-keyspace readiness, representative legacy/initialized channels, concurrent writes, ACK and replay before using the procedure live. Keep the paired backup immutable until that proof completes. Do not drop or recreate the original keyspace to disable tablets. Snowflake reservations have a separate restore barrier in [backup-restore](backup-restore.md#id-reserveringen-na-databaseherstel).
+
+When versioned snapshots are enabled, invalidate all existing gateway sessions and resume buffers before reopening a restored database: restored versions may be smaller than client-held versions. Require fresh identification/READY to establish the restored baseline. Include version columns in the coherent backup; do not reset them in place while clients remain connected.
 
 ## Rollback
 
