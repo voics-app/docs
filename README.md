@@ -20,6 +20,10 @@ de openbare voorvertoning, synchronisatie en de nog te bevestigen UI/livecontrol
 
 ## Start here
 
+The [integrations and authorization specification](specs/2026-11-18-integrations-and-authorizations.md)
+defines webhook credential rotation, supported bot-install consent and precise
+personal-consent versus server-removal behavior for client#61 and client#69.
+
 The [Community and discovery specification](specs/2026-11-03-server-discovery.md)
 pins Community channel setup and listing reports for api#45. Implementation and
 independent UI acceptance are tracked separately from the existing directory.
