@@ -68,6 +68,7 @@
 | gateway | 4000 | WS `/gateway`; internal HTTP `/internal/v1/*` |
 | voice-signaling | 4100 | WS `/voice` |
 | sfu | UDP 50000 | Media. Control on TCP `127.0.0.1:4101` (newline-delimited JSON) |
+| voice-prober (prepared, inactive) | 4103 | Loopback HTTP health and Prometheus metrics; no public ingress |
 | admin-bff | 8090 | Serves `/admin-api/*` and the built SPA |
 | admin-web (dev) | 5174 | |
 | client renderer (dev) | 5173 | |
@@ -117,7 +118,8 @@
 | api | `DATABASE_URL`, `VALKEY_URL`, `JWT_PRIVATE_KEY` (Ed25519 PEM), `PUBLIC_API_URL`, `PUBLIC_GATEWAY_URL`, `CDN_PUBLIC_URL`, `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET_ASSETS` (default `discordy-assets`), `MESSAGES_INTERNAL_URL` |
 | messages | `SCYLLA_NODES`, `SCYLLA_KEYSPACE` (default `discordy`), `API_INTERNAL_URL`, `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET_ATTACHMENTS` (default `discordy-attachments`), `CDN_PUBLIC_URL` |
 | gateway | `VALKEY_URL`, `ETCD_ENDPOINTS`, `TURN_STATIC_AUTH_SECRET`, `TURN_URLS`, `API_INTERNAL_URL`, `MESSAGES_INTERNAL_URL`, `VOICE_TOKEN_SECRET` (HS256), `PUBLIC_GATEWAY_URL`, `DEFAULT_VOICE_REGION` (default `nl-home`), `RELEASE_COOKIE` (Erlang distribution), `CLUSTER_DNS_QUERY` (optional, k8s headless service) |
-| voice-signaling | `VOICE_REGION`, `VOICE_NODE_ID`, `VOICE_PUBLIC_WS_URL`, `VOICE_PUBLIC_IP`, `VOICE_UDP_PORT` (default `50000`), `ETCD_ENDPOINTS`, `VOICE_TOKEN_SECRET`, `SFU_CONTROL_ADDR` (default `127.0.0.1:4101`) |
+| voice-signaling | `VOICE_REGION`, `VOICE_NODE_ID`, `VOICE_PUBLIC_WS_URL`, `VOICE_PUBLIC_IP`, `VOICE_UDP_PORT` (default `50000`), `ETCD_ENDPOINTS`, `VOICE_TOKEN_SECRET`, `SFU_CONTROL_ADDR` (default `127.0.0.1:4101`), `VOICE_REQUIRE_PROBE` (default `false`; prepared health enforcement opt-in), `VOICE_PROBE_TOKEN_SECRET` (optional separate key; absent disables probes) |
+| voice-prober (prepared, inactive) | `VOICE_PROBER_ID`, `ETCD_ENDPOINTS`, `VOICE_PROBE_TOKEN_SECRET`, `VOICE_PROBE_SERVER_ID`, `VOICE_PROBE_CHANNEL_ID`, `VOICE_PROBE_USER_IDS` (two distinct decimal IDs); `VOICE_PROBE_INTERVAL_MS` (10000), `VOICE_PROBE_TIMEOUT_MS` (4000, less than interval), `VOICE_PROBE_FAILURES` (2), `VOICE_PROBE_PASSES` (2), `VOICE_PROBE_MAX_LOSS_PCT` (10), `VOICE_PROBE_MAX_RTT_MS` (1000), `VOICE_PROBE_HTTP_BIND` (`127.0.0.1:4103`) |
 | coturn | `TURN_STATIC_AUTH_SECRET` (shared with gateway, which mints short-lived TURN credentials for P2P) |
 | sfu | `SFU_UDP_BIND` (default `0.0.0.0:50000`), `SFU_PUBLIC_IP`, `SFU_CONTROL_BIND` (default `127.0.0.1:4101`) |
 | admin-bff | `ADMIN_DATABASE_URL`, `API_INTERNAL_URL`, `VICTORIAMETRICS_URL`, `ETCD_ENDPOINTS`, `ADMIN_ALLOWED_EMAILS` (comma-separated; the second gate after Cloudflare Access), `CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD` (both optional only when `DISCORDY_ENV=local`), `GATEWAY_INTERNAL_URL` |
@@ -140,6 +142,7 @@
 - **Bot token**: `Authorization: Bot <base64url(bot_user_id)>.<random 32 bytes base64url>`. Non-api services validate it via `POST /internal/v1/auth/introspect` and cache the result for 60 seconds.
 - **Introspect response**: `{ "user_id": "...", "kind": "user"|"bot", "application_id": "..."|null, "session_id": "..."|null }`.
 - **Voice token**: JWT HS256 signed with `VOICE_TOKEN_SECRET`, 60-second lifetime. Claims: `sub` (user ID), `sid`, `srv` (`guild_id`, or the DM `channel_id` for DM calls), `chn` (`channel_id`), `node` (voice node ID), `e2ee` (bool).
+- **Synthetic voice token extension (prepared)**: optional `purpose` defaults to `call`. `purpose: "probe"` requires the separate `VOICE_PROBE_TOKEN_SECRET` signature, stricter `ProbeVoiceTokenClaims` validation, `node_lease` (the current etcd lease as a decimal string), random UUID `probe_id`, and `e2ee: false`. Signaling derives an isolated synthetic room from lease + probe ID, refuses video and stale registrations, and may bypass draining only after those checks. Configured synthetic IDs never grant access to an ordinary user room. See [ADR-0025](../adr/0025-active-voice-health-probes.md).
 
 ### P4. Internal HTTP APIs
 
@@ -282,9 +285,10 @@ All calls carry the `X-Internal-Token` header. All IDs are strings.
 ### P8. Voice allocation and voice protocol
 
 - **etcd discovery**: each node writes `/discordy/voice/nodes/<region>/<node_id>` under a 10-second lease, refreshed every 3 seconds. Value: `{node_id, region, ws_url, public_ip, udp_port, users:int, cpu_pct:float, egress_bps:int, draining:bool, version}`.
+- **Active media health (prepared, not activated)**: optional discovery `probe_required: bool` defaults false. Leased results at `/discordy/voice/health/<node_id>` match the node registration lease and are written only by the fenced owner of `/discordy/voice/probers/<node_id>`. Required-health nodes need a fresh healthy result; legacy nodes tolerate absent results, while matching unhealthy results exclude them. Persistent `/discordy/voice/blacklist/nodes/<node_id>` or `/discordy/voice/blacklist/regions/<region>` keys always exclude new allocation. The gateway applies these checks to cached allocations too; existing calls continue. Full state-machine and rollout rules are in [ADR-0025](../adr/0025-active-voice-health-probes.md).
 - **Allocation** (gateway guild process; DM calls use a per-channel process):
   1. Read the region: per-channel override, else the guild's `voice_region`, else `DEFAULT_VOICE_REGION`.
-  2. Pick the non-draining node with the lowest `users`, breaking ties by `cpu_pct`.
+  2. Pick an eligible node with unique identity/endpoints, no drain or blacklist, and any required matching media health, with the lowest `users`, breaking ties by `cpu_pct`. Active-health enforcement is enabled only after the prepared rollout is reviewed.
   3. Store the choice at Valkey `voice:alloc:<srv_id>` = node_id.
   4. Every user in that guild/DM shares the node.
   5. If the node disappears from etcd, the gateway reallocates and re-sends VOICE_SERVER_UPDATE to the connected users.
