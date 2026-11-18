@@ -18,6 +18,9 @@ Publicatie volgt de bestaande [Notion-mirror en inhoudscontrole](runbooks/notion
 De [server-template-specificatie](specs/2026-11-04-server-templates.md) beschrijft
 de openbare voorvertoning, synchronisatie en de nog te bevestigen UI/livecontrole.
 
+[Profielaanpassing](specs/2026-11-18-profile-customization.md) beschrijft de uitbreiding met
+voornaamwoorden, profielkleuren en een eigen avatar, banner en bio per server (api#43).
+
 ## Start here
 
 The [Community and discovery specification](specs/2026-11-03-server-discovery.md)
