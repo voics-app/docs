@@ -38,6 +38,24 @@ Server-side VIEW_CHANNEL, membership and send permissions remain authoritative.
 
 ## Verification and release boundary
 
+### Reporting without opening content
+
+The interstitial uses `POST /reports` with `target: "channel"`, `channel_id`, an
+existing report category and an optional note of at most 500 characters. The API
+requires current guild membership and VIEW_CHANNEL, including thread-parent access.
+The server snapshots exactly the channel ID, server ID, parent ID, channel name,
+channel type and age-restricted flag. It does not fetch messages, attachments, topics
+or member lists. Client-supplied message/user IDs and content are rejected for this
+target. The disclosure lists these fields before the person submits.
+
+The moderation queue identifies the target as a channel and the associated account
+as the server owner. The report is not converted to a user report. Owners may report
+their own channel; self-user reports remain disallowed. Repeated open reports by the
+same account are idempotent and share the existing hourly limit. The separate guild
+target continues to capture only a currently public discovery listing.
+
+### Acceptance evidence
+
 Required client evidence covers desktop and mobile direct routes, sidebar filtering,
 threads/forums/voice, search/pins/inbox snippets, cached media, account/instance
 isolation, remote preference changes, failed-save retry and logout. English and Dutch
