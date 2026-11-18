@@ -165,6 +165,15 @@ template-visible structure with the saved snapshot. Public sharing uses
 
 ### P4. Internal HTTP APIs
 
+The channel-access lookup checks current account eligibility before returning permissions:
+missing, disabled, pending-deletion or currently suspended users receive 403. Expired
+suspensions and eligible bots retain ordinary membership/permission checks. A live user
+session is not required for this internal lookup, so an offline scheduled author may
+remain eligible. A scheduled worker must make a new uncached request after its durable
+claim, without joining an older in-flight lookup. This is a current authorization check,
+not an atomic transaction with a later cross-service message write. See
+[the account-access addendum](../specs/2026-11-18-scheduled-account-access.md).
+
 All calls carry the `X-Internal-Token` header. All IDs are strings.
 
 **api**
