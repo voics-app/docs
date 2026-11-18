@@ -1,6 +1,7 @@
 # Age-restricted channels
 
-Status: proposed implementation for [client#76](https://github.com/discordy-voics/client/issues/76).
+Status: implemented in review for [client#76](https://github.com/discordy-voics/client/issues/76);
+native and paired API acceptance remain release requirements.
 This extends the existing `Channel.nsfw` flag. It introduces no date of birth,
 verified-age state, age-verification service or server permission.
 
@@ -36,6 +37,23 @@ restriction/parent-context changes. Enabling Hide revokes existing confirmations
 turning it off requires Continue again. Channel renames alone do not revoke consent.
 Server-side VIEW_CHANNEL, membership and send permissions remain authoritative.
 
+Standalone forward previews, reaction lists and bot forms obey the same current
+boundary. A revoked channel closes global media and queued speech, and disconnects
+active voice transport before asynchronous capture cleanup. Forward comments and
+bot-form drafts remain available after deliberate re-confirmation. Read counts
+retain their existing semantics. No acknowledgement is inferred from a notification
+tap, a server-directed voice move or a previously cached message.
+
+### Background notifications
+
+The API push-targets endpoint follows the channel's full parent context. Restricted
+or incomplete context forces the existing token `previews` field to false in the
+response; it does not rewrite the device registration. Accounts with Hide enabled
+receive no restricted-channel target. Other accounts may receive a generic push
+without message content. Local Continue never enables APNs/FCM background previews.
+Ordinary channels retain their registered preview preference. The mobile foreground
+handler also checks the current gate while its gateway is reconnecting.
+
 ## Verification and release boundary
 
 ### Reporting without opening content
@@ -65,3 +83,9 @@ Required API evidence covers true/false persistence, sparse default, typed rejec
 key-by-key merge and account isolation. Contract generation and API tests must run on
 the owned warm environment before approval. A client unit test is not native or live
 acceptance; root owns those checks and release publication.
+
+Implementation companions: contracts#52 (preference), api#151 (preference),
+contracts#53 and api#152 (channel reporting), admin#35 (distinct channel evidence),
+and api#153 (background push policy). API#153 uses the existing preview field and
+requires no notifier wire extension. Scheduled-message UI must keep list/cancel
+available while withholding its message-body previews until acknowledgement.
