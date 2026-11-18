@@ -34,6 +34,8 @@ Gateway registers the user session before fetching read states. Events that arri
 
 Clients receiving certified READY use server snapshots for standard-channel mention counts, so MESSAGE_CREATE cannot double-increment an included count. A fresh READY establishes a new session baseline. Within that session, READ_STATE_UPDATE, versioned MESSAGE_ACK and READ_STATE_SYNC obey the same per-channel version comparison; absent channels in a sync are not deletion instructions. Unversioned ACKs cannot overwrite certified channel state. Existing local notification/inbox behavior remains separate from counter authority. Private decrypted traffic retains local accounting. Clients connected to older unversioned servers keep the legacy behavior; old clients ignore the additive fields/events and retain its ordering limitation.
 
+Local read actions may be optimistic while their ACK is pending. A resume sync at the same version may restore the already-known authoritative snapshot over that local optimism when the ACK never committed. It must not accept conflicting data at an equal version or replace any newer snapshot. Duplicate live events remain ignored. A session that was certified must invalidate resume if the refreshed service loses certification; it cannot silently resume under an unversioned writer.
+
 ### Consequences
 
 - The database version is the ordering authority; gateway sequence and message IDs serve different purposes.
