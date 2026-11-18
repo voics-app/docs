@@ -70,7 +70,9 @@ eerder met 1044 tests en vier configuratiecontroles, vóór de laatste layoutwij
 Deze aantallen mogen niet worden verwisseld met native toestelproeven.
 
 De [herhaalbare chatproef](https://github.com/discordy-voics/client/blob/feature/message-long-press-gesture-20261118/docs/native-chat-input.md)
-staat bij de clientcode. CI en een nieuwe iOS-native build lopen; fysieke iPhone-
+staat bij de clientcode. De [iOS-native controle op deze wijziging](https://github.com/discordy-voics/client/actions/runs/44255079798)
+is geslaagd: de volledige app, ReplayKit-uitbreiding en simulatorproeven voor
+aanmelden en herstel slagen. De overige client-CI loopt nog; fysieke iPhone-
 toetsenbordgebaren, rotatie, VoiceOver en een ondertekende release blijven open.
 
 ## Accounts, templates en Community
