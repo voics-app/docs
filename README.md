@@ -23,6 +23,11 @@ voornaamwoorden, profielkleuren en een eigen avatar, banner en bio per server (a
 
 ## Start here
 
+The [scheduled messages specification](specs/2026-11-18-scheduled-messages.md)
+defines author-private drafts, send-time checks and visible delivery uncertainty
+for messages#61. Backend and client implementations are under review; scheduling
+remains disabled until coupled acceptance and rollout review are complete.
+
 The [integrations and authorization specification](specs/2026-11-18-integrations-and-authorizations.md)
 defines webhook credential rotation, supported bot-install consent and precise
 personal-consent versus server-removal behavior for client#61 and client#69.
