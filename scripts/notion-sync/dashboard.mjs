@@ -1,11 +1,16 @@
-// The hand-written parts of the Discordy home page: hero, quick links, FAQ and common-task toggles.
+// The hand-written parts of the Voics home page: hero, quick links, FAQ and common-task toggles.
 import { rt } from './md.mjs';
 import { GITHUB_ORG } from './sources.mjs';
 
 export const heroText =
-  'Discordy is a Discord-equivalent platform (without payments): text, voice and video, guilds, bots, end-to-end encrypted and peer-to-peer delivery modes. ' +
-  'Status: production runs on gen-serv (Proxmox VM, microk8s, Flux GitOps), v0.1.0 milestone in progress. ' +
-  'This space is a mirror of the docs repository; start with the Handbook below.';
+  'Voics is een app voor tekst, spraak, video en servers. Begin met de Nederlandse handleiding voor mobiel of desktop. ' +
+  'Productie draait op gen-serv; extra servers zijn alleen voorbereid en back-ups zijn nog een plan. ' +
+  'Deze ruimte spiegelt de docsrepo. De statuspagina onderscheidt code, releases en praktijkverificatie.';
+
+// Retain the existing block when migrating its text, and recognize it on later runs.
+export const isManagedHero = (block) => block.type === 'callout' && /^(?:Voics|Discordy)\b/.test(
+  block.callout.rich_text.map((text) => text.plain_text ?? text.text?.content ?? '').join(''),
+);
 
 const link = (text, url) => rt(text, {}, url);
 const bullet = (richText) => ({ type: 'bulleted_list_item', bulleted_list_item: { rich_text: richText } });
@@ -22,7 +27,12 @@ export function faqMarkdown() {
 
 | I want to | Go to |
 |---|---|
-| Understand how Discordy works end to end | [How Discordy works](handbook/01-how-discordy-works.md) |
+| De mobiele app gebruiken | [Handleiding iPhone en Android](handbook/14-handleiding-mobiele-app.md) |
+| De desktopapp gebruiken | [Handleiding desktop](handbook/15-handleiding-desktop.md) |
+| Een tweede server voorbereiden | [Server uitbreiden](runbooks/server-uitbreiden.md) |
+| Back-ups en herstel voorbereiden | [Back-upplan](runbooks/backup-restore.md) |
+| Weten wat live is en wat nog open staat | [Stand en beheerkeuzes](handbook/16-status-en-beheerkeuzes.md) |
+| Understand how Voics works end to end | [How Voics works](handbook/01-how-discordy-works.md) |
 | Find my way around one repository | [Applications](handbook/02-apps-overview.md) |
 | Log in to Grafana, Headlamp, pgweb, MinIO, OpenBao | [Ops tools & URLs](notion-db:tools) and [Ops access](runbooks/ops-access.md) |
 | Unseal OpenBao after a reboot | [OpenBao unseal](runbooks/openbao-unseal.md) |
@@ -47,7 +57,7 @@ export function dashboardBlocks({ rows, dbs, faqUrl, rowUrl, syncedDuplicate }) 
   const tools = rows.filter((r) => r.db === 'tools');
   const quick = tools.map((t) => bullet([...rt(`${TOOL_EMOJI[t.title] ?? '🔧'} `), ...link(t.title, t.props.URL.url)]));
   const project = [
-    bullet([...rt('🌐 '), ...link('Website discordy.voics.nl', 'https://discordy.voics.nl')]),
+    bullet([...rt('🌐 '), ...link('Website voics.nl', 'https://voics.nl')]),
     bullet([...rt('🐙 '), ...link('GitHub organisation', GITHUB_ORG)]),
     bullet([...rt('📋 '), ...link('Project board', 'https://github.com/orgs/discordy-voics/projects/1')]),
     bullet([...rt('📝 '), ...link('docs repository (source of this space)', `${GITHUB_ORG}/docs`)]),

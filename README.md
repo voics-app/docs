@@ -2,7 +2,18 @@
 
 Architecture, decisions, references and runbooks for **Voics**, a Discord-equivalent platform (without payments) built in the `discordy-voics` GitHub org. Git is the source of truth; the content is mirrored to Notion on every merge to `main`.
 
-> This platform currently lives at `discordy.voics.nl`. It is separate from the earlier product on `voics.nl` / `app.voics.nl`, which must never be touched (the hostnames move in [docs#135](https://github.com/discordy-voics/docs/issues/135)).
+> Voics is live at `voics.nl`, with production on gen-serv (`192.168.1.212`). The approved hostname takeover is complete; compatibility aliases remain. The unrelated VM `.204` and the old product’s other records remain protected. See [public hostnames](runbooks/hostnames.md).
+
+## Nederlandse handleidingen
+
+- [Voics op iPhone en Android](handbook/14-handleiding-mobiele-app.md)
+- [Voics op de computer](handbook/15-handleiding-desktop.md)
+- [Een tweede server voorbereiden](runbooks/server-uitbreiden.md) — geen server aangemaakt of join uitgevoerd
+- [Back-up- en herstelplan](runbooks/backup-restore.md) — voorstellen, nog geen geactiveerde jobs
+- [Stand van zaken en beheerkeuzes](handbook/16-status-en-beheerkeuzes.md)
+- [Opleverprogramma en alle toegewezen kaarten](plans/2026-11-18-completion-programme.md)
+
+Publicatie volgt de bestaande [Notion-mirror en inhoudscontrole](runbooks/notion-publicatie-controleren.md).
 
 ## Start here
 
@@ -57,11 +68,11 @@ CI ([`.github/workflows/`](.github/workflows/)) runs markdownlint, the secrets-i
 
 ## Notion mirror
 
-The Markdown in this repository is mirrored to Notion under **Home, Home Lab, Discordy** (page id `3fb99f29-12a4-81cb-b018-ebda0f0072e8`). Git stays the source of truth: edit the Markdown, never the Notion pages, because the next sync overwrites them.
+The Markdown in this repository is mirrored to Notion under the existing **Voics** root (historically **Home, Home Lab, Discordy**) (page id `3fb99f29-12a4-81cb-b018-ebda0f0072e8`). Git stays the source of truth: edit the Markdown, never the Notion pages, because the next sync overwrites them.
 
 ### What you get in Notion
 
-- A dashboard (the Discordy page): hero, handbook links, ops quick links, a synced "Where to find X" FAQ, toggles for common tasks and a last-synced stamp.
+- A dashboard (the Voics page): hero, handbook links, ops quick links, a synced "Where to find X" FAQ, toggles for common tasks and a last-synced stamp.
 - Databases with properties and one page per document: **Handbook**, **Runbooks**, **ADRs**, **Services**, **Ops tools & URLs**, **Environments**, **Guides & references**, **Specs & plans** and **Protocols**. Relations link ADRs to the ones they supersede and services to what they depend on.
 - Markdown is converted to Notion blocks (headings, lists, tables, code with language, callouts for blockquotes, images). Relative links point at the matching Notion page, or at GitHub for files that are not mirrored.
 
@@ -78,13 +89,13 @@ The Markdown in this repository is mirrored to Notion under **Home, Home Lab, Di
 - Locally, with the token in the environment (never commit it):
 
   ```bash
-  export NOTION_TOKEN=...                      # internal integration shared with the Discordy page
+  export NOTION_TOKEN=...                      # internal integration shared with the Voics page
   node scripts/notion-sync/index.mjs --dry-run # plan only
   node scripts/notion-sync/index.mjs           # sync
-  node scripts/notion-sync/index.mjs --prune-root  # one time: also remove unmanaged blocks and pages under the Discordy page
+  node scripts/notion-sync/index.mjs --prune-root  # one time: also remove unmanaged blocks and pages under the Voics page
   ```
 
-- Rotating the token: [secret rotation](runbooks/secret-rotation.md#notion-token). The integration must stay shared with the Discordy page.
+- Rotating the token: [secret rotation](runbooks/secret-rotation.md#notion-token). The integration must stay shared with the Voics page.
 
 ### Views
 

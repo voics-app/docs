@@ -117,6 +117,15 @@ Signs attachment download URLs. Links issued under the old key stop working at t
 3. Restart the messages deployment.
 4. **Verify**: open a channel with an attachment (the history call returns fresh links) and download it.
 
+## FCM service-account key
+
+The Firebase service-account key the notifier signs its Android push requests with. Google lets a service account hold several keys, so rotate without a gap.
+
+1. In the Firebase console (project `voics-cf336`), Project settings, Service accounts, **Generate new private key**.
+2. `gh secret set NOTIFIER_FCM_SERVICE_ACCOUNT --repo discordy-voics/gitops --env production < key.json`, then run `secrets-sync` with `paths=discordy/notifier-fcm`.
+3. Force-sync `notifier-fcm` in `voics-apps` and restart the notifier (it reads the key at startup).
+4. Check `notifier_pushes_total{provider="fcm",outcome="sent"}` moves, then delete the old key in the Google Cloud console (IAM, Service accounts, Keys).
+
 ## APNs key
 
 The .p8 key the notifier signs APNs requests with. Apple lets an account hold two active keys, so rotate without a gap.

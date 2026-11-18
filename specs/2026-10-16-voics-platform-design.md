@@ -101,7 +101,7 @@ src/
 
 ## 5. Identity, auth and permissions
 
-- **Login**: email + password hashed with argon2id, plus optional 2FA. TOTP is implemented. WebAuthn passkeys as a second factor, with single-use backup codes for recovery, are proposed in ADR-0015 and tracked in [api#19](https://github.com/discordy-voics/api/issues/19).
+- **Login**: email + password hashed with argon2id, plus optional 2FA. TOTP is implemented. WebAuthn passkeys are specified as an additional second factor in ADR-0015; runtime implementation and client acceptance remain open in [api#19](https://github.com/discordy-voics/api/issues/19). The accepted design requires password verification before every login MFA ceremony. Registration and assertion state must stay in Postgres, expire after five minutes and be consumed once; signature counters must be checked. Recovery codes must be hashed and single use. RP identity and allowed origin must come from deployment configuration, never from request headers.
 - **Tokens**: 15-minute access JWTs signed with Ed25519, and rotating refresh tokens with reuse detection.
 - **Devices**: each device has an Ed25519 identity key and uploads MLS key packages. Users can compare safety numbers.
 - **Permissions**: Discord-compatible 64-bit permission bitfield, @everyone role, role hierarchy, and channel overwrites (role and member, allow/deny). Computed in `api`; cached and recomputed in guild processes.
