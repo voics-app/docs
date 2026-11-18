@@ -148,6 +148,23 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 | SLOs | Availability 99.0 % per region (voice WS handshake success); join-to-first-audio p95 < 1.5 s; lease never missed for more than 10 s outside drains |
 | Runbooks | [adding a region](../runbooks/voice-regions/adding-a-region.md), [draining](../runbooks/voice-regions/draining-a-region.md), [failover](../runbooks/voice-regions/failover.md), [troubleshooting](../runbooks/voice-regions/troubleshooting.md) |
 
+## voice-prober (prepared, inactive)
+
+This service is defined by [ADR-0025](../adr/0025-active-voice-health-probes.md) and is not enabled by this design change. Implementation and rollout evidence remain required before deployment.
+
+| | |
+|---|---|
+| Purpose | Two isolated synthetic voice peers per node test advertised WebSocket, ICE/DTLS and bidirectional RTP; publish loss/RTT and hysteresis state for allocation |
+| Planned repo / image | `discordy-voics/voice` (`prober/`) / `ghcr.io/discordy-voics/voice-prober` |
+| Tech | Rust, str0m, Tokio |
+| Ports | HTTP `127.0.0.1:4103` by default for readiness and Prometheus; no public ingress |
+| Owns data | Leased `/discordy/voice/probers/<node_id>` ownership and `/discordy/voice/health/<node_id>` observations; writes atomically compare observer ownership and node registration lease |
+| Depends on | etcd, each voice node's advertised WebSocket and UDP media route |
+| Identity / secrets | Explicit `VOICE_PROBER_ID` and configured synthetic IDs; separate `VOICE_PROBE_TOKEN_SECRET`, never the gateway call-signing key |
+| Env vars | Exact prepared settings/defaults are listed in master plan [P2](../plans/2026-10-16-discordy-master-plan.md#p2-environment-variables) |
+| Rollout | Reader/signaling support first, then independently placed prober and verified observations, then optional `VOICE_REQUIRE_PROBE=true`; no VM/server creation or activation is implied |
+| Runbook | [Prepared health states and blacklist behavior](../runbooks/voice-regions/troubleshooting.md#prepared-active-health-probes) |
+
 ## sfu
 
 | | |
