@@ -22,6 +22,13 @@
 
 ## Global Constraints
 
+Server-template completion (18 November 2026):
+`GET /guilds/templates/{code}` is a public, rate-limited snapshot preview;
+creation and management remain authenticated. `is_dirty` compares the current
+template-visible structure with the saved snapshot. Public sharing uses
+`/template.html?code=...` on the landing host. See the
+[server-template specification](../specs/2026-11-04-server-templates.md).
+
 - **Org and repos**: GitHub org `discordy-voics`; all repos private. Local root is `C:\Users\Karma\Projects\discordy\voics\<repo>`, with one git repo per directory.
 - **Repo names**: `api`, `gateway`, `messages`, `voice`, `admin`, `client`, `bots-sdk`, `contracts`, `gitops`, `docs`, `.github`.
 - **git-flow**: branches `main` + `develop`; work on `feature/<ws>-<topic>` branches, merged into `develop` with `--no-ff`.

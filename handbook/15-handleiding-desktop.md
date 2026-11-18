@@ -116,6 +116,21 @@ Let op de balk met niet-opgeslagen wijzigingen. Sla op of herstel je wijzigingen
 
 Voor de nieuwe permanente uitnodiging en auditinstellingen staan de precieze rechten en gevolgen in [serverinstellingen](../protocols/community-settings.md). Een kortere auditbewaartermijn kan oudere gegevens verwijderen. Het uitzetten van het log is geen algemene privacyverwijdering en wist geen externe back-ups.
 
+### Een server delen als sjabloon
+
+Onder **Server settings > Template** kun je met Manage Server een sjabloon
+maken van de kanalen, rollen en instellingen. Leden en berichten worden niet
+gekopieerd. Geef het sjabloon een naam en kies **Generate template link**.
+**Copy** kopieert de link. Na wijzigingen aan de server geeft het scherm aan
+dat het sjabloon verouderd is; **Sync with this server** vervangt de gedeelde
+structuur. **Delete template** maakt de link ongeldig.
+
+De afrondingswijziging van 18 november voegt een openbare webpagina toe die
+het sjabloon laat zien en de app opent. In de app kies je **Create server** en
+geef je de nieuwe server een naam. Je wordt eigenaar van een nieuwe server;
+je treedt hiermee niet toe tot de oorspronkelijke server. De publicatie en
+onafhankelijke controle van deze wijziging moeten nog worden bevestigd.
+
 ## 9. Handige toetsen
 
 Deze standaardtoetsen kun je onder Keybinds aanpassen. Een globale toets werkt alleen wanneer die optie door de geïnstalleerde desktopbuild wordt ondersteund en aangezet.

@@ -148,6 +148,8 @@ Errors use the envelope `{ "code": int, "message": string, "errors"?: object }`.
 | `PATCH` | `/guilds/{guild_id}/emojis/{emoji_id}` | api | `ModifyEmojiRequest` | `Emoji` | Modify a custom emoji |
 | `DELETE` | `/guilds/{guild_id}/emojis/{emoji_id}` | api | — | 204 No Content | Delete a custom emoji |
 | `GET` | `/guilds/{guild_id}/invites` | api | — | `array of Invite` | List a guild's invites |
+| `GET` | `/guilds/{guild_id}/vanity-url` | api | — | `VanityUrl` | Get a guild's permanent invitation (requires MANAGE_GUILD) |
+| `PATCH` | `/guilds/{guild_id}/vanity-url` | api | `ModifyVanityUrlRequest` | `VanityUrl` | Set or remove a guild's permanent invitation (requires MANAGE_GUILD) |
 | `GET` | `/discovery/guilds` | api | — | `DiscoveryPage` | Browse and search public servers that opted in to discovery |
 | `GET` | `/discovery/categories` | api | — | `DiscoveryCategories` | List discovery categories |
 | `POST` | `/discovery/guilds/{guild_id}/join` | api | — | 204 No Content | Join a publicly listed server |
@@ -419,7 +421,7 @@ A file attached to a message.
 | `ephemeral?` | `boolean` |  |
 | `duration_secs?` | `number` |  |
 | `waveform?` | `string` |  |
-| `flags?` | `integer` | AttachmentFlags bit set; IS_SPOILER (8) marks a spoiler. |
+| `flags?` | `integer` | AttachmentFlags bit set; IS_SPOILER (8) marks a spoiler. When present, flags are authoritative: 0 clears a spoiler even for a SPOILER_ filename. Infer the filename prefix only when flags are absent. |
 
 ### AuditEntryInfo
 
@@ -790,6 +792,8 @@ A guild (server). `voice_region` is a Discordy extra.
 | `approximate_member_count?` | `integer` |  |
 | `approximate_presence_count?` | `integer` |  |
 | `voice_region` | `string` | Discordy: voice region ID used to allocate voice nodes. |
+| `audit_log_enabled?` | `boolean` | Whether new audit entries are recorded. Audit-policy changes are always recorded. Existing entries remain readable within retention. |
+| `audit_log_retention_days?` | `30 or 90 or 365` | Retention for audit entries, including policy changes. Expired entries are excluded immediately and removed by the hourly retention job. |
 | `prune_admin_only?` | `boolean` | Discordy: when true, only administrators may prune inactive members. |
 
 ### GuildApplicationCommandPermissions
@@ -864,6 +868,8 @@ A guild with its full state (GUILD_CREATE payload and the internal guild state e
 | `approximate_member_count?` | `integer` |  |
 | `approximate_presence_count?` | `integer` |  |
 | `voice_region` | `string` | Discordy: voice region ID used to allocate voice nodes. |
+| `audit_log_enabled?` | `boolean` | Whether new audit entries are recorded. Audit-policy changes are always recorded. Existing entries remain readable within retention. |
+| `audit_log_retention_days?` | `30 or 90 or 365` | Retention for audit entries, including policy changes. Expired entries are excluded immediately and removed by the hourly retention job. |
 | `prune_admin_only?` | `boolean` | Discordy: when true, only administrators may prune inactive members. |
 | `joined_at?` | `string (date-time)` |  |
 | `large?` | `boolean` |  |
@@ -926,7 +932,7 @@ A server template: a shareable snapshot of a guild's roles and channels (Discord
 | `updated_at` | `string (date-time)` |  |
 | `source_guild_id` | `any` |  |
 | `serialized_source_guild` | `TemplateSourceGuild` |  |
-| `is_dirty` | `boolean` | Always false: syncing is explicit (`PUT /guilds/{guild_id}/templates/{code}`). |
+| `is_dirty` | `boolean` | Whether the source guild's current template-visible structure differs from the saved snapshot. Built-ins are always false. Syncing is explicit (`PUT /guilds/{guild_id}/templates/{code}`). |
 
 ### InstallParams
 
@@ -1486,6 +1492,15 @@ Account-wide settings of the current user. `default_delivery_mode` is a Discordy
 | `guild_positions` | `array of Snowflake` | Flat server order (legacy mirror of guild_folders). |
 | `preferences` | `UserPreferences` | Synced client preferences (appearance, chat, notification sounds, emoji). Sparse. |
 
+### VanityUrl
+
+A guild's permanent invitation. Codes are unique across guilds, case-insensitive and returned lowercase. Resolves through /invites/{code} while the guild has an @everyone-visible text channel.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `code` | `?string` |  |
+| `uses` | `integer` | Successful joins through this code. Existing membership does not increment it. Renaming the code resets this count. |
+
 ### VoiceRegion
 
 A voice region.
@@ -1563,6 +1578,16 @@ Create, overwrite or edit an application command.
 | `nsfw?` | `boolean` |  |
 | `contexts?` | `?array of integer` |  |
 | `integration_types?` | `array of integer` |  |
+
+### AttachmentMetadataEdit
+
+Updates metadata of one attachment already owned by this message. Omitted properties are unchanged; description null or blank clears alt text. Files, filenames, IDs and URLs are immutable. Only the author may edit attachment metadata.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `id` | `Snowflake` |  |
+| `description?` | `?string` | Trimmed alt text; null or blank clears it. |
+| `flags?` | `integer` | Only IS_SPOILER (8) is applied; other stored bits are preserved. Explicit 0 clears the spoiler even for a SPOILER_ filename. |
 
 ### AttachmentReference
 
@@ -1789,7 +1814,7 @@ POST /channels/{id}/messages body. allowed_mentions.replied_user=false replies w
 | --- | --- | --- |
 | `content?` | `string` |  |
 | `nonce?` | `string` |  |
-| `tts?` | `boolean` |  |
+| `tts?` | `boolean` | Read aloud by recipients with TTS enabled. Requires SEND_TTS_MESSAGES in addition to normal send permission; a disallowed true value returns 403. Stored and returned on messages and gateway events. |
 | `embeds?` | `array of Embed` |  |
 | `allowed_mentions?` | `AllowedMentions` |  |
 | `message_reference?` | `MessageReference` |  |
@@ -1850,7 +1875,7 @@ PATCH /channels/{id}/messages/{mid} body.
 | `flags?` | `?integer` |  |
 | `allowed_mentions?` | `?AllowedMentions` |  |
 | `components?` | `?array of MessageComponent` |  |
-| `attachments?` | `array of AttachmentReference` |  |
+| `attachments?` | `array of AttachmentMetadataEdit` | Partial metadata edits of existing attachments. Unlisted files remain unchanged and an empty array does nothing. Unknown or duplicate attachment IDs reject the complete edit. This field cannot add or remove files. |
 
 ### EditOverwriteRequest
 
@@ -2059,6 +2084,8 @@ PATCH /guilds/{id} body (partial). `voice_region` is a Discordy extra.
 | `default_message_notifications?` | `integer` |  |
 | `explicit_content_filter?` | `integer` |  |
 | `voice_region?` | `string` |  |
+| `audit_log_enabled?` | `boolean` | Owner or ADMINISTRATOR only. Disabling suppresses new audit entries and dispatches, except audit-policy changes themselves. |
+| `audit_log_retention_days?` | `30 or 90 or 365` | Owner or ADMINISTRATOR only. Existing entries older than this window become unreadable immediately and are physically removed by the hourly retention job. |
 | `prune_admin_only?` | `boolean` | Discordy: restrict member pruning to administrators. Needs MANAGE_GUILD. |
 
 ### ModifyGuildTemplateRequest
@@ -2104,6 +2131,14 @@ PATCH /users/@me/settings body (partial).
 | `pinned_dm_channel_ids?` | `array of Snowflake` | DM and group DM channels pinned to the top of the DM list (at most 5), most recently pinned last. Synced across devices. |
 | `pinned_channel_ids?` | `map of array of Snowflake` | Personal pinned channels per server, at most 10 per server (guild id to channel ids, most recently pinned last), shown at the top of that server's channel list. Visible only to the user. Synced across devices. |
 | `preferences?` | `UserPreferences` | Merged key by key into the stored preferences. |
+
+### ModifyVanityUrlRequest
+
+Requires MANAGE_GUILD. Set a permanent invitation code or remove it with null. Codes cannot conflict with ordinary invites, ignoring case.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `code` | `?string` |  |
 
 ### ModifyWebhookRequest
 
