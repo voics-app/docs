@@ -1,6 +1,6 @@
 # Server discovery (api#74)
 
-Status: existing search, categories, pagination and joining are implemented. The api#45 Community configuration and listing-report increment below is specified for implementation; paired API/client/admin verification and independent acceptance remain pending. REST shapes are in `protocols/rest.md` (generated from contracts).
+Status: existing search, categories, pagination and joining are implemented. The api#45 Community configuration and listing-report increment is in [API PR147](https://github.com/discordy-voics/api/pull/147), [client PR348](https://github.com/discordy-voics/client/pull/348), [admin PR34](https://github.com/discordy-voics/admin/pull/34) and [contracts PR46](https://github.com/discordy-voics/contracts/pull/46). Local API/client/admin tests pass; independent acceptance of the integrated versions remains pending. REST shapes are in `protocols/rest.md` (generated from contracts).
 
 ## Model
 
@@ -27,6 +27,8 @@ Both configured channels must belong to this guild and be standard-delivery text
 
 Configured channels cannot be deleted, marked NSFW or switched to ephemeral/P2P delivery until replaced or Community is disabled. Deleting the whole guild still works. Ordinary guild updates must not overwrite Community settings from stale reads. Changes use the existing guild update event and audit action.
 
+The Postgres adapter serializes Community changes, channel edits and listing writes on the guild row. A concurrent incompatible channel edit and Community enable cannot both commit. A concurrent listing request either commits before disable and is removed, or sees Community disabled and is refused.
+
 Migrations `0052` and `0053` add the channel pair and the guild report kind/index. Existing discovery rows without Community configuration become hidden at rollout. Configure Community to restore eligibility; explicitly disabling Community removes the opt-in row, so re-enabling requires listing again. No new environment variables or infrastructure are needed.
 
 ## Moderation rules
@@ -49,6 +51,14 @@ Listing reports enter the existing admin Reports queue as kind `guild`. Evidence
 - Discover view: search box (debounced), category chips, tag filter (click a tag on a card), card grid with description, tags, online/member counts and Join/Open, "Show more" pagination, loading/empty/error states.
 - Server settings, Discovery tab (needs `MANAGE_GUILD`): Community toggle and rules/updates channel selectors, category, tags, blockers list, List/Save/Remove. Explain when an opted-in listing is paused by eligibility.
 - Discover cards offer Report listing with category, optional note, public-evidence disclosure, pending/success/error states. Admin Reports distinguishes listing evidence from message or profile reports.
+
+## Local verification
+
+Seven Community HTTP tests use throwaway Postgres containers and the production adapters. They cover pair/type/mode/permission validation, disabling, channel/guild deletion, stale ordinary writes, concurrent incompatible edits/listing changes, audit changes, visibility/join/report eligibility, public evidence, duplicates, shared rate limits and admin resolution. The two existing discovery and seven existing message/user report tests also pass. Full API unit, formatting, Clippy and brand gates pass.
+
+Client interaction tests cover setup, failed-save retry, disabling, paused listing status and report opening/submission. Core, desktop and mobile lint/typecheck/unit suites and the desktop production build pass. Admin has 46 web tests and 171 BFF unit tests, with lint/typecheck/format/Clippy/build checks passing. These automated checks do not claim a production deployment or replace the coordinator's independent UI acceptance.
+
+The desktop production renderer also passes two headless Chromium scenarios at 1280×900 and 1000×720 against an isolated in-process REST/gateway fixture. Each covers Community setup, failed-save retry, listing, disabling and a public-listing report; the captured request contains only category and note. Settings and report-dialog screenshots were inspected at both sizes. All external requests are blocked and no live accounts are created. Reproduce with the Community browser-acceptance command in the client README. This checks the renderer and transport separately from the real-Postgres API tests above.
 
 ## Not in scope / follow-ups
 

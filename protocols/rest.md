@@ -68,6 +68,7 @@ Errors use the envelope `{ "code": int, "message": string, "errors"?: object }`.
 | `GET` | `/users/@me/mfa/passkeys` | api | — | `array of Passkey` | List registered passkey second factors |
 | `POST` | `/users/@me/mfa/passkeys/register/start` | api | `PasskeyRegisterStartRequest` | `WebauthnChallenge` | Start passkey registration |
 | `POST` | `/users/@me/mfa/passkeys/register/finish` | api | `PasskeyRegisterFinishRequest` | `PasskeyRegisterResponse` | Verify and save a passkey second factor |
+| `PATCH` | `/users/@me/mfa/passkeys/{id}` | api | `PasskeyRenameRequest` | `Passkey` | Rename a passkey owned by the current account |
 | `DELETE` | `/users/@me/mfa/passkeys/{id}` | api | `PasskeyDeleteRequest` | 204 No Content | Remove a passkey after password and second-factor confirmation |
 | `POST` | `/auth/mfa/webauthn/start` | api | `WebauthnLoginStartRequest` | `WebauthnChallenge` | Start passkey assertion after the password step |
 | `POST` | `/auth/mfa/webauthn/finish` | api | `WebauthnLoginFinishRequest` | `AuthResponse` | Exchange a verified passkey assertion for login tokens |
@@ -148,9 +149,12 @@ Errors use the envelope `{ "code": int, "message": string, "errors"?: object }`.
 | `PATCH` | `/guilds/{guild_id}/emojis/{emoji_id}` | api | `ModifyEmojiRequest` | `Emoji` | Modify a custom emoji |
 | `DELETE` | `/guilds/{guild_id}/emojis/{emoji_id}` | api | — | 204 No Content | Delete a custom emoji |
 | `GET` | `/guilds/{guild_id}/invites` | api | — | `array of Invite` | List a guild's invites |
+| `GET` | `/guilds/{guild_id}/vanity-url` | api | — | `VanityUrl` | Get a guild's permanent invitation (requires MANAGE_GUILD) |
+| `PATCH` | `/guilds/{guild_id}/vanity-url` | api | `ModifyVanityUrlRequest` | `VanityUrl` | Set or remove a guild's permanent invitation (requires MANAGE_GUILD) |
 | `GET` | `/discovery/guilds` | api | — | `DiscoveryPage` | Browse and search public servers that opted in to discovery |
 | `GET` | `/discovery/categories` | api | — | `DiscoveryCategories` | List discovery categories |
 | `POST` | `/discovery/guilds/{guild_id}/join` | api | — | 204 No Content | Join a publicly listed server |
+| `POST` | `/discovery/guilds/{guild_id}/reports` | api | `ReportListingRequest` | 204 No Content | Report a currently discoverable listing for moderation |
 | `GET` | `/guilds/{guild_id}/discovery` | api | — | `GuildDiscoverySettings` | Get a guild discovery settings (requires MANAGE_GUILD) |
 | `PUT` | `/guilds/{guild_id}/discovery` | api | `UpdateGuildDiscoveryRequest` | `GuildDiscoverySettings` | List or delist a guild in discovery (requires MANAGE_GUILD) |
 | `GET` | `/guilds/templates` | api | — | `array of GuildTemplate` | List the built-in server templates |
@@ -419,7 +423,7 @@ A file attached to a message.
 | `ephemeral?` | `boolean` |  |
 | `duration_secs?` | `number` |  |
 | `waveform?` | `string` |  |
-| `flags?` | `integer` | AttachmentFlags bit set; IS_SPOILER (8) marks a spoiler. |
+| `flags?` | `integer` | AttachmentFlags bit set; IS_SPOILER (8) marks a spoiler. When present, flags are authoritative: 0 clears a spoiler even for a SPOILER_ filename. Infer the filename prefix only when flags are absent. |
 
 ### AuditEntryInfo
 
@@ -790,6 +794,8 @@ A guild (server). `voice_region` is a Discordy extra.
 | `approximate_member_count?` | `integer` |  |
 | `approximate_presence_count?` | `integer` |  |
 | `voice_region` | `string` | Discordy: voice region ID used to allocate voice nodes. |
+| `audit_log_enabled?` | `boolean` | Whether new audit entries are recorded. Audit-policy changes are always recorded. Existing entries remain readable within retention. |
+| `audit_log_retention_days?` | `30 or 90 or 365` | Retention for audit entries, including policy changes. Expired entries are excluded immediately and removed by the hourly retention job. |
 | `prune_admin_only?` | `boolean` | Discordy: when true, only administrators may prune inactive members. |
 
 ### GuildApplicationCommandPermissions
@@ -805,7 +811,7 @@ Permissions of an application's command(s) in a guild.
 
 ### GuildDiscoverySettings
 
-A guild opt-in discovery listing and the rules that currently block listing it. Listing needs a description of at least 10 characters, the configured minimum member count and guild age, and no age-restricted (nsfw) channel.
+A guild opt-in discovery listing and the rules that currently block listing it. Listing requires Community with configured rules and updates channels, a description of at least 10 characters, the configured minimum member count and guild age, and no age-restricted (nsfw) channel. enabled means opted in; blockers must also be empty for public visibility.
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -814,7 +820,7 @@ A guild opt-in discovery listing and the rules that currently block listing it. 
 | `tags` | `array of string` |  |
 | `listed_at` | `?string (date-time)` |  |
 | `member_count` | `integer` |  |
-| `blockers` | `array of "DESCRIPTION_REQUIRED" or "MEMBER_COUNT_TOO_LOW" or "GUILD_TOO_NEW" or "NSFW_NOT_ALLOWED"` |  |
+| `blockers` | `array of "COMMUNITY_REQUIRED" or "DESCRIPTION_REQUIRED" or "MEMBER_COUNT_TOO_LOW" or "GUILD_TOO_NEW" or "NSFW_NOT_ALLOWED"` |  |
 
 ### GuildFolder
 
@@ -864,6 +870,8 @@ A guild with its full state (GUILD_CREATE payload and the internal guild state e
 | `approximate_member_count?` | `integer` |  |
 | `approximate_presence_count?` | `integer` |  |
 | `voice_region` | `string` | Discordy: voice region ID used to allocate voice nodes. |
+| `audit_log_enabled?` | `boolean` | Whether new audit entries are recorded. Audit-policy changes are always recorded. Existing entries remain readable within retention. |
+| `audit_log_retention_days?` | `30 or 90 or 365` | Retention for audit entries, including policy changes. Expired entries are excluded immediately and removed by the hourly retention job. |
 | `prune_admin_only?` | `boolean` | Discordy: when true, only administrators may prune inactive members. |
 | `joined_at?` | `string (date-time)` |  |
 | `large?` | `boolean` |  |
@@ -1486,6 +1494,15 @@ Account-wide settings of the current user. `default_delivery_mode` is a Discordy
 | `guild_positions` | `array of Snowflake` | Flat server order (legacy mirror of guild_folders). |
 | `preferences` | `UserPreferences` | Synced client preferences (appearance, chat, notification sounds, emoji). Sparse. |
 
+### VanityUrl
+
+A guild's permanent invitation. Codes are unique across guilds, case-insensitive and returned lowercase. Resolves through /invites/{code} while the guild has an @everyone-visible text channel.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `code` | `?string` |  |
+| `uses` | `integer` | Successful joins through this code. Existing membership does not increment it. Renaming the code resets this count. |
+
 ### VoiceRegion
 
 A voice region.
@@ -1563,6 +1580,16 @@ Create, overwrite or edit an application command.
 | `nsfw?` | `boolean` |  |
 | `contexts?` | `?array of integer` |  |
 | `integration_types?` | `array of integer` |  |
+
+### AttachmentMetadataEdit
+
+Updates metadata of one attachment already owned by this message. Omitted properties are unchanged; description null or blank clears alt text. Files, filenames, IDs and URLs are immutable. Only the author may edit attachment metadata.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `id` | `Snowflake` |  |
+| `description?` | `?string` | Trimmed alt text; null or blank clears it. |
+| `flags?` | `integer` | Only IS_SPOILER (8) is applied; other stored bits are preserved. Explicit 0 clears the spoiler even for a SPOILER_ filename. |
 
 ### AttachmentReference
 
@@ -1789,7 +1816,7 @@ POST /channels/{id}/messages body. allowed_mentions.replied_user=false replies w
 | --- | --- | --- |
 | `content?` | `string` |  |
 | `nonce?` | `string` |  |
-| `tts?` | `boolean` |  |
+| `tts?` | `boolean` | Read aloud by recipients with TTS enabled. Requires SEND_TTS_MESSAGES in addition to normal send permission; a disallowed true value returns 403. Stored and returned on messages and gateway events. |
 | `embeds?` | `array of Embed` |  |
 | `allowed_mentions?` | `AllowedMentions` |  |
 | `message_reference?` | `MessageReference` |  |
@@ -1850,7 +1877,7 @@ PATCH /channels/{id}/messages/{mid} body.
 | `flags?` | `?integer` |  |
 | `allowed_mentions?` | `?AllowedMentions` |  |
 | `components?` | `?array of MessageComponent` |  |
-| `attachments?` | `array of AttachmentReference` |  |
+| `attachments?` | `array of AttachmentMetadataEdit` | Partial metadata edits of existing attachments. Unlisted files remain unchanged and an empty array does nothing. Unknown or duplicate attachment IDs reject the complete edit. This field cannot add or remove files. |
 
 ### EditOverwriteRequest
 
@@ -2042,6 +2069,7 @@ PATCH /guilds/{id} body (partial). `voice_region` is a Discordy extra.
 
 | Field | Type | Description |
 | --- | --- | --- |
+| `features?` | `array of "COMMUNITY"` | MANAGE_GUILD. [] disables Community, clears its channels and removes the discovery listing. [COMMUNITY] enables it and requires rules_channel_id and public_updates_channel_id. Both must be non-NSFW standard text or announcement channels in this guild. Omission retains the current Community setting. |
 | `name?` | `string` |  |
 | `icon?` | `?string` |  |
 | `banner?` | `?string` | Image data URI (png, jpeg, gif or webp, at most 10 MiB) to set the banner; null removes it. |
@@ -2052,13 +2080,15 @@ PATCH /guilds/{id} body (partial). `voice_region` is a Discordy extra.
 | `afk_timeout?` | `integer` |  |
 | `system_channel_id?` | `?Snowflake` |  |
 | `system_channel_flags?` | `integer` | Bit set of system message suppressions: 1 join notifications, 2 server boosts, 4 setup tips, 8 join reply buttons, 16 role subscription purchases, 32 their reply buttons. A set bit turns that message off; 0 keeps all on. Join messages are posted to system_channel_id when it is set and bit 1 is clear. |
-| `rules_channel_id?` | `?Snowflake` |  |
-| `public_updates_channel_id?` | `?Snowflake` |  |
+| `rules_channel_id?` | `?Snowflake` | Community rules channel. Required when enabling Community; cannot be cleared while Community remains enabled. May equal public_updates_channel_id. |
+| `public_updates_channel_id?` | `?Snowflake` | Community updates channel. Required when enabling Community; cannot be cleared while Community remains enabled. May equal rules_channel_id. |
 | `preferred_locale?` | `string` |  |
 | `verification_level?` | `integer` |  |
 | `default_message_notifications?` | `integer` |  |
 | `explicit_content_filter?` | `integer` |  |
 | `voice_region?` | `string` |  |
+| `audit_log_enabled?` | `boolean` | Owner or ADMINISTRATOR only. Disabling suppresses new audit entries and dispatches, except audit-policy changes themselves. |
+| `audit_log_retention_days?` | `30 or 90 or 365` | Owner or ADMINISTRATOR only. Existing entries older than this window become unreadable immediately and are physically removed by the hourly retention job. |
 | `prune_admin_only?` | `boolean` | Discordy: restrict member pruning to administrators. Needs MANAGE_GUILD. |
 
 ### ModifyGuildTemplateRequest
@@ -2104,6 +2134,14 @@ PATCH /users/@me/settings body (partial).
 | `pinned_dm_channel_ids?` | `array of Snowflake` | DM and group DM channels pinned to the top of the DM list (at most 5), most recently pinned last. Synced across devices. |
 | `pinned_channel_ids?` | `map of array of Snowflake` | Personal pinned channels per server, at most 10 per server (guild id to channel ids, most recently pinned last), shown at the top of that server's channel list. Visible only to the user. Synced across devices. |
 | `preferences?` | `UserPreferences` | Merged key by key into the stored preferences. |
+
+### ModifyVanityUrlRequest
+
+Requires MANAGE_GUILD. Set a permanent invitation code or remove it with null. Codes cannot conflict with ordinary invites, ignoring case.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `code` | `?string` |  |
 
 ### ModifyWebhookRequest
 
@@ -2205,6 +2243,14 @@ Reauthenticate with the password before creating a passkey registration challeng
 | `password` | `string` |  |
 | `name` | `string` |  |
 
+### PasskeyRenameRequest
+
+Rename one of the authenticated user's passkeys. The name is trimmed and must contain 1–64 Unicode characters without control characters. Credential material and MFA state are unchanged.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `name` | `string` |  |
+
 ### PasswordConfirmationRequest
 
 Body of POST /users/@me/disable, /users/@me/delete and /users/@me/mfa/totp/enable: the current password re-authenticates the caller.
@@ -2262,6 +2308,7 @@ POST /auth/refresh body.
 | Field | Type | Description |
 | --- | --- | --- |
 | `refresh_token` | `string` | Opaque 256-bit token, base64url. |
+| `request_id?` | `string (uuid)` | Optional random UUID saved durably with the current refresh token before sending. Retrying this exact pair for up to five minutes recovers its immediate unused, unexpired successor in a live session without extending expiry. Keep the UUID until successor credentials are saved, then generate a new UUID for the next rotation. Omission retains strict single-use rotation. |
 
 ### RegisterRequest
 
@@ -2272,6 +2319,15 @@ POST /auth/register body.
 | `email` | `string (email)` |  |
 | `username` | `string` |  |
 | `password` | `string` |  |
+
+### ReportListingRequest
+
+Report a currently discoverable guild listing. The server captures only the public listing as evidence. Shares the reporter's 10-per-hour report limit; an existing open report from the same user is idempotent. Filing a report does not automatically remove a listing.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `category` | `"spam" or "harassment" or "hate_speech" or "violence" or "sexual_content" or "self_harm" or "illegal" or "impersonation" or "other"` |  |
+| `note?` | `?string` |  |
 
 ### ResetBotTokenResponse
 

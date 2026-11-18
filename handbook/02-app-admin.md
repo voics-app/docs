@@ -15,6 +15,15 @@ Summary: the operator portal, a Rust backend-for-frontend with an embedded React
 
 Pages: Overview, Usage, Voice regions (drain and resume nodes), Platform health, Trust and Safety (user and guild lookup, suspension), Reports (the review queue for reported messages and users: open, resolved and dismissed reports, the evidence with its source, resolve or dismiss with an optional note), Send notification (a push notification by hand, see below), Feature flags and Audit log. The BFF counts events from every Redpanda topic into rollups, reads metrics from VictoriaMetrics and calls the internal APIs of api and gateway. It never stores message content: the Reports page shows the text of a reported message that api copied (or the reporter submitted), but the BFF only passes it through and the audit entries for `report.resolve` and `report.dismiss` never contain it. See [moderation spec](../specs/2026-10-22-moderation-tools-and-ban-purge.md#reporting-a-message-or-a-user-api126).
 
+### Public listing reports (api#45)
+
+The paired API/client/admin increment adds guild listings to Reports. The table
+identifies the guild; review shows the owner at filing and the server-captured
+public name, description, category and tags. It does not copy private channels,
+members or messages. Existing resolve/dismiss actions remain audited and do not
+remove a listing. See the [discovery moderation policy](../specs/2026-11-03-server-discovery.md).
+Independent acceptance of the integrated versions remains a separate step.
+
 ### Send notification
 
 Page `/notify` (<https://discordy-admin.voics.nl/notify>, sidebar entry *Send notification*). Pick one user (search by username, email or id) or **Everyone**, write a title (at most 64 characters) and a message (at most 240), check the preview, press **Review and send**. The confirmation dialog states how many devices will receive it (for everyone this is the exact count of devices with a live push token, taken from a dry run), and only then **Send** goes through. The admin BFF calls the notifier, which uses the same queue and rate limits as message pushes; see [Sending a notification by hand](../runbooks/push-notifications.md#sending-a-notification-by-hand). Every send writes an audit entry `notification.send` (who, when, target `all` or `user:<id>`, title; never the message). It needs `NOTIFIER_INTERNAL_URL` (set in gitops `admin-config`) and a running notifier. Same access as the rest of the panel: Cloudflare Access plus `ADMIN_ALLOWED_EMAILS`.
