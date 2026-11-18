@@ -61,6 +61,8 @@ Message entries (always below the target block):
 
 Ephemeral and P2P messages drop reactions, pin, thread and others-delete (they cannot be applied to them).
 
+The Forward destination picker shows a one-to-one DM recipient's global avatar from `/avatars/{recipient_user_id}/{hash}`. The recipient ID owns the image; the DM channel ID remains the send target. A source server's profile override does not apply to a DM destination. Static and animated images use the shared asset resolver, and recipients without an avatar hash retain their initials. Group and server-channel destinations keep their existing icons.
+
 ## Channel menu matrix
 
 | Entry | Shown when |
