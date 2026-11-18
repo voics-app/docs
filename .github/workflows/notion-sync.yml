@@ -1,7 +1,7 @@
 name: notion-sync
 
-# Mirrors the Markdown in this repository into the Discordy Notion space
-# (Home > Home Lab > Discordy). Idempotent; see README "Notion mirror".
+# Mirrors this repository into the existing Voics Notion root.
+# Root/page identities are retained across the rename; see README "Notion mirror".
 on:
   push:
     branches: [main]

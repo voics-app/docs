@@ -4,6 +4,8 @@ Use this runbook for any change to the ScyllaDB cluster: adding a node, a rollin
 
 Today the cluster is one node in developer mode (`gitops/infrastructure/data/scylla/scylla.yaml`). Every procedure below is written for a multi-node cluster. Run them on a test cluster first. Scripted automation is tracked in [gitops#18](https://github.com/discordy-voics/gitops/issues/18) and is not built yet.
 
+**Readiness correction, 18 November 2026:** the current manifest hardcodes the broadcast address to `scylla-0`. Increasing replicas does not create a valid multi-node Scylla cluster. First design distinct node identities/seeds, topology and keyspace replication, then prove backup/restore and join/failure behavior in an isolated test cluster. The present server request is prepare-only and the [backup document](backup-restore.md) is a plan, not a completed prerequisite. Do not run the add/restart/repair/drain procedures on production as part of worker preparation.
+
 ## Rules
 
 - Change one node at a time, and never start the next step until the previous one reports normal.

@@ -137,7 +137,7 @@ Voice UDP bypasses Cloudflare, so a region's public IP is exposed by design.
 **Actions**:
 
 1. Check etcd with `kubectl -n voics-data get pods -l app=etcd`, then `kubectl -n voics-data exec etcd-0 -- etcdctl endpoint health`.
-2. Fix or restart etcd. If its data is corrupt, restore it from a snapshot ([backup-restore → etcd](../backup-restore.md#etcd)). The contents are only leased keys, so an empty etcd is acceptable: nodes re-register within 3 s of etcd's return.
+2. Fix or restart etcd. If its data is corrupt, restore it from a snapshot ([backup-restore → etcd](../backup-restore.md#kubernetes-etcd-en-applicatie-etcd)). The contents are only leased keys, so an empty etcd is acceptable: nodes re-register within 3 s of etcd's return.
 3. After recovery, check that every node is listed with `regionctl list`.
 4. The gateway reconciles its watch. A guild whose node vanished during the outage is reallocated on its next join.
 

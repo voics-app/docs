@@ -2,6 +2,10 @@
 
 How a message becomes a notification on an iPhone or an Android phone, what the owner must provide before it works, how to turn it on, and what to check when it does not. Plan: [mobile app](../plans/2026-11-03-mobile-app.md) (Notifier, Back-pressure and Privacy rows). Decision record for the bounded queue: [ADR 0016](../adr/0016-push-backpressure.md).
 
+## Verified deployment status, 18 November 2026
+
+Production notifier is 1/1 Ready on `messages-notifier:0.15.0`; the coordinator independently verified `notifier-secrets` and `notifier-fcm` as Ready/SecretSynced. Deployment card gitops#69 is closed. This is **not proof of actual APNs/FCM device delivery**. The credential setup below is for rotation/recovery or an unconfigured separate environment, not an instruction to recreate existing keys. Keep singleton/Recreate semantics.
+
 ## How it works
 
 ```mermaid
@@ -19,7 +23,7 @@ flowchart LR
 
 1. The app registers its APNs device token with the api, one per login session, together with the APNs environment it was issued for (`sandbox` or `production`) and two device preferences (message previews, only mentions). It registers again on every start. The api removes the token with its session (logout, remote revoke, logout everywhere, suspension), with its encrypted-message device, and when it was not refreshed for `DEVICE_MAX_IDLE_DAYS`.
 2. The **notifier** (`messages` repo, image `ghcr.io/discordy-voics/messages-notifier`, namespace `voics-apps`, port 8085) reads `MESSAGE_CREATE` from `discordy.message.v1`. For each message it asks the api for the members who can view the channel, are not the author and hold a token on a live session.
-3. It applies the clients' rules to each of them: no push while the user has a live gateway session (the app shows its own banner), then mute (guild, channel or category), the effective level (channel, category, guild, server default), direct messages, direct mentions, role mentions, `@everyone` (unless suppressed), `@here` (never reaches an offline member), `@silent`, and the device's own only-mentions preference.
+3. It applies the clients' rules to each of them: a live gateway socket alone does not suppress push, because a mobile socket may linger in the background; the client handles foreground duplicate suppression. Then apply mute (guild, channel or category), the effective level (channel, category, guild, server default), direct messages, direct mentions, role mentions, `@everyone` (unless suppressed), `@here` (never reaches an offline member), `@silent`, and the device's own only-mentions preference.
 4. It sends through APNs over HTTP/2 with a provider token signed by the `.p8` key. Each token goes to the sandbox or the production host it was issued for; on `BadDeviceToken` the other host gets one try, and a host that works is remembered. A token APNs rejects for good (`410`, `BadDeviceToken` on both hosts, `DeviceTokenNotForTopic`) is deleted through the api.
 
 Android goes the same way with Firebase Cloud Messaging (HTTP v1): the app registers its FCM token with `platform: "fcm"`, and the notifier signs a JWT with the Firebase service-account key, exchanges it at `oauth2.googleapis.com/token` for an access token (scope `firebase.messaging`, cached until two minutes before it expires) and posts to `fcm.googleapis.com/v1/projects/{project_id}/messages:send`. A message push is a notification plus data message (Android priority high, notification channel `messages`, data `type=message`, `channel_id`, `message_id`, `guild_id` when there is one). A rejected FCM token (`UNREGISTERED`, `INVALID_ARGUMENT`, `SENDER_ID_MISMATCH`, 404) is deleted through the api; `401` drops the cached access token; `429` and `5xx` are retried. Each provider is optional: a provider without credentials has no sender and its tokens are counted `unsupported` while the other provider keeps working (a partial APNs setup is still a startup error, and an unusable FCM key stops the pod at startup with `FCM service account ...`).
@@ -34,7 +38,7 @@ Android goes the same way with Firebase Cloud Messaging (HTTP v1): the app regis
 
 ## What the owner must provide
 
-The deployment ships at **0 replicas** and the `notifier-secrets` ExternalSecret cannot sync, so nothing crash-loops and no alert fires. Until the three values below exist in OpenBao, the iPhone app registers tokens but nobody sends.
+Production already runs at **1 replica** with synced APNs and FCM secrets. The values below document prerequisites for a new, separately authorized environment or key rotation. Do not create duplicate provider keys merely because this historical setup section exists.
 
 | What | Where it comes from | Where it goes |
 |---|---|---|
@@ -59,7 +63,7 @@ The project id is read from the key file. The value lands in `kv/discordy/notifi
 
 ## Turning push on
 
-Do this once the three values are in hand. Production first, dev the same way with the dev paths.
+Use this checklist only for a genuinely unconfigured environment or an authorized rotation. Production setup is already complete; verify existing state first. Do not perform a new environment deployment under the prepare-only server request.
 
 1. **Store the values** in the gitops repository's `production` environment. Pipe the key from the file, never as an argument:
 
@@ -71,7 +75,7 @@ Do this once the three values are in hand. Production first, dev the same way wi
 
 2. **Sync to OpenBao**: `gh workflow run secrets-sync.yml --repo discordy-voics/gitops -f paths=discordy/notifier`, then `gh run watch`. Until the three GitHub secrets exist, every `secrets-sync` run reports `skip kv/discordy/notifier: missing GitHub secret(s)` for this path and ends red, as it does for any unprovisioned path (the other paths are still written). For dev write the same three values to `kv/discordy-dev/notifier` (`25-secrets.sh` skips this path on purpose).
 3. **Check the secret reached the cluster**: `kubectl -n voics-apps get externalsecret notifier-secrets` shows `SecretSynced`, and `kubectl -n voics-apps get secret notifier-secrets` exists. Force a refresh with `kubectl -n voics-apps annotate externalsecret notifier-secrets force-sync="$(date +%s)" --overwrite`.
-4. **Scale it up**: in `gitops/apps/notifier/production/kustomization.yaml` change the `replicas` count from `0` to `1` (dev: `apps/notifier/dev/kustomization.yaml`), merge through the normal flow ([release](release.md)). Flux reconciles within the `apps` interval.
+4. **Check desired replicas**: production is already one. For a separately authorized unconfigured environment, set that environment’s notifier overlay to one through the normal [release flow](release.md). Do not change another environment or add concurrent notifier replicas.
 5. **Verify**: `kubectl -n voics-apps rollout status deploy/notifier`; `kubectl -n voics-apps logs deploy/notifier` shows `notifier listening` and `consumer started` once per partition; `curl` of `/readyz` through a port-forward answers `ok`. A wrong key makes the pod exit at startup with `APNs key is not a valid .p8`.
 6. **Smoke test with a real phone** (see below). The metric `notifier_pushes_total{outcome="sent"}` must move.
 
@@ -79,7 +83,7 @@ Turning it off again is the same one-line change back to `0`.
 
 ## Sending a notification by hand
 
-The owner can push a notification to one user or to everyone from the admin panel: <https://discordy-admin.voics.nl/notify> (sidebar *Send notification*, [admin handbook](../handbook/02-app-admin.md#send-notification)).
+The owner can push a notification to one user or to everyone from the admin panel: <https://admin.voics.nl/notify> (sidebar *Send notification*, [admin handbook](../handbook/02-app-admin.md#send-notification)).
 
 1. Choose **One user** (search by username, email or id, then *Choose*) or **Everyone**. Write the title (at most 64 characters) and the message (at most 240). The preview shows what the lock screen will roughly look like.
 2. Press **Review and send**. The dialog states how many devices will receive it. For everyone this is the exact number of devices with a live token (iOS and Android, one per login session, PushKit call tokens excluded). A user with no registered device cannot be sent to (the button stays off).

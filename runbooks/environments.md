@@ -175,42 +175,13 @@ The gitops side is in place. These changes belong to the repositories named, and
 
 ## Disaster recovery: rebuild production
 
-Use this when the gen-serv VM is lost. Read [Backup and restore](backup-restore.md) first: it defines
-what is backed up. Timings: **not measured yet**; the first drill fills in the table below.
+**Updated 18 November 2026: design only.** Production contains user data, and no verified offsite backup or restore drill is established. The former instructions to remove Terraform state, enable production bootstrap and assume MinIO/barman recovery are not an executable recovery procedure.
 
-Decide first:
+Start with the [backup and recovery plan](backup-restore.md). Preserve the source VM, disks, Terraform state and independent OpenBao static seal key. GitHub secrets are not assumed to reconstruct every secret, and a new OpenBao init can overwrite key-store entries needed for an older data copy.
 
-- **A recent whole-VM `vzdump` exists**: restore that instead ([Whole VM](backup-restore.md#whole-vm)). It is faster and keeps the OpenBao keys valid.
-- **No usable VM backup**: rebuild with Terraform as below.
+Before any rebuild: explicitly authorize the target environment, inventory data and identities, obtain a complete decryptable set, prove isolated restoration, and document write fencing, public cutover and rollback. Never run production bootstrap on the existing data-bearing VM as a worker-preparation step. Use the [worker guide](server-uitbreiden.md) for capacity preparation and the [revised migration proposal](../plans/2026-10-19-rke2-rancher-migration.md) for a future control-plane change.
 
-### Rebuild
-
-1. **Protect the existing OpenBao keys.** A restored data directory also needs the **seal key** (`OpenBao seal key` in the key store): `20-openbao.sh` re-creates the Secret from it. `20-openbao.sh` stores new recovery keys under the names `OpenBao unseal key N` and `OpenBao root token`. With the DPAPI store a new init **overwrites** the files, and with 1Password it adds duplicates. If you will restore an OpenBao snapshot ([OpenBao backup](backup-restore.md#openbao)), keep the old keys: do **not** run the `openbao` stage's init; follow [OpenBao unseal](openbao-unseal.md) to restore the snapshot instead. If you will re-initialise and rely on GitHub as the source of truth, copy the old key files aside first.
-2. **Machine.** In `infra/terraform/envs/gen-serv`, fill in `terraform.tfvars` from your notes (`qm config 107` of a surviving copy, or the table above) and set `run_bootstrap = true`. Drop the lost VM from the state: `terraform state rm 'module.node'` if it is still in there.
-3. **Bring-up:**
-
-   ```bash
-   git checkout main && git pull
-   CONFIRM_PRODUCTION=gen-serv ./env.sh up gen-serv
-   ```
-
-   The guard `CONFIRM_PRODUCTION` exists so nobody applies production by accident.
-   - `provision` creates the VM and prepares the node (CPU `host`, etcd disk, etcd datastore).
-   - `flux` reinstalls Flux; the layers reconcile (`infra-configs` waits for OpenBao).
-   - `openbao`: init or unseal as decided in step 1.
-   - `secrets`: set or confirm the GitHub `production` environment secrets, then run the `secrets-sync` workflow (the runners register once `kv/discordy/arc` exists: pass `ARC_GITHUB_TOKEN`).
-   - `cloudflare`: the tunnel `discordy-gen-serv` and its DNS records already exist and are left alone; the tunnel credentials come back from the GitHub `production` secret.
-4. **Restore data**, in the order of [Full disaster recovery order](backup-restore.md#full-disaster-recovery-order): MinIO from off-site (it also holds `discordy-backups`), Postgres PITR from barman, ScyllaDB snapshots. The apps reconcile when their dependencies are ready.
-5. **Verify.** `./env.sh verify gen-serv`, then the end-to-end smoke: log in, send a message, join a voice channel from the client.
-6. Reset `run_bootstrap = false` so later plans never touch the live node.
-
-| Step | Measured time |
-|---|---|
-| VM creation and node bootstrap (`provision`) | not measured yet |
-| Flux layers Ready | not measured yet |
-| Secrets and OpenBao | not measured yet |
-| Data restore (Postgres, Scylla, MinIO) | not measured yet |
-| Total | not measured yet |
+No rebuild time, PITR capability, whole-VM recovery or usable offsite object set is currently claimed. Record actual timings and functional checks in the backup plan's evidence form after the first authorized isolated drill.
 
 ### Adopting the existing production VM into Terraform
 

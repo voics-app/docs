@@ -264,7 +264,7 @@ There are two options:
 
 2. **Fix forward** with a hotfix, then resume automation with `flux resume image update flux-system`.
 
-**Migrations**: never roll back a database migration automatically. If the previous version can't run against the new schema, restore from backup ([backup-restore → Postgres PITR](backup-restore.md#point-in-time-restore)).
+**Migrations**: never roll back a database migration automatically. If the previous version cannot run against the new schema, a validated forward fix or tested restore plan is required; production PITR is not currently established ([Postgres recovery plan](backup-restore.md#postgres)).
 
 ## Desktop client release
 

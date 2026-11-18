@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Mirrors the docs repository into the Discordy Notion page tree. Idempotent:
+// Mirrors the docs repository into the existing Voics Notion page tree. Idempotent:
 // every database page carries the hidden "Source path" (stable key) and "Content hash" properties,
 // so a re-run only touches pages whose source changed, and archives pages whose source is gone.
 //
@@ -10,9 +10,9 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Notion } from './notion.mjs';
-import { convertMarkdown, redactSecrets, rt, richTextPlain } from './md.mjs';
+import { convertMarkdown, redactSecrets, rt } from './md.mjs';
 import { collectRows, DB_DEFS, GITHUB_ORG, BRANCH } from './sources.mjs';
-import { dashboardBlocks, faqMarkdown, heroText } from './dashboard.mjs';
+import { dashboardBlocks, faqMarkdown, heroText, isManagedHero } from './dashboard.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const ROOT_PAGE = process.env.NOTION_ROOT_PAGE_ID ?? '3fb99f29-12a4-81cb-b018-ebda0f0072e8';
@@ -37,7 +37,7 @@ if (args.has('--prune-root')) {
   for (const b of rootKids) {
     const title = b.child_page?.title ?? b.child_database?.title;
     if (title && managedTitles.has(title)) continue;
-    if (b.type === 'callout' && richTextPlain(b.callout.rich_text.map((t) => ({ text: { content: t.plain_text } }))).startsWith('Discordy')) continue;
+    if (isManagedHero(b)) continue;
     log(`prune: ${b.type} ${title ?? ''}`);
     await notion.del(`/blocks/${b.id}`);
     stats.archived++;
@@ -45,7 +45,7 @@ if (args.has('--prune-root')) {
 }
 const kids = args.has('--prune-root') && !DRY ? await notion.children(ROOT_PAGE) : rootKids;
 
-let hero = kids.find((b) => b.type === 'callout' && b.callout.rich_text.map((t) => t.plain_text).join('').startsWith('Discordy'));
+let hero = kids.find(isManagedHero);
 if (!hero) {
   log('creating hero callout');
   const made = await notion.append(ROOT_PAGE, [heroBlock()]);
@@ -243,7 +243,7 @@ for (const r of rows) {
   stats[r.isNew ? 'created' : 'updated']++;
 }
 
-// ---------------------------------------------------------------- dashboard on the Discordy page
+// ---------------------------------------------------------------- dashboard on the Voics page
 const rowUrl = (key) => notionUrl(byKey.get(key)?.pageId ?? ROOT_PAGE);
 const dash = dashboardBlocks({
   rows, dbs, faqUrl: notionUrl(faqId), rowUrl, syncedDuplicate,
@@ -277,4 +277,4 @@ if (oldRev !== rev || !stampBlock) {
 
 log(JSON.stringify({ ...stats, requests: notion.requests, writes: notion.writes, rows: rows.length, dryRun: DRY }));
 if (warnings.length) console.warn(`warnings:\n- ${warnings.join('\n- ')}`);
-log(`Discordy page: ${notionUrl(ROOT_PAGE)}`);
+log(`Voics page: ${notionUrl(ROOT_PAGE)}`);
