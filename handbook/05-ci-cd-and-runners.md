@@ -57,7 +57,7 @@ Releases are always clean: pushes to `main`, tags, `release/*`, `hotfix/*` and P
 
 **Switch it off** (clean from-scratch build, same as GitHub-hosted): set the variable `CI_CACHE=off` (`gh variable set CI_CACHE --body off -R discordy-voics/<repo>` or at organization level; delete it or set `on` to switch back), or label a pull request `ci-no-cache` and push a commit (a re-run keeps the old labels). Every scheduled run (weekly, Monday 04:17 UTC on `develop`, in api, messages, gateway, voice and client) is a cold build, so a cache that hides a breakage shows up within a week and alerts like any red CI.
 
-**Clear it:** `scripts/runner.sh cache-clear --host user@vm [--what all|cargo|target|sccache|pnpm|trivy|mix] [--layers] [--force]` (refuses while a runner is busy). Rebuild the runners with `runner.sh up` when idle to pick up new toolchain versions; versions are listed at the top of `runner.sh`.
+**Clear it:** `scripts/runner.sh cache-clear --host user@vm [--what all|cargo|target|sccache|pnpm|trivy|mix] [--layers] [--force]` (refuses while a runner is busy). For new toolchains, first drain and stop the selected runners explicitly, then use `up --recreate` within the preflight budget. Plain `up` keeps running containers. Versions are listed at the top of `runner.sh`.
 
 Measured on the VM runners (job duration, `gh api repos/discordy-voics/<repo>/actions/runs/<id>/jobs`). Before: api `test` 1794 s (cargo test 1477 s plus rust-cache upload 298 s) and `clippy` 229 s in parallel jobs, messages `test` 575 s, client `checks` 652 s. After (PR runs, unit tests only):
 
@@ -104,17 +104,31 @@ The shared workflows' default `runs-on` follows the caller repository variable *
 
 ### Build a runner
 
-`scripts/runner.sh up` starts `--count` containers (default 3) of `ghcr.io/actions/actions-runner:2.338.0`, one job each. Each registers at org level with the label, mounts the host Docker socket for image builds and installs the packages `ubuntu-latest` ships (`libatomic1`, build tools, cmake, clang, jq).
+The capacity-aware `scripts/runner.sh` first inspects the Docker daemon's CPU/RAM
+and all `discordy-runner-*` containers, across labels and indices. `--count N`
+means N total active runners for the requested label. Existing runner #2 satisfies
+a total of one; `up` must not add #1 just because its number is below N.
+Runners use `ghcr.io/actions/actions-runner:2.338.2`, one job each, with the host
+Docker socket and baked build tools. Use the reviewed script version: older
+versions ignored unknown flags, so `up --dry-run` was not a safe preview.
 
 ```bash
 cd .github
-scripts/runner.sh up                      # three runners on this PC, label karma-pc, switches CI_RUNNER
-scripts/runner.sh up --count 5            # five parallel jobs on this machine
+scripts/runner.sh preflight               # read-only JSON: capacity, kept names and planned additions
+scripts/runner.sh up --dry-run --count 1   # same plan, with an explicit total
+scripts/runner.sh up                      # add only missing slots within the CPU/RAM budget
 scripts/runner.sh status                  # active CI_RUNNER and online runners
 scripts/runner.sh down                    # deregister, remove, switch back to GitHub
 ```
 
 Run `down` before shutting the PC off: the containers have no restart policy, so after a reboot they are gone and queued jobs would wait for `karma-pc`.
+
+The default uses up to three slots that fit the budget; a larger existing pool is
+kept only when it fits. An unchanged pool is a read-only no-op: no image build,
+pull, token request or routing change. Stopped containers are preserved unless
+`--recreate` is explicit. Recreation refuses active targets and removes selected
+stopped containers without force; drain and stop them manually first. Capacity
+is checked again after image preparation and before each addition.
 
 ### Use a VM: set up on the VM itself (easiest)
 
@@ -177,7 +191,7 @@ The client installer (NSIS and the native crypto module) must be built on Window
 
 Every machine names its runners `<label>-<machine id>-N` (for example `vm-runner-3f9a1c-1`), so names never collide, even when two VMs share a hostname. The label decides which jobs a runner takes:
 
-- **One pool** (recommended): use the same label on every VM, for example `scripts/runner.sh up --label vm-pool --count 3` on each, then `scripts/runner.sh use vm-pool` once. Jobs go to whichever runner is free.
+- **One pool**: use the same label on existing VMs, run `scripts/runner.sh preflight --label vm-pool` on each and choose a count within its budget. Then `scripts/runner.sh use vm-pool` sends jobs to a free runner. A label does not create more host capacity.
 - **Separate VMs**: keep the default label `vm-<hostname>` (give the VMs different hostnames), and `use` picks one.
 
 `down` on a VM removes only that VM's runners. It switches CI back to GitHub only when no other runner with the label is still online.
@@ -187,7 +201,8 @@ Every machine names its runners `<label>-<machine id>-N` (for example `vm-runner
 ```bash
 ssh-copy-id user@vm                         # once: your SSH key on the VM
 scripts/runner-vm-bootstrap.sh user@vm      # once: installs Docker (asks for the VM sudo password)
-scripts/runner.sh up --host user@vm --count 3
+scripts/runner.sh preflight --host user@vm  # inspect the target daemon, not the caller PC
+scripts/runner.sh up --host user@vm         # add only missing slots within that budget
 scripts/runner.sh use vm-<ip-with-dashes>   # send every repo's jobs there
 scripts/runner.sh use github                # and back
 ```
@@ -200,7 +215,24 @@ Its runners stay registered as offline, and jobs queue for its label. Fix: set u
 
 ### Resources
 
-One runner handles one job at a time and needs about 2 vCPU, 6 to 8 GB RAM and 40 GB disk. Rust builds (api, messages, sfu, native crypto) are the heaviest. A VM for three runners needs about 6 to 8 vCPU, 16 to 24 GB RAM and 150 GB disk, SSD preferred. An idle runner uses about 100 MB.
+One runner handles one job at a time. Budget about 40 GB disk per runner in
+addition to the CPU/RAM admission rule below. For three heavy jobs, plan for
+6–8 vCPU, 24 GiB RAM and 150 GB SSD. Rust linking, testcontainers, image builds
+and caches are much heavier than an idle runner.
+
+Admission reserves **2 CPUs and 6 GiB per job, plus 1 GiB for the host**. Swap adds
+no capacity. Thus 8 GiB/4 CPUs permits one runner; 24 GiB/6 CPUs permits three.
+The 4 CPU/7.2 GiB CI VM observed on 18 November permits one. Running, paused,
+restarting, created and removing runner containers reserve slots, including other
+labels. An excessive existing pool or smaller explicit count requires manual
+draining; `up` never shrinks or stops it.
+
+This is a dedicated-host admission rule, not a performance guarantee. Available
+RAM, free disk and I/O pressure still require operator inspection. Serialize `up`
+across operators: the inventory is a snapshot, not a distributed lock. In the
+18 November incident, approximately 99% I/O wait and 90% I/O PSI accompanied the
+overcommitted pool; no OOM evidence was captured. A fitting count does not prove
+that a busy host has recovered. The source change itself drains no live runner.
 
 ### Troubleshooting
 
