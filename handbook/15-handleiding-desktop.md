@@ -116,6 +116,43 @@ Let op de balk met niet-opgeslagen wijzigingen. Sla op of herstel je wijzigingen
 
 Voor de nieuwe permanente uitnodiging en auditinstellingen staan de precieze rechten en gevolgen in [serverinstellingen](../protocols/community-settings.md). Een kortere auditbewaartermijn kan oudere gegevens verwijderen. Het uitzetten van het log is geen algemene privacyverwijdering en wist geen externe back-ups.
 
+### Community en vindbaarheid
+
+Onder **Server settings → Discovery** kun je Community inschakelen en een rules-
+en updateskanaal kiezen. Beide moeten een tekst- of announcementkanaal met
+Standard-bezorging zijn, zonder leeftijdsbeperking. Hetzelfde kanaal mag beide
+doelen dienen. Sla Community eerst op en kies daarna een categorie en tags om de
+server in Discover te tonen. De overige eisen staan op de pagina; een bestaande
+listing die niet meer voldoet krijgt de status gepauzeerd.
+
+Community uitschakelen en opslaan verwijdert de listing en wist beide
+kanaalkeuzes. Opnieuw inschakelen maakt de server niet automatisch vindbaar.
+Vervang een ingesteld kanaal voordat je het verwijdert of de bezorgmodus wijzigt.
+Deze instelling voegt geen verplichte regelsacceptatie of onboarding toe.
+
+Op een Discover-kaart opent **Report listing** een melding met categorie en
+optionele toelichting. Moderatoren krijgen een kopie van de openbare listing
+op het moment van melden. Privékanalen, leden en berichten worden niet
+meegestuurd. Een melding verwijdert de listing niet automatisch. De bediening
+hoort bij de api#45-increment; onafhankelijke acceptatie van de geïntegreerde
+desktop/API/admin-versies blijft een aparte stap. Zie de
+[specificatie en uitrolgevolgen](../specs/2026-11-03-server-discovery.md).
+
+### Een server delen als sjabloon
+
+Onder **Server settings > Template** kun je met Manage Server een sjabloon
+maken van de kanalen, rollen en instellingen. Leden en berichten worden niet
+gekopieerd. Geef het sjabloon een naam en kies **Generate template link**.
+**Copy** kopieert de link. Na wijzigingen aan de server geeft het scherm aan
+dat het sjabloon verouderd is; **Sync with this server** vervangt de gedeelde
+structuur. **Delete template** maakt de link ongeldig.
+
+De afrondingswijziging van 18 november voegt een openbare webpagina toe die
+het sjabloon laat zien en de app opent. In de app kies je **Create server** en
+geef je de nieuwe server een naam. Je wordt eigenaar van een nieuwe server;
+je treedt hiermee niet toe tot de oorspronkelijke server. De publicatie en
+onafhankelijke controle van deze wijziging moeten nog worden bevestigd.
+
 ## 9. Handige toetsen
 
 Deze standaardtoetsen kun je onder Keybinds aanpassen. Een globale toets werkt alleen wanneer die optie door de geïnstalleerde desktopbuild wordt ondersteund en aangezet.

@@ -32,7 +32,23 @@ Android goes the same way with Firebase Cloud Messaging (HTTP v1): the app regis
 
 **Privacy.** Only a channel whose delivery mode is exactly `standard` may put message text, the author or the channel and server names into a push. Every other mode, and any mode the notifier does not know, gets the title "New message" and nothing else. A device that turned previews off gets "New message" as the body in standard chats too. Encrypted (Ephemeral) and peer-to-peer messages do not travel on the message topic at all (the gateway relays them), so today no push is produced for them; the rule is in place for the day one is.
 
-**Back-pressure (ADR 0016).** Pushes wait in a bounded queue (`PUSH_QUEUE_CAPACITY`, default 10000). At most `PUSH_MAX_IN_FLIGHT` (default 100) provider requests run at once. When the queue is full new pushes are dropped and counted, never blocking the event consumer. Failed sends are retried with backoff (`PUSH_MAX_ATTEMPTS`, default 3) and then recorded as failed. Events older than `PUSH_MAX_EVENT_AGE_SECS` (default 120) are not pushed.
+**Back-pressure (ADR 0016).** Pushes wait in a bounded queue (`PUSH_QUEUE_CAPACITY`, default 10,000).
+At most `PUSH_MAX_IN_FLIGHT` (default 100) jobs run across both providers together, including retry
+waits. The pump acquires a send slot before taking a job out of the queue: waiting work never gains
+an extra hidden slot. Total admitted work is bounded by queue capacity plus active slots. A full
+queue drops new message pushes and counts them without blocking the event consumer. Failed sends
+retry with backoff (`PUSH_MAX_ATTEMPTS`, default 3), then record failure. Events older than
+`PUSH_MAX_EVENT_AGE_SECS` (default 120) are skipped. Manual broadcasts use the same bounds, waiting
+up to 30s per device for queue room before counting a drop.
+
+**Operator view.** Admin → Platform health shows Dropped pushes (5m), Push queue and Push sends
+in flight. The drop chart uses `increase(...[5m])` per provider: each point estimates the preceding
+five minutes, not the whole selected chart range. Queue and in-flight are per notifier instance.
+Compare with exported `notifier_queue_capacity` and `notifier_in_flight_limit` when saturated.
+Empty charts mean missing samples, not zero drops. These panels depend on the existing notifier
+scrape job; no new secrets or access permissions are needed. A local 100,000-request blocked-provider
+burst retained 10,000 waiting plus 100 active, counted 90,000 drops, and drained all admitted jobs
+after release. The 10,000 baseline comes from default capacity, not measured production traffic.
 
 **One replica only.** The notifier has no consumer group and stores no offset: it starts at the end of the topic. A second pod would push every message twice, so the Deployment uses the `Recreate` strategy and one replica. A restart loses at most the messages sent while it was down, which is intended: a push for an old message only annoys.
 
@@ -111,7 +127,8 @@ Good to know:
 Needs an iPhone with a development or preview build of the app, signed in, notifications allowed.
 
 1. Open a chat once (the app then holds a registered token). Check in pgweb: `select user_id, platform, environment, previews, only_mentions, updated_at from push_tokens order by updated_at desc limit 5;`.
-2. Close the app (swipe it away; a live gateway session suppresses the push).
+2. Background or close the app. A live gateway session does not suppress push; also verify that
+   an active foreground app suppresses duplicate system banners according to its current chat/gateway state.
 3. From another account send a message to the phone's account. A notification with the sender and text arrives within a few seconds. Tapping it opens the chat at that message.
 4. In the app set the chat to mentions only and send again: no push; mention the account: a push.
 5. Switch the app's *Show message previews* off: the body becomes "New message".
@@ -123,15 +140,18 @@ A build signed with a development provisioning profile (a local `expo run:ios`, 
 
 ## Metrics and alerts
 
-Scrape job `notifier` on port 8085 (not listed in the admin health page while it runs at 0 replicas).
+Scrape job `notifier` on port 8085. Admin Platform health includes scrape availability and the
+notifier drop/queue/in-flight panels; missing samples remain no-data rather than healthy zeroes.
 
 | Metric | Meaning |
 |---|---|
 | `notifier_events_total{result}` | `processed`, `duplicate`, `stale`, `unparsable`, `not_pushable`, `directory_error` |
-| `notifier_decisions_total{verdict}` | `notify`, `online`, `muted`, `level_nothing`, `not_mentioned`, `device_only_mentions` |
+| `notifier_decisions_total{verdict}` | `notify`, `muted`, `level_nothing`, `not_mentioned`, `device_only_mentions`; `online` is no longer a skip reason |
 | `notifier_pushes_total{provider,outcome}` | `sent`, `failed`, `invalid_token` (token removed), `dropped` (queue full), `unsupported` (no sender configured for that provider), `manual` (a device accepted for a notification sent by hand; counted on top of the final outcome) |
 | `notifier_push_retries_total`, `notifier_push_duration_seconds` | retries and provider latency |
 | `notifier_queue_depth` | jobs waiting for a free slot |
+| `notifier_queue_capacity` | configured waiting-job capacity |
+| `notifier_in_flight`, `notifier_in_flight_limit` | active jobs including retry waits, and their configured cap |
 | `notifier_apns_errors_total{status,reason}` | APNs error answers |
 | `notifier_fcm_errors_total{status,reason}` | FCM and OAuth error answers (`reason` is the FCM error code, or `oauth`) |
 | `notifier_apns_host_corrections_total` | tokens found on the other APNs host |
@@ -143,7 +163,7 @@ Alerts (`push` group, [alerting](alerting.md)): `PushSendFailures`, `PushDropped
 | Symptom | Check |
 |---|---|
 | No push at all | `push_tokens` has a row for the user? The app asks for permission the first time a chat is open, and a refusal is final (Settings, Notifications, Open Settings). Deployment at 0 replicas? `notifier_events_total{result="processed"}` moving? |
-| Push for some people only | `notifier_decisions_total`: `online` (a live session suppresses it), `muted`, `level_nothing`, `not_mentioned`, `device_only_mentions` explain skips |
+| Push for some people only | `notifier_decisions_total`: `muted`, `level_nothing`, `not_mentioned`, `device_only_mentions` explain skips; a live socket does not suppress pushes |
 | `ApnsCredentialsRejected` | Key, Key ID or Team ID is wrong or revoked: [secret rotation, APNs key](secret-rotation.md#apns-key) |
 | `notifier_pushes_total{outcome="dropped"}` rising | Burst or slow APNs: look at `notifier_push_duration_seconds` and `notifier_queue_depth`; raise `PUSH_QUEUE_CAPACITY` or `PUSH_MAX_IN_FLIGHT` in `notifier-config` only after checking memory (limit 96Mi) |
 | `BadDeviceToken` for every token | The App ID or topic does not match (`APNS_TOPIC`), or the build has no push entitlement |
@@ -153,6 +173,9 @@ Alerts (`push` group, [alerting](alerting.md)): `PushSendFailures`, `PushDropped
 ## Not covered yet
 
 - Android: a rejected service-account key (`oauth` errors) shows as `notifier_fcm_errors_total{reason="oauth"}` and failed pushes, no alert rule yet.
-- VoIP pushes for calls ([separate ticket](https://github.com/discordy-voics/messages/issues/56)): the APNs sender already supports the `.voip` topic and `OutboundPush::Voip`; nothing produces them.
+- VoIP call production already exists: a fresh type 3 DM call-start message sends `OutboundPush::Voip`
+  to eligible PushKit tokens. Late/ended calls and server calls do not ring; caller identity is
+  omitted for private/unknown modes. Actual ringing and foreground/background behavior still
+  require the device checks in [running the mobile app](run-the-mobile-app.md).
 - A badge count in the push payload: the app sets its own badge from the unread mentions while it runs.
 - Pushes for Ephemeral and peer-to-peer messages: they bypass the message topic, so there is nothing for the notifier to read.

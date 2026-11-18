@@ -2,6 +2,18 @@
 
 This runbook is organised by symptom. Each section moves from the most likely cause to the least likely. The [toolbox](#toolbox) at the end collects the commands used throughout.
 
+## Prepared active health probes
+
+[ADR-0025](../../adr/0025-active-voice-health-probes.md) and the P8 contract prepare an independent prober. This section describes the intended operator state; no daemon or required-health enforcement is activated by this documentation change.
+
+The discovery node's `probe_required` flag defaults false. Once enforcement is enabled, allocation needs a fresh `healthy` result at `/discordy/voice/health/<node_id>` whose `registration_lease` matches the node's current etcd lease. `unknown`, expired, missing or mismatched observations exclude a required-health node. Two consecutive failed probes exclude a previously healthy node; two passes re-admit it. Draining and manual exclusions still apply even when media is healthy.
+
+Manual exclusions are persistent keys at `/discordy/voice/blacklist/nodes/<node_id>` or `/discordy/voice/blacklist/regions/<region>`. Inspect the exact key and its reason before removing it with the prepared operator CLI. Clear only that exact key, never the prefix or the health record. A successful probe cannot remove a blacklist. Clearing a blacklist does not override a drain, ambiguous endpoint or unhealthy/missing required probe result. Existing calls continue while new allocation is excluded.
+
+The prepared `VOICE_PROBE_TOKEN_SECRET` is separate from `VOICE_TOKEN_SECRET`. No value or secret-store binding exists until rollout is approved. For rotation, first review the signaling/prober rollout and the resulting brief probe-authentication failures; generate a fresh independent key, update only their reviewed secret binding, and roll those consumers together. Confirm M consecutive passes before resuming required-health allocation. Do not expose keys or signed probe tokens in logs. Never grant the prober the ordinary call-signing key.
+
+Implementation evidence and exact executable operator commands will accompany the service PR before any rollout. The local validation must include real WebSocket, ICE, DTLS and RTP, stale-observer/node rejection, blacklist dominance and recovery hysteresis.
+
 ## Symptom index
 
 | Symptom | Go to |

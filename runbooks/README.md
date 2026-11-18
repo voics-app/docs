@@ -1,5 +1,7 @@
 # Runbooks
 
+[Read-state accounting rollout and recovery](read-accounting.md) covers the proposed companion keyspace, coordinated writer drain and paired backups.
+
 | Runbook | Use it when |
 |---|---|
 | [Incident 2026-11-14: image reflector OOM](incident-2026-11-14-image-reflector.md) | Seven stale image scans, a 256Mi crash loop, memory evidence and GitOps recovery |

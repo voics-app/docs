@@ -22,6 +22,25 @@
 
 ## Global Constraints
 
+**Community discovery increment (api#45, 18 November 2026)**
+
+Pinned before implementation: `PATCH /guilds/{id}` accepts `features` as `[]` or
+`["COMMUNITY"]`, with `rules_channel_id` and `public_updates_channel_id`. Community
+requires same-guild, non-NSFW, standard text/announcement channels. Disabling it
+clears the pair and removes the discovery listing transactionally. Discovery
+adds `COMMUNITY_REQUIRED`; existing ineligible listings are hidden at rollout.
+`POST /discovery/guilds/{id}/reports` accepts category and optional note, returns
+204, and routes server-captured public listing evidence into the existing admin
+report queue. It never auto-delists. See the [discovery specification](../specs/2026-11-03-server-discovery.md)
+for constraints, migrations, moderation policy and independent acceptance scope.
+
+Server-template completion (18 November 2026):
+`GET /guilds/templates/{code}` is a public, rate-limited snapshot preview;
+creation and management remain authenticated. `is_dirty` compares the current
+template-visible structure with the saved snapshot. Public sharing uses
+`/template.html?code=...` on the landing host. See the
+[server-template specification](../specs/2026-11-04-server-templates.md).
+
 - **Org and repos**: GitHub org `discordy-voics`; all repos private. Local root is `C:\Users\Karma\Projects\discordy\voics\<repo>`, with one git repo per directory.
 - **Repo names**: `api`, `gateway`, `messages`, `voice`, `admin`, `client`, `bots-sdk`, `contracts`, `gitops`, `docs`, `.github`.
 - **git-flow**: branches `main` + `develop`; work on `feature/<ws>-<topic>` branches, merged into `develop` with `--no-ff`.
@@ -68,6 +87,7 @@
 | gateway | 4000 | WS `/gateway`; internal HTTP `/internal/v1/*` |
 | voice-signaling | 4100 | WS `/voice` |
 | sfu | UDP 50000 | Media. Control on TCP `127.0.0.1:4101` (newline-delimited JSON) |
+| voice-prober (prepared, inactive) | 4103 | Loopback HTTP health and Prometheus metrics; no public ingress |
 | admin-bff | 8090 | Serves `/admin-api/*` and the built SPA |
 | admin-web (dev) | 5174 | |
 | client renderer (dev) | 5173 | |
@@ -115,9 +135,10 @@
 | Service | Variables |
 |---|---|
 | api | `DATABASE_URL`, `VALKEY_URL`, `JWT_PRIVATE_KEY` (Ed25519 PEM), `PUBLIC_API_URL`, `PUBLIC_GATEWAY_URL`, `CDN_PUBLIC_URL`, `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET_ASSETS` (default `discordy-assets`), `MESSAGES_INTERNAL_URL` |
-| messages | `SCYLLA_NODES`, `SCYLLA_KEYSPACE` (default `discordy`), `API_INTERNAL_URL`, `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET_ATTACHMENTS` (default `discordy-attachments`), `CDN_PUBLIC_URL` |
+| messages | `SCYLLA_NODES`, `SCYLLA_KEYSPACE` (default `discordy`), `SCYLLA_READ_STATE_KEYSPACE` (default `<SCYLLA_KEYSPACE>_reads`; distinct vnode keyspace on the same cluster), `API_INTERNAL_URL`, `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET_ATTACHMENTS` (default `discordy-attachments`), `CDN_PUBLIC_URL` |
 | gateway | `VALKEY_URL`, `ETCD_ENDPOINTS`, `TURN_STATIC_AUTH_SECRET`, `TURN_URLS`, `API_INTERNAL_URL`, `MESSAGES_INTERNAL_URL`, `VOICE_TOKEN_SECRET` (HS256), `PUBLIC_GATEWAY_URL`, `DEFAULT_VOICE_REGION` (default `nl-home`), `RELEASE_COOKIE` (Erlang distribution), `CLUSTER_DNS_QUERY` (optional, k8s headless service) |
-| voice-signaling | `VOICE_REGION`, `VOICE_NODE_ID`, `VOICE_PUBLIC_WS_URL`, `VOICE_PUBLIC_IP`, `VOICE_UDP_PORT` (default `50000`), `ETCD_ENDPOINTS`, `VOICE_TOKEN_SECRET`, `SFU_CONTROL_ADDR` (default `127.0.0.1:4101`) |
+| voice-signaling | `VOICE_REGION`, `VOICE_NODE_ID`, `VOICE_PUBLIC_WS_URL`, `VOICE_PUBLIC_IP`, `VOICE_UDP_PORT` (default `50000`), `ETCD_ENDPOINTS`, `VOICE_TOKEN_SECRET`, `SFU_CONTROL_ADDR` (default `127.0.0.1:4101`), `VOICE_REQUIRE_PROBE` (default `false`; prepared health enforcement opt-in), `VOICE_PROBE_TOKEN_SECRET` (optional separate key; absent disables probes) |
+| voice-prober (prepared, inactive) | `VOICE_PROBER_ID`, `ETCD_ENDPOINTS`, `VOICE_PROBE_TOKEN_SECRET`, `VOICE_PROBE_SERVER_ID`, `VOICE_PROBE_CHANNEL_ID`, `VOICE_PROBE_USER_IDS` (two distinct decimal IDs); `VOICE_PROBE_INTERVAL_MS` (10000), `VOICE_PROBE_TIMEOUT_MS` (4000, less than interval), `VOICE_PROBE_FAILURES` (2), `VOICE_PROBE_PASSES` (2), `VOICE_PROBE_MAX_LOSS_PCT` (10), `VOICE_PROBE_MAX_RTT_MS` (1000), `VOICE_PROBE_HTTP_BIND` (`127.0.0.1:4103`) |
 | coturn | `TURN_STATIC_AUTH_SECRET` (shared with gateway, which mints short-lived TURN credentials for P2P) |
 | sfu | `SFU_UDP_BIND` (default `0.0.0.0:50000`), `SFU_PUBLIC_IP`, `SFU_CONTROL_BIND` (default `127.0.0.1:4101`) |
 | admin-bff | `ADMIN_DATABASE_URL`, `API_INTERNAL_URL`, `VICTORIAMETRICS_URL`, `ETCD_ENDPOINTS`, `ADMIN_ALLOWED_EMAILS` (comma-separated; the second gate after Cloudflare Access), `CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD` (both optional only when `DISCORDY_ENV=local`), `GATEWAY_INTERNAL_URL` |
@@ -140,6 +161,7 @@
 - **Bot token**: `Authorization: Bot <base64url(bot_user_id)>.<random 32 bytes base64url>`. Non-api services validate it via `POST /internal/v1/auth/introspect` and cache the result for 60 seconds.
 - **Introspect response**: `{ "user_id": "...", "kind": "user"|"bot", "application_id": "..."|null, "session_id": "..."|null }`.
 - **Voice token**: JWT HS256 signed with `VOICE_TOKEN_SECRET`, 60-second lifetime. Claims: `sub` (user ID), `sid`, `srv` (`guild_id`, or the DM `channel_id` for DM calls), `chn` (`channel_id`), `node` (voice node ID), `e2ee` (bool).
+- **Synthetic voice token extension (prepared)**: optional `purpose` defaults to `call`. `purpose: "probe"` requires the separate `VOICE_PROBE_TOKEN_SECRET` signature, stricter `ProbeVoiceTokenClaims` validation, `node_lease` (the current etcd lease as a decimal string), random UUID `probe_id`, and `e2ee: false`. Signaling derives an isolated synthetic room from lease + probe ID, refuses video and stale registrations, and may bypass draining only after those checks. Configured synthetic IDs never grant access to an ordinary user room. See [ADR-0025](../adr/0025-active-voice-health-probes.md).
 
 ### P4. Internal HTTP APIs
 
@@ -282,9 +304,10 @@ All calls carry the `X-Internal-Token` header. All IDs are strings.
 ### P8. Voice allocation and voice protocol
 
 - **etcd discovery**: each node writes `/discordy/voice/nodes/<region>/<node_id>` under a 10-second lease, refreshed every 3 seconds. Value: `{node_id, region, ws_url, public_ip, udp_port, users:int, cpu_pct:float, egress_bps:int, draining:bool, version}`.
+- **Active media health (prepared, not activated)**: optional discovery `probe_required: bool` defaults false. Leased results at `/discordy/voice/health/<node_id>` match the node registration lease and are written only by the fenced owner of `/discordy/voice/probers/<node_id>`. Required-health nodes need a fresh healthy result; legacy nodes tolerate absent results, while matching unhealthy results exclude them. Persistent `/discordy/voice/blacklist/nodes/<node_id>` or `/discordy/voice/blacklist/regions/<region>` keys always exclude new allocation. The gateway applies these checks to cached allocations too; existing calls continue. Full state-machine and rollout rules are in [ADR-0025](../adr/0025-active-voice-health-probes.md).
 - **Allocation** (gateway guild process; DM calls use a per-channel process):
   1. Read the region: per-channel override, else the guild's `voice_region`, else `DEFAULT_VOICE_REGION`.
-  2. Pick the non-draining node with the lowest `users`, breaking ties by `cpu_pct`.
+  2. Pick an eligible node with unique identity/endpoints, no drain or blacklist, and any required matching media health, with the lowest `users`, breaking ties by `cpu_pct`. Active-health enforcement is enabled only after the prepared rollout is reviewed.
   3. Store the choice at Valkey `voice:alloc:<srv_id>` = node_id.
   4. Every user in that guild/DM shares the node.
   5. If the node disappears from etcd, the gateway reallocates and re-sends VOICE_SERVER_UPDATE to the connected users.
@@ -369,6 +392,7 @@ All calls carry the `X-Internal-Token` header. All IDs are strings.
 | Postgres DB `discordy` | api (migrations in `api/migrations`, sqlx) | users, devices, key_packages, sessions, refresh_tokens, relationships, user_settings, channel_delivery_overrides, guilds, roles, members, member_roles, channels, permission_overwrites, invites, bans, emojis, applications, bot_tokens, application_commands, interactions, webhooks, audit_log, outbox |
 | Postgres DB `discordy_admin` | admin-bff | usage rollups, feature_flags, admin_audit |
 | ScyllaDB keyspace `discordy` | messages (CQL migrations in `messages/migrations`) | messages, reactions, pins, read_states, channel_last_message |
+| ScyllaDB companion `<SCYLLA_KEYSPACE>_reads` | messages (separate vnode migration `0008_read_accounting`) | Atomic metadata, delivery ledger and generation contributions in `read_state_accounting`; inherits main replication, both keyspaces form one backup/restore unit ([ADR 0026](../adr/0026-atomic-read-accounting.md)) |
 | Valkey | gateway (`gw:*`, `e2ee:*`, `voice:*`, `presence:*`); api (`rl:*`, `cache:*`) | |
 | etcd | voice-signaling writes; gateway and admin-bff read | |
 | MinIO | api (assets bucket); messages (attachments bucket); gitops (updates bucket) | |
@@ -518,6 +542,7 @@ Each WS runs in its own repo, with its own agent, on `feature/<ws>-bootstrap`, w
 - [ ] **6.1 Shell and design system**: shell (security flags, typed IPC bridge, tray, deep links, single-instance); design-token system (dark, OLED, light, accent), primitives, layout (server rail, channel sidebar, chat, member list), command palette; Storybook-like `/__gallery` route for visual review.
 - [ ] **6.2 Auth and connectivity**: auth screens; token storage in the OS keychain (keytar/safeStorage); REST client generated from contracts; gateway client (heartbeat, resume, reconnect with backoff) feeding the Zustand stores.
 - [ ] **6.3 Servers and settings**: guilds and channels UI; server settings (roles editor with the permission matrix, channel overwrites, members, bans, invites, emojis, audit log); user settings (profile, privacy and delivery-mode defaults, voice and video, keybinds, appearance, notifications).
+  - api#43: [profile customization](../specs/2026-11-18-profile-customization.md) adds pronouns, banner uploads, two theme colors and self-only server avatar/banner/bio with live preview. Contract/spec published before implementation; integrated acceptance remains pending.
 - [ ] **6.4 Messaging**: virtualized history, composer (markdown, mentions, emoji, replies, attachments with drag-drop), reactions, pins, threads, typing, unread badges, optimistic sends.
 - [ ] **6.5 Delivery modes**: Ephemeral (MLS group per channel via the native module; op 20/21; local SQLCipher store) and P2P (WebRTC DataChannel; signaling via op 22; identity signature over the DTLS fingerprint; "peer offline" state); mode badge and per-chat/account switches.
 - [ ] **6.6 Voice and video**: P8 client (synthesize SDP from the minimal payload); devices, VAD/PTT (global hotkey via uiohook-napi), RNNoise WASM worklet; per-user volume; video grid; screen share picker (desktopCapturer with Windows loopback audio, presets); stream viewer with PiP; DAVE-style frame E2EE through RTCRtpScriptTransform keyed from MLS exporter secrets; Watch Together panel.
@@ -579,3 +604,9 @@ Blocked on the owner prerequisites: VM group access, GitHub org and scopes, Clou
 - [ ] **11.1 Local end-to-end**: run the full compose stack; client end-to-end tests: register → create guild → send message → second user receives it over the gateway; ephemeral message delivered and deleted from Valkey after ACK; P2P message delivered with zero server writes; voice call between two clients with audio flowing through the SFU.
 - [ ] **11.2 Publish**: create the GitHub repos, push `main` + `develop`, set secrets, run CI, cut `v0.1.0` via release/0.1.0 → main, build the installers.
 - [ ] **11.3 Deploy**: bring up WS9 on the VM; verify Flux reconciles, the apps are healthy and the admin portal shows usage.
+
+## Read-accounting extension — 18 November 2026
+
+Proposed [ADR 0026](../adr/0026-atomic-read-accounting.md) adds the optional messages P2 keyspace setting above; it does not provision another server or change public ACK/MESSAGE_ACK/READY payloads. The P4 recipient prerequisite is `GET /internal/v1/channels/{id}/notification-recipients?author_id&after&limit`, defined by [contracts#44](https://github.com/discordy-voics/contracts/pull/44) and implemented by [api#146](https://github.com/discordy-voics/api/pull/146). It returns current permission-filtered, token-independent pages with advancing candidate cursors, including empty filtered pages and empty terminal private-mode audiences.
+
+The writer applies eligible-message and mute/level/mention policy before idempotent accounting. Normal ACK preserves contributions newer than its marker; manual unread replaces the visible count without reopening delivery IDs. Legacy aggregate counts are preserved as an untracked baseline until an advancing ACK. Rollout must drain/fence every old unconditional writer and capture coherent backups of both keyspaces. Binary-only rollback after new writes is unsafe. See the [read-accounting runbook](../runbooks/read-accounting.md). No live rollout, durable accounting outbox or production capacity proof is claimed.

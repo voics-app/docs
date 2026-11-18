@@ -5,7 +5,7 @@ This catalog lists every deployable unit in Voics. Ports, env vars, topics and i
 Each production service:
 
 - Exposes `GET /healthz`, `GET /readyz` and `GET /metrics`.
-- Is scraped by VictoriaMetrics under **its own job name**, which the admin health page groups by (`count by (job) (up)`): `api`, `messages`, `notifier` (port 8085, 0 replicas until the Apple key exists, see [push notifications](../runbooks/push-notifications.md); not in the admin health page), `gateway`, `voice-signaling` (port 4100), `sfu` (port 4102) and `admin-bff`. On the cluster these jobs live in `gitops/infrastructure/controllers/victoria-metrics/helmrelease.yaml` (`server.scrape.extraScrapeConfigs`), and the pods set `prometheus.io/scrape: "false"` so the generic `kubernetes-pods` job does not count them twice. Locally they live in `gitops/local/victoriametrics/scrape.yml`. A new service needs a job here too, and its name must match `PLATFORM_SERVICES` in `admin/bff/src/domain/service_health.rs`.
+- Is scraped by VictoriaMetrics under **its own job name**, which the admin health page groups by (`count by (job) (up)`): `api`, `messages`, `notifier` (port 8085, singleton/Recreate, see [push notifications](../runbooks/push-notifications.md)), `gateway`, `voice-signaling` (port 4100), `sfu` (port 4102) and `admin-bff`. On the cluster these jobs live in `gitops/infrastructure/controllers/victoria-metrics/helmrelease.yaml` (`server.scrape.extraScrapeConfigs`), and the pods set `prometheus.io/scrape: "false"` so the generic `kubernetes-pods` job does not count them twice. Locally they live in `gitops/local/victoriametrics/scrape.yml`. A new service needs a job here too, and its name must match `PLATFORM_SERVICES` in `admin/bff/src/domain/service_health.rs`.
 - Exports the **standard metric set** below (one naming scheme for every service; the `job` label identifies the service, so metric names carry no service prefix).
 - Logs JSON to stdout.
 - Exports OpenTelemetry data when `OTEL_EXPORTER_OTLP_ENDPOINT` is set.
@@ -20,6 +20,9 @@ Each production service:
 | `discordy_gateway_session_started_count`, `discordy_gateway_session_closed_count{code}` | counter | | gateway (WebSocket connect / close) |
 | `discordy_gateway_dispatch_sent_count{event}`, `discordy_gateway_events_consumed_count{topic,outcome}` | counter | | gateway (event dispatch) |
 | `discordy_gateway_gauges_sessions_local` | gauge | | gateway |
+| `notifier_pushes_total` | counter | `provider`, `outcome` | notifier; admin charts `increase(...{outcome="dropped"}[5m])` by provider |
+| `notifier_queue_depth`, `notifier_queue_capacity` | gauge | | notifier waiting jobs and configured capacity |
+| `notifier_in_flight`, `notifier_in_flight_limit` | gauge | | notifier active jobs (including retry waits) and configured cap |
 | `redpanda_kafka_consumer_group_lag_sum` / `_max` | gauge | `redpanda_group` | Redpanda `/public_metrics` (cluster property `enable_consumer_group_metrics` includes `consumer_lag`, set by the `redpanda-topics` Job in gitops) |
 
 Histogram buckets (seconds) are identical everywhere: 0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 10. WebSocket upgrades on the gateway are counted under `status="1xx"` (101). Postgres latency is taken from sqlx's per-statement `elapsed_secs` tracing events by a small tracing layer (no call-site changes); Scylla latency is measured in the shared `execute` / `fetch_all` helpers. voice-signaling and sfu are not yet covered (tracked separately).
@@ -83,14 +86,15 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 | Repo / image | `discordy-voics/messages` / `ghcr.io/discordy-voics/messages` |
 | Tech | Rust, axum 0.8, scylla driver |
 | Ports | 8082: public (ingress routes `/api/v1/channels/*/messages*`, `/api/v1/guilds/*/messages/search` and the CDN host's `/attachments/*` signed downloads and `/external/*` signed media proxy here) and internal |
-| Owns data | ScyllaDB keyspace `discordy` (messages, reactions, pins, read_states, channel_last_message); MinIO bucket `discordy-attachments`; Postgres database `discordy_search` (`search_messages` index, `search_offsets`, `search_state`; rebuildable, text not stored) |
+| Owns data | ScyllaDB keyspace `discordy` (messages, reactions, pins, read_states discovery, channel_last_message) plus the proposed companion vnode keyspace `<SCYLLA_KEYSPACE>_reads` (atomic read metadata/ledger/contributions, same replication; paired backups required); MinIO bucket `discordy-attachments`; Postgres database `discordy_search` (`search_messages` index, `search_offsets`, `search_state`; rebuildable, text not stored) |
 | Publishes | `discordy.message.v1` (keyed by `channel_id`) |
 | Consumes | `discordy.message.v1` (all partitions, own offsets in Postgres) to keep the search index current; `discordy.guild.v1` `BAN_MESSAGE_PURGE` (offsets in the same Postgres, start at the end of the topic) to purge a banned user's recent messages, see [spec](../specs/2026-10-22-moderation-tools-and-ban-purge.md) |
 | Depends on | ScyllaDB, Redpanda, MinIO, Postgres (search, optional), api (`/internal/v1/channels/{id}/access/{user}` with a 5 s cache; bot token introspection with a 60 s cache) |
 | Called by | client, bots, api, gateway, admin-bff |
 | Snowflake workers | Intended messages range 64–127; fixed worker IDs must not be duplicated across concurrent replicas |
-| Env vars | common + `SCYLLA_NODES`, `SCYLLA_KEYSPACE`, `API_INTERNAL_URL`, `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY` 🔒, `MINIO_SECRET_KEY` 🔒, `MINIO_BUCKET_ATTACHMENTS`, `CDN_PUBLIC_URL`, `ATTACHMENT_SIGNING_KEY` 🔒, `ATTACHMENT_URL_TTL_SECONDS`, `SEARCH_DATABASE_URL` 🔒 (search is disabled when unset), `SEARCH_BACKFILL_ON_START` |
+| Env vars | common + `SCYLLA_NODES`, `SCYLLA_KEYSPACE`, `SCYLLA_READ_STATE_KEYSPACE` (distinct same-cluster companion, defaults to `<SCYLLA_KEYSPACE>_reads`), `API_INTERNAL_URL`, `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY` 🔒, `MINIO_SECRET_KEY` 🔒, `MINIO_BUCKET_ATTACHMENTS`, `CDN_PUBLIC_URL`, `ATTACHMENT_SIGNING_KEY` 🔒, `ATTACHMENT_URL_TTL_SECONDS`, `SEARCH_DATABASE_URL` 🔒 (search is disabled when unset), `SEARCH_BACKFILL_ON_START` |
 | SLOs | Availability 99.5 %; search p95 < 300 ms; history p95 < 100 ms; send p95 < 200 ms; send-to-dispatch p95 < 500 ms (with the gateway) |
+| Read-accounting prerequisite | Token-independent uncached API recipient directory (contracts#44/API#146); coordinated old-writer drain, both-keyspace readiness and backups; [rollout and rollback](../runbooks/read-accounting.md) |
 | Runbooks | [backup-restore](../runbooks/backup-restore.md#scylladb), [release](../runbooks/release.md) |
 
 ## notifier
@@ -144,6 +148,23 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 | Env vars | common + `VOICE_REGION`, `VOICE_NODE_ID`, `VOICE_PUBLIC_WS_URL`, `VOICE_PUBLIC_IP`, `VOICE_UDP_PORT`, `ETCD_ENDPOINTS`, `VOICE_TOKEN_SECRET` 🔒, `SFU_CONTROL_ADDR` |
 | SLOs | Availability 99.0 % per region (voice WS handshake success); join-to-first-audio p95 < 1.5 s; lease never missed for more than 10 s outside drains |
 | Runbooks | [adding a region](../runbooks/voice-regions/adding-a-region.md), [draining](../runbooks/voice-regions/draining-a-region.md), [failover](../runbooks/voice-regions/failover.md), [troubleshooting](../runbooks/voice-regions/troubleshooting.md) |
+
+## voice-prober (prepared, inactive)
+
+This service is defined by [ADR-0025](../adr/0025-active-voice-health-probes.md) and is not enabled by this design change. Implementation and rollout evidence remain required before deployment.
+
+| | |
+|---|---|
+| Purpose | Two isolated synthetic voice peers per node test advertised WebSocket, ICE/DTLS and bidirectional RTP; publish loss/RTT and hysteresis state for allocation |
+| Planned repo / image | `discordy-voics/voice` (`prober/`) / `ghcr.io/discordy-voics/voice-prober` |
+| Tech | Rust, str0m, Tokio |
+| Ports | HTTP `127.0.0.1:4103` by default for readiness and Prometheus; no public ingress |
+| Owns data | Leased `/discordy/voice/probers/<node_id>` ownership and `/discordy/voice/health/<node_id>` observations; writes atomically compare observer ownership and node registration lease |
+| Depends on | etcd, each voice node's advertised WebSocket and UDP media route |
+| Identity / secrets | Explicit `VOICE_PROBER_ID` and configured synthetic IDs; separate `VOICE_PROBE_TOKEN_SECRET`, never the gateway call-signing key |
+| Env vars | Exact prepared settings/defaults are listed in master plan [P2](../plans/2026-10-16-discordy-master-plan.md#p2-environment-variables) |
+| Rollout | Reader/signaling support first, then independently placed prober and verified observations, then optional `VOICE_REQUIRE_PROBE=true`; no VM/server creation or activation is implied |
+| Runbook | [Prepared health states and blacklist behavior](../runbooks/voice-regions/troubleshooting.md#prepared-active-health-probes) |
 
 ## sfu
 
