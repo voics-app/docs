@@ -29,6 +29,30 @@ Summary: the Electron and React desktop app, with a Rust native crypto module.
 
 `DISCORDY_PROFILE` (`production`, `local`, `custom`), `DISCORDY_API_URL`, `DISCORDY_GATEWAY_URL`, `DISCORDY_CDN_URL`, `UPDATE_FEED_URL`, `DISCORDY_USER_DATA_DIR` and `RENDERER_PORT` (to run a second client). Users can switch profile on the sign-in screen.
 
+### Gateway recovery
+
+Desktop and mobile use the same core gateway client. Every connection must receive
+HELLO within 10 seconds, including a socket that opens without sending a frame or
+emits an error without closing. After HELLO it has 30 seconds to complete READY or
+RESUMED, even if heartbeats are acknowledged; duplicate HELLO frames cannot extend
+this deadline. A connection failure before an advertised resume
+endpoint completes READY or RESUMED discards that endpoint. Subsequent retries use
+the configured gateway with the existing exponential backoff and jitter, retaining
+the session ID and sequence and reading the current token for RESUME. A fresh READY
+can supply a new resume endpoint; a successful RESUMED keeps the working route.
+
+Authentication and intent close codes remain fatal. A missing token stops recovery;
+an expired/non-resumable session follows the existing fresh IDENTIFY path. Manual
+disconnect cancels both handshake deadlines and reconnect timers. Socket-construction
+errors enter the same retry path instead of escaping the timer callback.
+
+This recovery does not broaden CSP or authorize another origin. When diagnosing a
+client stuck on Connecting, compare the configured gateway with READY's advertised
+resume URL and inspect refused connections. Local QA must use consistent reachable
+hosts and route API requests through its ingress so messages reach the messages
+service. Changing production configuration or permitting arbitrary origins is not
+a remedy for mismatched local endpoints.
+
 ## Run, test, release
 
 ```bash
