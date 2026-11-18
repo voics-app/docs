@@ -1,7 +1,7 @@
 # Voics docs
 
-[Age-restricted channels](specs/2026-11-18-age-restricted-channels.md): proposed
-account preference and desktop/mobile confirmation boundaries for client#76.
+[Age-restricted channels](specs/2026-11-18-age-restricted-channels.md): account
+preference and desktop/mobile confirmation boundaries under review for client#76.
 
 Architecture, decisions, references and runbooks for **Voics**, a Discord-equivalent platform (without payments) built in the `discordy-voics` GitHub org. Git is the source of truth; the content is mirrored to Notion on every merge to `main`.
 
