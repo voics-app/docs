@@ -31,6 +31,7 @@ This directory holds Voics's architecture decisions. The records use the [MADR](
 | [0025](0025-active-voice-health-probes.md) | Active voice media probes with isolated sessions and lease-fenced allocation health | proposed |
 | [0026](0026-atomic-read-accounting.md) | Atomic mention accounting in a companion Scylla keyspace | proposed |
 | [0027](0027-versioned-read-state-snapshots.md) | Versioned read-state snapshots across gateway sessions | proposed |
+| [0029](0029-persistent-polls.md) | Persistent polls with atomic votes and a closing fence | proposed |
 
 ## Writing a new ADR
 

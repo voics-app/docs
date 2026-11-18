@@ -23,6 +23,10 @@ voornaamwoorden, profielkleuren en een eigen avatar, banner en bio per server (a
 
 ## Start here
 
+The [persistent poll specification](specs/2026-11-18-polls.md) and
+[ADR0029](adr/0029-persistent-polls.md) define message polls, voting, finalization
+and recovery. Implementation and device acceptance remain separate gates.
+
 The [integrations and authorization specification](specs/2026-11-18-integrations-and-authorizations.md)
 defines webhook credential rotation, supported bot-install consent and precise
 personal-consent versus server-removal behavior for client#61 and client#69.
