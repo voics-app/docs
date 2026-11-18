@@ -15,8 +15,8 @@ All mutes, levels and suppression flags are the synced per-guild settings resour
 
 - Server menu: Mute server (15m, 1h, 3h, 8h, 24h, until off) and Notification settings dialog (level, suppress @everyone/@here, suppress role mentions, hide muted channels, channel overrides list).
 - Channel and category menus use the same overrides.
-- `@silent` messages (flag `1 << 12`) never count as mentions and fire no notification, sound or taskbar flash; a reply with the ping turned off lists nobody in `mentions` ([composer spec](2026-10-20-client-markdown-and-composer.md)).
-- Muted channels render dimmed and do not count as unread; mentions in them still count (Discord behaviour).
+- `@silent` messages (flag `1 << 12`) never count as mentions and fire no notification, sound or taskbar flash; turning off a reply ping removes only its implicit author mention, preserving explicit mentions ([composer spec](2026-10-20-client-markdown-and-composer.md)).
+- Muted channels render dimmed and do not count as unread. The notification-accounting policy suppresses mention badges when the resolved mute is active or level is Nothing; role/everyone suppression also applies. Current API policy is evaluated per recipient page. See [read accounting](../runbooks/read-accounting.md) for the proposed server writer and migration limits.
 - Notes use `PUT /users/@me/notes/{id}` via the synced notes store, saved on blur.
 
 ## Mentions inbox (Ctrl+I, title bar button)

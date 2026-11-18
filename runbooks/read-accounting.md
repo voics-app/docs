@@ -25,6 +25,7 @@ Observe failed-accounting warnings by message/channel, `read_state_cas_conflicts
 - Manual unread sets the requested marker/count, starts a new contribution generation and retains delivery deduplication plus the acknowledged high watermark. It does not recount already acknowledged history. Future unique messages add to its explicit baseline.
 - At most 16 recipient writes run concurrently per page. Direct-only guild posts seek each exact mentioned user; roles, broadcasts and DMs follow all pages. No device token is required. Policy is current per page, not an atomic snapshot of an entire guild.
 - Unacknowledged deliveries retain one ledger row and one contribution row; manual unread removes obsolete contributions but retains needed ledger rows. ACK removes acknowledged ranges in its conditional batch. There is no TTL that silently re-enables duplicates. Large unread partitions remain a scaling concern; local measurements are not production capacity certification.
+- Local admission gates are cached with a 4096-partition cap and 60-second idle expiry. They reduce self-contention without replacing distributed CAS. The 1024-message load regression checks live rows of 2049, 1025, 513 and 1 after initial deliveries, half ACK, manual unread and full ACK; it also asserts actual cross-repository CAS conflicts and zero retry exhaustion.
 
 ## Backup and restore
 
