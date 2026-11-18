@@ -18,6 +18,8 @@ Use synthetic accounts/data in isolated QA first. Verify concurrent mentions fro
 
 Observe failed-accounting warnings by message/channel, `read_state_cas_conflicts_total`, `read_state_cas_exhausted_total`, request latency and unread partition size. A policy-page failure may occur after earlier pages were applied; a failed write may have an unknown outcome. Retrying the same eligible message ID cannot add a second contribution. The current creation path has no durable retry/outbox guarantee, and events or logs alone do not reconstruct historical preferences.
 
+Stored counts and event publication are not one transaction. Include in-flight/reordered MESSAGE_ACK snapshots versus MESSAGE_CREATE in client QA: applying a snapshot before an already-included create can temporarily diverge until reconciliation. The unchanged payload has no accounting revision or snapshot-delivery watermark. Database tests alone do not establish exactly-once live UI state.
+
 ## Data semantics and limits
 
 - The old `read_states` table remains the channel discovery index and preserved migration baseline. READY resolves companion metadata for every initialized channel, with at most 16 concurrent reads.
