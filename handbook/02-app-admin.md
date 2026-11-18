@@ -53,8 +53,17 @@ Release: tag `vX.Y.Z`, stable image, Flux. A new platform service needs its job 
 | DB latency p95 | `db_query_duration_seconds_bucket` (`db`, `operation`) | live for api (sqlx); messages exports Postgres search and Scylla timings and shows up once it serves DB traffic |
 | Gateway sessions | `discordy_gateway_gauges_sessions_local` by instance | live |
 | Consumer lag | `sum by (redpanda_group) (redpanda_kafka_consumer_group_lag_sum)` | live: five gateway consumer groups (the `redpanda-topics` Job sets `enable_consumer_group_metrics` to include `consumer_lag`) |
+| Dropped pushes (5m) | `sum by (provider) (increase(notifier_pushes_total{outcome="dropped"}[5m]))` | implemented; local adapter/UI validation, production panel verification pending |
+| Push queue / sends in flight | `notifier_queue_depth` / `notifier_in_flight` by instance | implemented; includes retries in flight, requires notifier scrape samples |
 | Voice nodes | `discordy_voice_node_*` plus gateway admin stats | live (one node, voice-nl-home) |
 | Usage dashboards | usage aggregator counters in Postgres, fed by the `discordy.*.v1` topics | live; counts match the Redpanda topic offsets |
 | Overview, users, guilds | api `/internal/v1/admin/*` | live |
 
 The Cloudflare Access login cannot be scripted, so verification queried VictoriaMetrics directly with the BFF's own PromQL and checked `/readyz` and `/metrics` through a port-forward.
+
+The notifier charts extend the existing authenticated `/admin-api/platform/health/series` endpoint
+with `panel=push_drops`, `push_queue` and `push_in_flight`; range and response shape are unchanged.
+Every drop point estimates its preceding five minutes, not the full selected range. No samples
+remain no-data. Queue capacity and the active-job limit are exported separately as
+`notifier_queue_capacity` and `notifier_in_flight_limit`. These panels read aggregate telemetry,
+never message content, device tokens or recipients, and require no new secrets or permissions.
