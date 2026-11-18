@@ -20,6 +20,10 @@ The supported scope set is `bot`, optionally accompanied by `applications.comman
 
 For an existing installation, POST `permissions` must equal the effective `bot_permissions` shown by the consent preview. A different set returns `409` and requires a fresh review; a role change between preview and submission must not create an acknowledgment of unseen permissions. Fresh installations continue to use requested bot-role permissions and disclose inherited everyone-role permissions.
 
+Every guild in `GET /oauth2/authorize` also supplies a required, non-null `installation_revision`. POST must echo the selected guild's displayed value unchanged. The value distinguishes an active installation, initial absence and absence after removal; clients treat it as opaque. A bot removed after a consent-only preview cannot be reinstalled by that stale submission, and a replacement installation cannot inherit acknowledgment of its predecessor even when their permission bits match. The API compares the preview revision before preparing writes and repeats that exact comparison under the transactional installation lock. A mismatch returns `409` with no installation or consent writes; the client fetches a new preview and requires the checkbox again.
+
+This is an explicit compatibility boundary for the unreleased integration flow. Missing, null or malformed POST `installation_revision` is `400`; there is no legacy fallback that substitutes the current revision. Old clients must update before authorizing, and the new client requires the matching API/contracts release. The deep-link query does not accept a caller-supplied revision; the revision comes from the authenticated preview. No additional migration is required beyond 0070 and its existing retained-generation ledger.
+
 Each record is identified by an opaque snowflake and belongs to one user, application and guild. It stores canonical supported scopes, the effective permissions acknowledged, and creation/last-authorization times. Application ownership is not authorization. Records are returned by `GET /oauth2/tokens` only for the authenticated user; the response contains no credentials. The historic route name describes authorization management, not a new token-exchange API.
 
 `DELETE /oauth2/tokens/{authorization_id}` revokes only the caller's recorded consent. Another user's record is never removable or exposed. Revoking personal consent does **not** uninstall a shared server bot, delete an owned application or rotate its bot token. The confirmation explains this distinction and directs server managers to Integrations for removal. Re-authorizing explicitly creates or refreshes consent again. Users can revoke their own records without current `MANAGE_GUILD`; account deletion clears them.
@@ -32,11 +36,13 @@ Each record is identified by an opaque snowflake and belongs to one user, applic
 
 ## Desktop interaction
 
-The `voics://oauth2/authorize` deep link and legacy `discordy://oauth2/authorize` alias open a consent dialog. URL input is parsed as data: validate snowflakes, supported scopes and the permission bitset, and reject unknown privileged redirect/code-flow parameters. The dialog shows the real application, supported scope explanations, an eligible guild selector and requested permission checklist. Cancel makes no API call. Failed authorization retains the selection and offers retry; success navigates within Voics.
+The `voics://oauth2/authorize` deep link and legacy `discordy://oauth2/authorize` alias open a consent dialog. URL input is parsed as data: validate snowflakes, supported scopes and the permission bitset, and reject unknown privileged redirect/code-flow parameters. The dialog shows the real application, supported scope explanations, an eligible guild selector and requested permission checklist. The review acknowledgment binds to the account, application, guild, installation revision, installed/absent action, permission bits and scopes. Cancel makes no API call. Failed authorization retains the selection and offers retry; success navigates within Voics.
 
 Settings > Authorized apps reads personal authorization records, shows the actual application, guild, scopes and permissions, and provides the precise consent-revocation flow described above. Developer settings continue to list applications owned by the user. Empty, loading, permission-denied and retry states do not masquerade as successful operations.
 
 Server Integrations independently gates webhook controls with `MANAGE_WEBHOOKS` and application controls with `MANAGE_GUILD`. Mutations preserve drafts on errors, confirm destructive removal/rotation, and invalidate the corresponding lists after success. Raw webhook credentials never enter persistent state, the query cache, analytics or audit entries.
+
+After creating a webhook, choosing New webhook starts a new blank draft and disposes of the prior editor's credential. Unsaved edits still block that transition until saved or reset.
 
 ## Persistence and verification
 
