@@ -54,6 +54,23 @@ without message content. Local Continue never enables APNs/FCM background previe
 Ordinary channels retain their registered preview preference. The mobile foreground
 handler also checks the current gate while its gateway is reconnecting.
 
+### Scheduled messages
+
+The warning exposes the author's own scheduled-message status and cancellation,
+including when Hide is enabled. Message-body previews, conflict text and editor
+fields require Continue. Editor detail polling and submit/retry actions are paused
+while gated. The existing list DTO is unchanged and includes its ordinary payload;
+the client withholds text from rendering without mounting channel history or media.
+
+The planning host remains outside the gated route/stage so revocation preserves an
+open local edit. Re-confirming restores the form. Account/instance changes close the
+old form, and pending create requests keep their original isolated retry identity.
+Unknown delivery remains inspect-only. Clearing the composer after acknowledgement
+still checks its current source text and reply, including after a composer remount.
+
+Client integration branch `integration/age-restricted-scheduling-20261118` combines
+frozen client#359 and client#358. Its boundary fix is commit `06de20048a5a17fb98a69a39f68639ac28b0ce37`.
+
 ## Verification and release boundary
 
 ### Reporting without opening content
@@ -87,5 +104,6 @@ acceptance; root owns those checks and release publication.
 Implementation companions: contracts#52 (preference), api#151 (preference),
 contracts#53 and api#152 (channel reporting), admin#35 (distinct channel evidence),
 and api#153 (background push policy). API#153 uses the existing preview field and
-requires no notifier wire extension. Scheduled-message UI must keep list/cancel
-available while withholding its message-body previews until acknowledgement.
+requires no notifier wire extension. Scheduled-message interaction tests cover
+hidden status/cancel, editor revocation/re-confirmation, isolated reopen and the
+unchanged retry identity; visible native and paired API acceptance remain separate.
