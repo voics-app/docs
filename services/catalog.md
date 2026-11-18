@@ -1,5 +1,19 @@
 # Service catalog
 
+## Proposed scheduled-message extension
+
+[ADR 0028](../adr/0028-scheduled-message-dispatch.md) proposes a scheduler inside
+the existing messages service, using the existing Scylla cluster and a dedicated
+vnode keyspace. This is not deployed or implemented. It adds no server, port or
+secret. Proposed settings are `SCHEDULED_MESSAGES_ENABLED` (default false) and
+`SCYLLA_SCHEDULED_MESSAGE_KEYSPACE` (default `<SCYLLA_KEYSPACE>_scheduled`). Public
+routes stay beneath `/channels/{id}/messages/scheduled` on the messages port.
+
+Enablement requires competing-worker/race/fault tests, paired message/journal
+backup and restore fencing. Metrics must expose pending/due age, dispatch results,
+dependency retries, uncertain outcomes and stale-index cleanup without author,
+channel, schedule or message IDs as labels. No new delivery SLO is claimed.
+
 This catalog lists every deployable unit in Voics. Ports, env vars, topics and images come from the pinned interfaces (P1–P11) in the master plan, so change them there first.
 
 Each production service:

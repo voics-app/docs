@@ -23,6 +23,10 @@ voornaamwoorden, profielkleuren en een eigen avatar, banner en bio per server (a
 
 ## Start here
 
+The proposed [scheduled messages specification](specs/2026-11-18-scheduled-messages.md)
+defines author-private drafts, send-time checks and visible delivery uncertainty
+for messages#61. It is a contract proposal; the feature is not implemented yet.
+
 The [Community and discovery specification](specs/2026-11-03-server-discovery.md)
 pins Community channel setup and listing reports for api#45. Implementation and
 independent UI acceptance are tracked separately from the existing directory.

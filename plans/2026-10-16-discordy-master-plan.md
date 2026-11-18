@@ -334,6 +334,19 @@ All calls carry the `X-Internal-Token` header. All IDs are strings.
 
 ### P9. REST API (public, `/api/v1`, JSON, snake_case, Discord-shaped objects)
 
+**Proposed scheduling extension (18 November 2026, not implemented):**
+[ADR 0028](../adr/0028-scheduled-message-dispatch.md) and the
+[scheduled messages contract](../specs/2026-11-18-scheduled-messages.md) add user-only
+`GET/POST /channels/{id}/messages/scheduled` and
+`GET/PATCH/DELETE /channels/{id}/messages/scheduled/{schedule_id}`, owned by messages.
+The schedule ID is a UUIDv4 request key, an explicit P5 exception; a normal message
+Snowflake is allocated only at dispatch. No new P6/P7 event is introduced.
+Proposed P2 variables are `SCHEDULED_MESSAGES_ENABLED` (false by default) and
+`SCYLLA_SCHEDULED_MESSAGE_KEYSPACE` (default `<SCYLLA_KEYSPACE>_scheduled`). The latter
+is a vnode keyspace on the existing cluster, included in coordinated backup/restore.
+The scheduler makes one attempt after its atomic claim and exposes uncertain
+outcomes; it must not retry the current non-idempotent create-message use case.
+
 **Endpoints** — owner is `api` unless marked **(messages)**:
 
 | Area | Endpoints |
