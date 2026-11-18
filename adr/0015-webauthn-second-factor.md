@@ -70,6 +70,9 @@ The acceptance criteria in api#19 require a software-authenticator integration t
 
 ## Implementation contract (2026-11-18)
 
+The routes and schemas below specify the implementation to build. The API adapter,
+runtime configuration and client authenticator flow are not delivered yet.
+
 - Library: `webauthn-rs` 0.6.2 behind the verifier port. Serialized ceremony state is retained only in Postgres; it is never trusted from a client.
 - Registration requires an authenticated session and password confirmation. Assertion requires a password-authenticated MFA ticket. Both ceremonies expire after five minutes and are single use.
 - Each credential has an account-private name, creation time and last-used time. Authenticators with nonzero counters must advance them; a database compare-and-set prevents concurrent assertions from accepting a stale counter.
