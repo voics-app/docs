@@ -2,7 +2,7 @@
 
 # REST API
 
-Base path `/api/v1`. JSON, snake_case, Discord API v10 object shapes plus Voics extras. IDs are Snowflakes and permission sets are 64-bit integers, both serialized as decimal strings. Authenticate with `Authorization: Bearer <access token>` or `Authorization: Bot <token>`. The machine-readable description is `openapi/discordy.yaml`.
+Base path `/api/v1`. JSON, snake_case, Discord API v10 object shapes plus Discordy extras. IDs are Snowflakes and permission sets are 64-bit integers, both serialized as decimal strings. Authenticate with `Authorization: Bearer <access token>` or `Authorization: Bot <token>`. The machine-readable description is `openapi/discordy.yaml`.
 
 ## Rate limits
 
@@ -35,7 +35,7 @@ Errors use the envelope `{ "code": int, "message": string, "errors"?: object }`.
 | 50001 | `MISSING_ACCESS` | 403 | Missing access. |
 | 50013 | `MISSING_PERMISSIONS` | 403 | You lack permissions to perform that action. |
 | 50035 | `INVALID_FORM_BODY` | 400 | Invalid form body. |
-| 50160 | `DELIVERY_MODE_CONFLICT` | 409 | Voics: the channel uses a non-standard delivery mode; send over gateway op 20 or op 22. |
+| 50160 | `DELIVERY_MODE_CONFLICT` | 409 | Discordy: the channel uses a non-standard delivery mode; send over gateway op 20 or op 22. |
 
 ## Delivery modes
 
@@ -65,6 +65,12 @@ Errors use the envelope `{ "code": int, "message": string, "errors"?: object }`.
 | `POST` | `/auth/reset-password` | api | `ResetPasswordRequest` | 204 No Content | Set a new password with a reset token |
 | `POST` | `/auth/verify-email` | api | `VerifyEmailRequest` | 204 No Content | Verify an email address with an emailed token |
 | `POST` | `/auth/resend-verification` | api | — | 204 No Content | Resend the verification email |
+| `GET` | `/users/@me/mfa/passkeys` | api | — | `array of Passkey` | List registered passkey second factors |
+| `POST` | `/users/@me/mfa/passkeys/register/start` | api | `PasskeyRegisterStartRequest` | `WebauthnChallenge` | Start passkey registration |
+| `POST` | `/users/@me/mfa/passkeys/register/finish` | api | `PasskeyRegisterFinishRequest` | `PasskeyRegisterResponse` | Verify and save a passkey second factor |
+| `DELETE` | `/users/@me/mfa/passkeys/{id}` | api | `PasskeyDeleteRequest` | 204 No Content | Remove a passkey after password and second-factor confirmation |
+| `POST` | `/auth/mfa/webauthn/start` | api | `WebauthnLoginStartRequest` | `WebauthnChallenge` | Start passkey assertion after the password step |
+| `POST` | `/auth/mfa/webauthn/finish` | api | `WebauthnLoginFinishRequest` | `AuthResponse` | Exchange a verified passkey assertion for login tokens |
 
 ### Devices
 
@@ -122,12 +128,15 @@ Errors use the envelope `{ "code": int, "message": string, "errors"?: object }`.
 | `POST` | `/guilds/{guild_id}/roles` | api | `RoleRequest` | `Role` | Create a role |
 | `PATCH` | `/guilds/{guild_id}/roles/{role_id}` | api | `RoleRequest` | `Role` | Modify a role |
 | `DELETE` | `/guilds/{guild_id}/roles/{role_id}` | api | — | 204 No Content | Delete a role |
+| `POST` | `/guilds/{guild_id}/roles/{role_id}/duplicate` | api | — | `Role` | Duplicate a role |
 | `GET` | `/guilds/{guild_id}/members` | api | — | `array of GuildMember` | List guild members |
 | `GET` | `/guilds/{guild_id}/members/{user_id}` | api | — | `GuildMember` | Get a guild member |
 | `PATCH` | `/guilds/{guild_id}/members/{user_id}` | api | `ModifyMemberRequest` | `GuildMember` | Modify a member (nick, roles, mute, deafen, move, timeout) |
 | `DELETE` | `/guilds/{guild_id}/members/{user_id}` | api | — | 204 No Content | Kick a member |
 | `PUT` | `/guilds/{guild_id}/members/{user_id}/roles/{role_id}` | api | — | 204 No Content | Add a role to a member |
 | `DELETE` | `/guilds/{guild_id}/members/{user_id}/roles/{role_id}` | api | — | 204 No Content | Remove a role from a member |
+| `GET` | `/guilds/{guild_id}/prune` | api | — | `PruneResult` | Count members a prune would remove |
+| `POST` | `/guilds/{guild_id}/prune` | api | `PruneRequest` | `PruneResult` | Prune inactive members |
 | `GET` | `/guilds/{guild_id}/bans` | api | — | `array of Ban` | List bans |
 | `GET` | `/guilds/{guild_id}/bans/{user_id}` | api | — | `Ban` | Get a ban |
 | `PUT` | `/guilds/{guild_id}/bans/{user_id}` | api | `CreateBanRequest` | 204 No Content | Ban a user |
@@ -501,7 +510,7 @@ A DM or group DM call: its voice states and the recipients still ringing for it.
 
 ### Channel
 
-A guild channel, DM, group DM or thread. `delivery_mode` and `voice_region` are Voics extras.
+A guild channel, DM, group DM or thread. `delivery_mode` and `voice_region` are Discordy extras.
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -542,8 +551,8 @@ A guild channel, DM, group DM or thread. `delivery_mode` and `voice_region` are 
 | `default_sort_order?` | `?integer` |  |
 | `default_forum_layout?` | `integer` |  |
 | `newly_created?` | `boolean` | Only on THREAD_CREATE. |
-| `delivery_mode?` | `DeliveryMode` | Voics: effective delivery mode. Always present on full channel objects. |
-| `voice_region?` | `?string` | Voics: per-channel voice region override; null uses the guild's voice_region. |
+| `delivery_mode?` | `DeliveryMode` | Discordy: effective delivery mode. Always present on full channel objects. |
+| `voice_region?` | `?string` | Discordy: per-channel voice region override; null uses the guild's voice_region. |
 
 ### ChannelMention
 
@@ -587,13 +596,13 @@ Default reaction emoji of a forum channel.
 
 ### DeliveryMode
 
-Voics message delivery mode. Strictness: standard (0) < ephemeral (1) < p2p (2).
+Discordy message delivery mode. Strictness: standard (0) < ephemeral (1) < p2p (2).
 
 Type: `"standard" or "ephemeral" or "p2p"`
 
 ### Device
 
-A user device with its Ed25519 identity key (Voics extra).
+A user device with its Ed25519 identity key (Discordy extra).
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -612,7 +621,7 @@ Category slugs a guild can be listed under.
 
 ### DiscoveryGuild
 
-One server card of `GET /discovery/guilds` (Voics extra).
+One server card of `GET /discovery/guilds` (Discordy extra).
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -746,7 +755,7 @@ A tag that can be applied to forum threads.
 
 ### Guild
 
-A guild (server). `voice_region` is a Voics extra.
+A guild (server). `voice_region` is a Discordy extra.
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -780,7 +789,8 @@ A guild (server). `voice_region` is a Voics extra.
 | `nsfw_level?` | `integer` |  |
 | `approximate_member_count?` | `integer` |  |
 | `approximate_presence_count?` | `integer` |  |
-| `voice_region` | `string` | Voics: voice region ID used to allocate voice nodes. |
+| `voice_region` | `string` | Discordy: voice region ID used to allocate voice nodes. |
+| `prune_admin_only?` | `boolean` | Discordy: when true, only administrators may prune inactive members. |
 
 ### GuildApplicationCommandPermissions
 
@@ -853,7 +863,8 @@ A guild with its full state (GUILD_CREATE payload and the internal guild state e
 | `nsfw_level?` | `integer` |  |
 | `approximate_member_count?` | `integer` |  |
 | `approximate_presence_count?` | `integer` |  |
-| `voice_region` | `string` | Voics: voice region ID used to allocate voice nodes. |
+| `voice_region` | `string` | Discordy: voice region ID used to allocate voice nodes. |
+| `prune_admin_only?` | `boolean` | Discordy: when true, only administrators may prune inactive members. |
 | `joined_at?` | `string (date-time)` |  |
 | `large?` | `boolean` |  |
 | `unavailable?` | `boolean` |  |
@@ -1296,7 +1307,7 @@ The client that opened the session.
 
 ### Snowflake
 
-A 64-bit Voics Snowflake ID serialized as a decimal string (42 bits ms since 2026-01-01T00:00:00Z, 10 bits worker, 12 bits sequence).
+A 64-bit Discordy Snowflake ID serialized as a decimal string (42 bits ms since 2026-01-01T00:00:00Z, 10 bits worker, 12 bits sequence).
 
 Type: `string`
 
@@ -1395,7 +1406,7 @@ A guild that is unavailable or that the user left.
 
 ### User
 
-A Voics user (Discord v10 User object).
+A Discordy user (Discord v10 User object).
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -1404,6 +1415,7 @@ A Voics user (Discord v10 User object).
 | `discriminator` | `string` | Always "0" (unique usernames). |
 | `global_name` | `?string` |  |
 | `avatar` | `?string` | Avatar hash. |
+| `bio?` | `?string` | Profile About me text, at most 300 characters. |
 | `bot?` | `boolean` |  |
 | `system?` | `boolean` |  |
 | `mfa_enabled?` | `boolean` |  |
@@ -1455,7 +1467,7 @@ Client preferences that follow the account across devices (client#123). Sparse: 
 
 ### UserSettings
 
-Account-wide settings of the current user. `default_delivery_mode` is a Voics extra.
+Account-wide settings of the current user. `default_delivery_mode` is a Discordy extra.
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -1940,7 +1952,8 @@ POST /auth/mfa/totp body: completes a login that answered 60008.
 | --- | --- | --- |
 | `code` | `60008` |  |
 | `message` | `string` |  |
-| `ticket` | `string` | Present to POST /auth/mfa/totp together with a code. |
+| `ticket` | `string` | Present to /auth/mfa/totp with a TOTP/recovery code or to /auth/mfa/webauthn/start. |
+| `methods?` | `array of "totp" or "webauthn" or "backup_code"` | Registered factors available for this ticket; older servers may omit it. |
 
 ### ModifyApplicationRequest
 
@@ -1993,6 +2006,7 @@ PATCH /users/@me body. `username`, `email` and `new_password` require the curren
 | `username?` | `string` |  |
 | `global_name?` | `?string` |  |
 | `avatar?` | `?string` | Data URI image. |
+| `bio?` | `?string` | About me text; null or blank clears it. Trimmed, at most 300 characters. |
 | `banner?` | `?string` |  |
 | `accent_color?` | `?integer` |  |
 | `password?` | `string` | Current password; required with username, email or new_password. |
@@ -2024,7 +2038,7 @@ PATCH /users/@me/guilds/{guild_id|@me}/settings body (partial). Muting with mute
 
 ### ModifyGuildRequest
 
-PATCH /guilds/{id} body (partial). `voice_region` is a Voics extra.
+PATCH /guilds/{id} body (partial). `voice_region` is a Discordy extra.
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -2045,6 +2059,7 @@ PATCH /guilds/{id} body (partial). `voice_region` is a Voics extra.
 | `default_message_notifications?` | `integer` |  |
 | `explicit_content_filter?` | `integer` |  |
 | `voice_region?` | `string` |  |
+| `prune_admin_only?` | `boolean` | Discordy: restrict member pruning to administrators. Needs MANAGE_GUILD. |
 
 ### ModifyGuildTemplateRequest
 
@@ -2143,6 +2158,53 @@ A guild the user can add the bot to.
 | `icon` | `?string` |  |
 | `permissions` | `PermissionBitset` |  |
 
+### Passkey
+
+Registered second factor metadata. Credential public keys and challenges are never included.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `id` | `string (uuid)` |  |
+| `name` | `string` |  |
+| `created_at` | `string (date-time)` |  |
+| `last_used_at` | `?string (date-time)` |  |
+
+### PasskeyDeleteRequest
+
+Removing a passkey needs the password and a valid TOTP or one-time recovery code. Removing the last factor turns MFA off.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `password` | `string` |  |
+| `code` | `string` |  |
+
+### PasskeyRegisterFinishRequest
+
+Finish the registration using navigator.credentials.create, serializing binary fields as unpadded base64url.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `challenge_id` | `string (uuid)` |  |
+| `credential` | `object` |  |
+
+### PasskeyRegisterResponse
+
+The enrolled passkey. First-factor enrollment generates recovery codes; existing codes are retained when another factor is added.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `passkey` | `Passkey` |  |
+| `backup_codes?` | `array of object` |  |
+
+### PasskeyRegisterStartRequest
+
+Reauthenticate with the password before creating a passkey registration challenge.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `password` | `string` |  |
+| `name` | `string` |  |
+
 ### PasswordConfirmationRequest
 
 Body of POST /users/@me/disable, /users/@me/delete and /users/@me/mfa/totp/enable: the current password re-authenticates the caller.
@@ -2150,6 +2212,23 @@ Body of POST /users/@me/disable, /users/@me/delete and /users/@me/mfa/totp/enabl
 | Field | Type | Description |
 | --- | --- | --- |
 | `password` | `string` |  |
+
+### PruneRequest
+
+POST /guilds/{id}/prune body.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `days?` | `integer` |  |
+| `include_roles?` | `array of Snowflake` |  |
+
+### PruneResult
+
+GET /guilds/{id}/prune (members that would be removed) and POST /guilds/{id}/prune (members removed).
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `pruned` | `integer` |  |
 
 ### PublicDevice
 
@@ -2286,3 +2365,30 @@ POST /users/@me/mfa/totp/verify body.
 | Field | Type | Description |
 | --- | --- | --- |
 | `code` | `string` |  |
+
+### WebauthnChallenge
+
+A five-minute, single-use server-side ceremony. Finish requires the same account/session or password-authenticated login ticket.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `challenge_id` | `string (uuid)` |  |
+| `publicKey` | `object` | WebAuthn PublicKeyCredentialCreationOptionsJSON or PublicKeyCredentialRequestOptionsJSON. Binary members use unpadded base64url. |
+
+### WebauthnLoginFinishRequest
+
+Complete a passkey assertion. The assertion challenge and login ticket are single use, and the credential signature counter is checked.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `ticket` | `string` |  |
+| `challenge_id` | `string (uuid)` |  |
+| `credential` | `object` |  |
+
+### WebauthnLoginStartRequest
+
+Begin passkey assertion after the password login returned MFA_REQUIRED.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `ticket` | `string` |  |

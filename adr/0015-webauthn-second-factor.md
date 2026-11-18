@@ -1,8 +1,8 @@
 # 0015 — WebAuthn as a second factor next to TOTP
 
-- Status: proposed
+- Status: accepted (implementation in progress)
 - Date: 2026-10-18
-- Deciders: @oussamaelhajoui (pending)
+- Deciders: @oussamaelhajoui (feature implementation authorized 2026-11-18)
 - Technical story: [docs#9](https://github.com/discordy-voics/docs/issues/9), [api#19](https://github.com/discordy-voics/api/issues/19)
 - Related: [research note, post 7](../research/discord-engineering-comparison.md), spec section 5
 
@@ -26,7 +26,7 @@ Login uses argon2id passwords and optional TOTP (spec section 5). The `api` serv
 
 ## Decision Outcome
 
-Proposed: **option 2.** WebAuthn is added as a second factor. TOTP remains.
+**Option 2.** WebAuthn is added as a second factor. TOTP remains.
 
 - **Port.** A `WebauthnVerifier` port in `api/crates/application/src/ports/services.rs`, next to `TotpVerifier`. The Rust library sits in `infrastructure`.
 - **Storage.** Credential ID, public key, sign counter and transports, in Postgres through the existing repository pattern. The private key never reaches the server.
@@ -67,3 +67,15 @@ Proposed: **option 2.** WebAuthn is added as a second factor. TOTP remains.
 ## Validation
 
 The acceptance criteria in api#19 require a software-authenticator integration test, a passkey-only login path, and single-use backup codes.
+
+## Implementation contract (2026-11-18)
+
+The routes and schemas below specify the implementation to build. The API adapter,
+runtime configuration and client authenticator flow are not delivered yet.
+
+- Library: `webauthn-rs` 0.6.2 behind the verifier port. Serialized ceremony state is retained only in Postgres; it is never trusted from a client.
+- Registration requires an authenticated session and password confirmation. Assertion requires a password-authenticated MFA ticket. Both ceremonies expire after five minutes and are single use.
+- Each credential has an account-private name, creation time and last-used time. Authenticators with nonzero counters must advance them; a database compare-and-set prevents concurrent assertions from accepting a stale counter.
+- TOTP remains available. Passkey-only users can log in with their passkey or a hashed, single-use recovery code. Removing the final factor disables MFA only after password and second-factor confirmation.
+- `WEBAUTHN_RP_ID` and `WEBAUTHN_RP_ORIGIN` enable the adapter together. The origin is an explicit HTTPS origin (HTTP localhost is allowed only for development). No request-controlled host or origin is used to configure the relying party.
+- Public routes and request schemas are in the generated [REST reference](../protocols/rest.md). Native/Electron clients must use a platform authenticator with that relying-party origin; a `file://` renderer cannot substitute its own origin.
