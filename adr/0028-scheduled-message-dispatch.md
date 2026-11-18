@@ -50,24 +50,41 @@ cannot supply the required LWT on the tested Scylla 2025.1 cluster. The new opti
 `SCHEDULED_MESSAGES_ENABLED` defaults to false until the complete backend and client
 slice has passed review. Disabled nodes do not accept or execute schedules.
 
-A journal partition is keyed by author and client-generated schedule UUID. Its row
-contains the immutable channel, original request fingerprint, current revision,
-draft, scheduled instant, state, chosen message ID and attempt ID. All state changes
-use SERIAL/QUORUM compare-and-set against the expected revision/state. The author
-cannot provide the resulting message Snowflake or attempt ID.
+A journal partition is keyed by author, with distinct rows for schedule UUIDs,
+active-job discovery, the author's active count and per-channel counts. A job holds
+the immutable channel, original request fingerprint, revision, draft, scheduled
+instant, state, chosen message ID and attempt ID. SERIAL/QUORUM conditional batches
+change the job and quota rows together against the expected author revision/state.
+The server permits at most **100 active intents per author and 25 per channel**;
+internal preparing reservations, pending jobs and dispatching jobs all occupy slots.
+Terminal/unknown transitions release their slot in that same batch, exactly once.
+The author cannot provide a resulting message Snowflake or attempt ID.
 
-Separate bounded-page indexes support author/channel listing and due-work discovery.
-An index entry is written before the journal create/edit is acknowledged. Workers
-and list readers validate every entry against the journal; losing create/edit races
-can leave harmless stale entries, which are cleaned in the background. A due scan
-must recover overdue entries after restart, not jump straight to the current clock.
-Index lag, orphan cleanup and overdue age need integration tests and metrics.
+Creation first reserves quota in an internal `preparing` state. It writes the due
+index and then CAS-activates the job as pending before acknowledging acceptance.
+A due reader never deletes a preparing entry as an orphan. Preparing reservations
+older than two minutes can be aborted by CAS; that state fences a paused creator
+from subsequently activating. Author operations reconcile at most 100 such active
+rows; an incomplete acceptance returns 503 and the caller retries the same key.
+Edits likewise retain the old discoverable entry until the new index entry and
+revision are committed. Real crash tests must prove both discovery and quota safety.
+
+The due index has 64 fixed hash shards and ordered due-time/job keys. Each process
+polls once per second, examines at most four pages of 100 candidates per tick and
+allows at most four dispatches in flight. Shards rotate fairly. Persisted cursors
+wrap to the start after each pass, including after restart, so an entry inserted
+behind a cursor is revisited. A restart never jumps to the current date and discards
+older work. Readers validate entries against journal state; cleanup deletes only
+proven obsolete entries and shares the same scan budget. There is no whole-table
+or unbounded in-memory recovery scan. The dataset itself is not a fixed-size queue;
+load tests must measure full-pass duration and due-age under the supported load.
 
 Terminal rows clear the draft immediately; the content-free idempotency record is
 retained so replaying an old create cannot silently schedule a second message.
 Terminal entries remain in channel lists for seven days; an exact author lookup
 can still return the content-free record afterward. Storage grows by one small
-record per accepted schedule. This cost is explicit; a future bounded-retention
+record per accepted schedule, including growth of an author's journal partition.
+This cost is explicit; a future bounded-retention
 protocol must reject expired request keys instead of treating them as new intents.
 
 ### Dispatch and cancellation
@@ -76,19 +93,31 @@ protocol must reject expired request keys instead of treating them as new intent
    author. Validate current account access, Standard delivery, SEND_MESSAGES and,
    when requested, SEND_TTS_MESSAGES. Resolve the reply again and compose the final
    message. The internal bot/webhook bypass is never used.
-2. Dependency failures before the claim remain retryable with backoff for at most
-   24 hours after the scheduled instant. Permanent access, mode or validation
+2. Dependency failures before the claim remain retryable with exponential backoff
+   starting at one second, capped at 60 seconds with jitter, for at most 24 hours
+   after the scheduled instant. Overdue jobs past that limit fail before a claim.
+   Permanent access, mode or validation
    failures become `failed` with a sanitized reason and no message write.
 3. Allocate a current message Snowflake and CAS `pending` to `dispatching`, freezing
    its message and a unique attempt ID. An edit or cancellation competes with this
    same CAS. A successful cancellation prevents any dispatch claim; a losing one
    returns conflict. The resulting message ID is allocated at dispatch, not when
    the user schedules it, so chronological message ordering stays correct.
-4. Exactly the worker that won the claim makes the single message insertion call.
-   It does not call the public create use case again. Known success records `sent`
+4. After the claim, the winning worker performs another uncached author/access/mode
+   check before the single insertion call. A worker paused **before** the claim
+   cannot rely on the earlier permission result; revocation in that interval must
+   fail without insertion. The post-claim lookup has a five-second timeout. Failure
+   at this point is known to precede insertion and is terminal, not automatically
+   retried. Authorization reflects that last lookup; permission revocation and a
+   Scylla write are not one cross-service transaction, so a subsequent concurrent
+   revocation retains the ordinary send path's check/write race.
+   The worker does not call the public create use case again. Known success records `sent`
    and the message ID. An error known to precede insertion records `failed`.
-   A timeout, lost result or crash after the claim records `delivery_unknown` when
-   the worker cannot prove the outcome. No other worker starts a replacement send.
+   A timeout or lost result records `delivery_unknown` when the worker cannot prove
+   the outcome. Recovery marks unresolved dispatches unknown once their claim is
+   two minutes old, using the same bounded active/due scan. No other worker starts
+   a replacement send. The two minutes are an eligibility threshold, not a promise
+   that recovery runs during a complete outage.
 5. The original attempt may later certify `sent` using its matching attempt ID,
    including after uncertainty was reported. The state cannot move back to pending.
    A message delete does not cause the schedule to be replayed. A chosen message ID
@@ -100,6 +129,13 @@ or dependencies are paused. The UI says “Delivery could not be confirmed” fo
 unknown outcome and offers to inspect the channel, not an automatic Retry button.
 Existing CREATE publication/accounting remains best effort; `sent` means the message
 write succeeded, not that every device received its event or push notification.
+
+Measure oldest due age, full scan-pass duration, pending/preparing/dispatching/unknown
+counts, quota refusals and time from claim to terminal outcome. Alert when oldest
+due age exceeds 60 seconds for five minutes, a preparing/dispatching claim exceeds
+two minutes plus one completed scan pass, or any unknown outcome first appears.
+These are operational investigation thresholds, not a delivery SLO. Every metric
+has bounded labels; never attach author, channel, schedule or message IDs.
 
 ### Rollout and recovery
 
@@ -116,6 +152,9 @@ uncertain and let their author inspect history, never to replay them automatical
 
 - Real Scylla tests with two independent workers: one claim, one insertion call;
   duplicate create with the same key/body returns one job; conflicting body rejects.
+- Concurrent quota tests hit exactly 100 per author/25 per channel, including
+  preparing reservations; cancellation/failure/unknown releases only once. Crash
+  recovery cannot leak a slot forever or activate after its reservation was aborted.
 - Deterministic cancel/edit/claim interleavings: successful cancel produces no
   insertion, stale revisions conflict, and a claimed draft cannot be edited.
 - Fault injection before index/journal writes, before/after claim, after insertion
@@ -123,6 +162,9 @@ uncertain and let their author inspect history, never to replay them automatical
   message or lose an accepted pending job; uncertain outcomes must remain visible.
 - Fresh permission revocation, deleted channel/reply, changed delivery mode, TTS
   denial, dependency backoff, downtime past the due time and restore fencing.
+- Pause before claim, revoke access, resume: the mandatory post-claim lookup denies
+  insertion. Recovery tests exceed one page/shard, insert behind cursors, retain
+  preparing entries and demonstrate the page/in-flight budgets with overdue jobs.
 - Client tests for timezone conversion, response loss with the same request key,
   cross-device edits, every status and private-mode rejection. A real two-account
   delivery check is required before calling messages#61 complete.

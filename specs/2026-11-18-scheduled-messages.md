@@ -12,6 +12,13 @@ the instant to UTC, and preserves the draft until the server acknowledges it.
 The chosen instant must be between one minute and 30 days in the future according
 to the server clock. The server may send later during outages; it never sends early.
 
+At most 100 active scheduled intents may exist per author and 25 in one channel.
+Preparing and dispatching reservations count toward the limits. A full quota
+rejects creation with 409 and a field error; it does not evict another draft.
+Dependency failures can delay a pending message for up to 24 hours, after which it
+fails before dispatch. An unresolved dispatch becomes eligible for the visible
+unknown state after two minutes; recovery resumes when the service is available.
+
 This first contract schedules text, TTS, an optional reply and the reply-ping/silent
 options. Text must contain 1–2000 characters and cannot be whitespace-only.
 Attachments, embeds, components and forwarding are not accepted; clients keep
@@ -45,6 +52,9 @@ one intent across channels: using it with another channel or original request
 returns 409. An identical replay returns the **current** resource even after edits,
 dispatch or cancellation and does not revalidate the original time window.
 The original normalized-request fingerprint remains separate from edited fields.
+An identical known replay is author-scoped and returns the current state before
+rechecking the original time window or current send access. An acceptance still
+being prepared returns 503; it never returns a falsely accepted pending resource.
 
 Creation and edits require fresh current channel access and Standard send
 permissions. Exact/list/cancel operations are author-scoped and remain available
@@ -89,7 +99,8 @@ not deletion of a sent message; normal message deletion remains a separate actio
 Validation returns the existing 400/50035 error envelope. Missing authentication
 is 401; unsupported token kinds or send denial are 403; unknown resources are 404;
 private delivery uses the existing 409/50160. A stale revision, non-pending mutation
-or conflicting request key returns 409 with code 50035 and a field error. Existing
+or conflicting request key returns 409 with code 50035 and a field error.
+Active-intent quota exhaustion also returns 409/50035 with a field error. Existing
 429 rate-limit headers apply. Temporary infrastructure errors before acceptance
 return 503; clients may retry the same request key/body. They must not substitute
 a new key merely because a response was lost.
