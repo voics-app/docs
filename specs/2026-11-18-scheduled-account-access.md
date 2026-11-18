@@ -1,12 +1,15 @@
 # Scheduled dispatch account eligibility
 
-Status: proposed P4 behavior correction supporting messages#61 and ADR0028.
+Status: account eligibility correction implemented on API `develop` in
+[PR150](https://github.com/discordy-voics/api/pull/150), supporting messages#61
+and ADR0028. The API change has not been released to production; the scheduler
+remains under implementation and disabled by default.
 
-`GET /internal/v1/channels/{channel_id}/access/{user_id}` currently checks channel
-membership and permissions but can still authorize a disabled or suspended author.
+Previously, `GET /internal/v1/channels/{channel_id}/access/{user_id}` checked
+channel membership and permissions but could authorize a disabled or suspended author.
 Offline execution cannot depend on a JWT session expiring or being revoked first.
 
-The API must load the current user and account lifecycle state on every lookup.
+The API now loads the current user and account lifecycle state on every lookup.
 A missing user, disabled account, pending deletion or active suspension returns
 403 with the existing missing-access error. Expired suspensions permit the usual
 channel checks again. Eligible bot accounts keep their existing behavior; the
@@ -27,6 +30,10 @@ last check retains the ordinary cross-service check/write race; no distributed
 permission transaction is claimed. Deploy the API correction before enabling the
 executor. Other existing access consumers also receive the stricter 403 result.
 
-Required proof includes real Postgres/HTTP cases for disabled, pending-deletion,
-missing, suspended and reactivated/expired users, plus eligible bots and channel
-membership behavior. This addendum does not enable a scheduler or alter production.
+Root independently verified real PostgreSQL/HTTP cases for disabled,
+pending-deletion, missing, suspended and reactivated/expired users, plus eligible
+bots and channel membership behavior. The disabled-account regression returned
+200 before the correction and 403 afterward; the final source passed local
+tests and CI before merge. This addendum does not enable a scheduler or alter
+production. Scheduler storage, HTTP, client and dispatch acceptance remain
+separate requirements.
