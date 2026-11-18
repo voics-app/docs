@@ -140,7 +140,7 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 | Publishes | `discordy.telemetry.v1` (VOICE_QUALITY) |
 | Depends on | sfu (local control socket), etcd, Redpanda |
 | Called by | client |
-| Runtime identity | Explicit unique voice node/region and advertised endpoint; signaling does not generate Snowflakes. Atomic etcd claim/lease ownership is prepared in voice PR 33; duplicate public endpoints remain unsafe |
+| Runtime identity | Explicit unique voice node/region and advertised endpoint; signaling does not generate Snowflakes. Atomic etcd claim/lease ownership merged to develop in voice PR 33 (`da80415`); duplicate public endpoints remain unsafe |
 | Env vars | common + `VOICE_REGION`, `VOICE_NODE_ID`, `VOICE_PUBLIC_WS_URL`, `VOICE_PUBLIC_IP`, `VOICE_UDP_PORT`, `ETCD_ENDPOINTS`, `VOICE_TOKEN_SECRET` 🔒, `SFU_CONTROL_ADDR` |
 | SLOs | Availability 99.0 % per region (voice WS handshake success); join-to-first-audio p95 < 1.5 s; lease never missed for more than 10 s outside drains |
 | Runbooks | [adding a region](../runbooks/voice-regions/adding-a-region.md), [draining](../runbooks/voice-regions/draining-a-region.md), [failover](../runbooks/voice-regions/failover.md), [troubleshooting](../runbooks/voice-regions/troubleshooting.md) |

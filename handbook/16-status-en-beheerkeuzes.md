@@ -13,11 +13,11 @@ Momentopname: **18 november 2026**. Dit is geen lijst met automatisch afgeronde 
 | Externe testers | [Openbare TestFlight-link](https://testflight.apple.com/join/2zQRFhHH), maximaal 100; client#311 door coördinator geverifieerd | Tester moet uitnodiging accepteren en daadwerkelijk installeren |
 | Android | Publieke APK 1.0.0/7; geïsoleerde lokale QA-app geïnstalleerd, login en UI-bericht onafhankelijk via tweede peer bevestigd | Geen volledige echte productiepush-/bel-/telefoontest |
 | Mobiele achtergrondstatus | Client PR 339, gateway PR 59 en contracts PR 35 naar develop; gerichte onafhankelijke tests | Uitrol van client én gateway; foreground/backgroundpraktijkproef. Force quit en crash hebben platform-/TTL-beperkingen |
-| iOS video/schermdelen | ReplayKit-code in PR 338, native unsigned simulatorbuild en 67 gerichte tests geverifieerd | Fysieke iPhone naar tweede apparaat, start/stop/rejoin en camera/schermwissel; release van juiste native build |
+| iOS video/schermdelen | ReplayKit-code in PR 338, native unsigned simulatorbuild en 67 gerichte tests geverifieerd. Nieuwste head `eba1e46` voegt een echte simulator-start-/formulierproef met screenshots toe; die nieuwe CI-proef is nog niet afgetekend | Fysieke iPhone naar tweede apparaat, start/stop/rejoin en camera/schermwissel; release van juiste native build |
 | Rapporteren en leden opruimen | Bestaande API-endpoints met echte HTTP-tests; report 7 en prune 4 controles | Afzonderlijke desktop-/mobiele-/adminacceptatie; geen algemene klaarclaim |
 | Sessiebeveiliging | API PR 137 atomiseert intrekking, push-tokencleanup en outbox; PR 138 JWT-auditupdate gemerged | Historische eenmalige api#121-assertie is niet verklaard door alleen deze regressiefixes |
 | Passkeys | Contract/design gemerged, runtime in vervolgwerk | Geen beschikbare passkeylogin claimen vóór runtime, clientintegratie en acceptatie |
-| Permanente uitnodiging / auditbeleid | Contract/API/client-increment met echte Postgres- en UI-tests | Review, compatibele releases en onafhankelijke gebruikersproef; [contract](../protocols/community-settings.md) |
+| Permanente uitnodiging / auditbeleid | Contracts PR 37 gemerged; coördinator herhaalde tien echte Postgres-tests op API PR 139, plus lokale clienttests | API/clientreview, compatibele releases en onafhankelijke gebruikersproef; [contract](../protocols/community-settings.md) |
 | TTS / alttekst / spoilers | Messages-increment met regressie- en Scylla-tests | Paired clientbediening, reviews en releases; [contract](../protocols/message-metadata.md) |
 | Desktopnavigatie / safety | Eerste werkende verbeteringen in PR 342 met core-/desktoptests | Visuele en gebruikersacceptatie; ontbrekende API-features blijven afzonderlijk open |
 | Overige pariteitsfeatures | Alle toegewezen kaarten opgenomen in het programma | Geen blanket-Done: onder meer volledige privacyfilters, gekoppelde accounts, export, polls en geplande berichten hebben verdere implementatie nodig |
@@ -33,6 +33,7 @@ De [mobiele handleiding](14-handleiding-mobiele-app.md) en [desktophandleiding](
 | Verkeersverdeling | Twee-replica-ingress-/tunnelprofiel voorbereid maar niet geactiveerd; stateful diensten niet automatisch schaalbaar |
 | App-identiteit bij opschalen | API/messages gebruiken nog vaste Snowflake-ID’s; allocator in werk. Gateway gebruikt UUID’s. SFU heeft unieke registraties én endpoints nodig |
 | Gateway | Twee-BEAM-tests voor fan-out/readiness geslaagd; geen transactionele garantie bij een partitie midden tijdens verdeling |
+| Voice-registratie | PR 33 naar develop gemerged (`da80415`): atomische claim en lease-eigendom. Externe endpoint-/mediaproef blijft apart |
 | Notifier | Coördinator zag 1/1 Ready op v0.15.0 en gezonde APNs/FCM-ExternalSecrets; gitops#69 afgesloten |
 | Echte push | Configuratiegereedheid is geen bewijs van zichtbare melding op een echt APNs-/FCM-toestel |
 | Image reflector | OOM-probleem onder 256 MiB hersteld met 1 GiB-limiet; gitops 0.25.1; lange periode zonder herstart geobserveerd. Geen geheugenlek aangetoond |

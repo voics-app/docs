@@ -2,7 +2,7 @@
 
 Summary: readiness, DNS, Erlang-distributie, reconnects en unieke voice-endpoints controleren vóór extra replica’s worden toegelaten.
 
-Stand 18 november 2026: gateway PR 60 is naar develop gemerged en met twee BEAM-processen getest. Voice PR 33 bereidt exclusieve etcd-registraties voor. Dit zijn applicatiecontroles; er is geen extra server aangesloten of replica-profiel geactiveerd. Zie [serveruitbreiding](server-uitbreiden.md).
+Stand 18 november 2026: gateway PR 60 is naar develop gemerged (`63dcc15`) en met twee BEAM-processen getest. Voice PR 33 met exclusieve etcd-registraties is eveneens naar develop gemerged (`da80415`). Dit zijn applicatiecontroles; er is geen extra server aangesloten of replica-profiel geactiveerd. Zie [serveruitbreiding](server-uitbreiden.md).
 
 ## Gateway: wat de gereedheid betekent
 
