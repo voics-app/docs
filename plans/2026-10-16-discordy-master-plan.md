@@ -178,6 +178,8 @@ All calls carry the `X-Internal-Token` header. All IDs are strings.
 
 ### P5. Snowflakes
 
+**Runtime correction, 18 November 2026:** the table below records the original reserved ranges, not evidence of current generation in every service. API and messages currently use fixed Snowflake worker IDs and require safe per-process allocation before replica scaling. Gateway creates UUIDv4 sessions and UUIDv7 events; voice-signaling does not generate Snowflakes. Do not assign Snowflake IDs to those services merely from this historical range table. The interval-allocation work must also preserve high-watermarks across database restore; see the [backup plan](../runbooks/backup-restore.md#id-reserveringen-na-databaseherstel) and [scaling guide](../runbooks/server-uitbreiden.md).
+
 - **Layout**: 42 bits of milliseconds since epoch `1767225600000` (2026-01-01T00:00:00Z), 10 bits worker, 12 bits sequence. Serialized as **decimal strings** in JSON.
 - **Worker ranges**:
 

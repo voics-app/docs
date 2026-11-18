@@ -70,7 +70,7 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 | Publishes | `discordy.guild.v1`, `discordy.user.v1`, `discordy.interaction.v1`, `discordy.audit.v1`; TYPING_START on `discordy.message.v1` |
 | Depends on | Postgres, Valkey, Redpanda, MinIO, messages (internal; also `GET /internal/v1/channels/{id}/messages/{mid}` to copy a reported message) |
 | Called by | client, bots, messages, gateway, admin-bff |
-| Snowflake workers | 0–63 |
+| Snowflake workers | Intended API range 0–63; production currently uses a fixed worker ID. Per-process allocation is not yet proven safe; see [replica constraints](../runbooks/server-uitbreiden.md#7-replicas-wat-kan-later-omhoog) |
 | Env vars | common + `DATABASE_URL` 🔒, `VALKEY_URL` 🔒, `JWT_PRIVATE_KEY` 🔒, `PUBLIC_API_URL`, `PUBLIC_GATEWAY_URL`, `CDN_PUBLIC_URL`, `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY` 🔒, `MINIO_SECRET_KEY` 🔒, `MINIO_BUCKET_ASSETS`, `MESSAGES_INTERNAL_URL`, `MAIL_TRANSPORT` (`log` or `smtp`), `SMTP_HOST`, `SMTP_PORT`, `SMTP_TLS`, `SMTP_USERNAME` 🔒, `SMTP_PASSWORD` 🔒, `MAIL_FROM`, `APP_LINK_BASE`, `ACCOUNT_DELETION_RETENTION_DAYS`, `ACCOUNT_PURGE_INTERVAL_SECS` (see [account security](../specs/2026-10-21-account-security-and-mfa.md)) |
 | SLOs | Availability 99.5 %; p95 latency < 150 ms for reads and < 300 ms for writes; outbox publish lag p99 < 2 s |
 | Runbooks | [backup-restore](../runbooks/backup-restore.md), [secret-rotation](../runbooks/secret-rotation.md) (JWT keys, DB password), [release](../runbooks/release.md) |
@@ -88,7 +88,7 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 | Consumes | `discordy.message.v1` (all partitions, own offsets in Postgres) to keep the search index current; `discordy.guild.v1` `BAN_MESSAGE_PURGE` (offsets in the same Postgres, start at the end of the topic) to purge a banned user's recent messages, see [spec](../specs/2026-10-22-moderation-tools-and-ban-purge.md) |
 | Depends on | ScyllaDB, Redpanda, MinIO, Postgres (search, optional), api (`/internal/v1/channels/{id}/access/{user}` with a 5 s cache; bot token introspection with a 60 s cache) |
 | Called by | client, bots, api, gateway, admin-bff |
-| Snowflake workers | 64–127 |
+| Snowflake workers | Intended messages range 64–127; fixed worker IDs must not be duplicated across concurrent replicas |
 | Env vars | common + `SCYLLA_NODES`, `SCYLLA_KEYSPACE`, `API_INTERNAL_URL`, `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY` 🔒, `MINIO_SECRET_KEY` 🔒, `MINIO_BUCKET_ATTACHMENTS`, `CDN_PUBLIC_URL`, `ATTACHMENT_SIGNING_KEY` 🔒, `ATTACHMENT_URL_TTL_SECONDS`, `SEARCH_DATABASE_URL` 🔒 (search is disabled when unset), `SEARCH_BACKFILL_ON_START` |
 | SLOs | Availability 99.5 %; search p95 < 300 ms; history p95 < 100 ms; send p95 < 200 ms; send-to-dispatch p95 < 500 ms (with the gateway) |
 | Runbooks | [backup-restore](../runbooks/backup-restore.md#scylladb), [release](../runbooks/release.md) |
@@ -97,16 +97,16 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 
 | | |
 |---|---|
-| Purpose | Push notifications for the iPhone app: decides who gets a push for a new message with the clients' rules (live session, mute, level, mentions, roles, `@everyone`, `@silent`, the device's only-mentions preference) and sends through APNs. Encrypted and unknown delivery modes carry no message text. Bounded queue, in-flight cap, retries and counted drops ([ADR 0016](../adr/0016-push-backpressure.md)). |
+| Purpose | APNs/FCM message push and native call notifications. Applies mute, level, mention and device preferences; a live gateway socket alone does not suppress push because mobile background sockets can linger. Private/unknown modes carry no message text. Bounded queue, in-flight cap, retries and counted drops ([push runbook](../runbooks/push-notifications.md)) |
 | Repo / image | `discordy-voics/messages` (second binary `bin/notifier`) / `ghcr.io/discordy-voics/messages-notifier` |
 | Tech | Rust, reqwest (HTTP/2), jsonwebtoken (ES256), rskafka |
 | Ports | 8085: `/healthz`, `/readyz` (Redpanda), `/metrics` |
 | Owns data | None. Device tokens live in the api's Postgres (`push_tokens`). |
 | Consumes | `discordy.message.v1` (all partitions, from the end of the topic, no stored offset: run exactly one replica) |
-| Depends on | Redpanda, api (`/internal/v1/channels/{id}/push-targets`, `DELETE /internal/v1/push-tokens`), APNs |
-| Called by | Nothing |
-| Env vars | `KAFKA_BROKERS`, `API_INTERNAL_URL`, `INTERNAL_SERVICE_TOKEN` 🔒, `APNS_KEY_FILE` (mounted `.p8`, from `APNS_KEY` 🔒), `APNS_KEY_ID` 🔒, `APNS_TEAM_ID` 🔒, `APNS_TOPIC`, `APNS_ENVIRONMENT`, `PUSH_QUEUE_CAPACITY`, `PUSH_MAX_IN_FLIGHT`, `PUSH_MAX_ATTEMPTS`, `PUSH_BASE_BACKOFF_MS`, `PUSH_MAX_BACKOFF_MS`, `PUSH_MAX_EVENT_AGE_SECS`, `PUSH_DEDUPE_CAPACITY` |
-| Deployment | 0 replicas until the owner provides the Apple key; `Recreate`, one replica; 32 Mi request, 96 Mi limit |
+| Depends on | Redpanda, api (`/internal/v1/channels/{id}/push-targets`, `DELETE /internal/v1/push-tokens`), configured APNs/FCM providers |
+| Called by | admin-bff for authenticated internal manual push |
+| Env vars | `KAFKA_BROKERS`, `API_INTERNAL_URL`, `INTERNAL_SERVICE_TOKEN` 🔒, `APNS_KEY_FILE` (mounted `.p8`, from `APNS_KEY` 🔒), `APNS_KEY_ID` 🔒, `APNS_TEAM_ID` 🔒, `APNS_TOPIC`, `APNS_ENVIRONMENT`, `NOTIFIER_FCM_SERVICE_ACCOUNT` 🔒 (or local `FCM_SERVICE_ACCOUNT_FILE`), `PUSH_QUEUE_CAPACITY`, `PUSH_MAX_IN_FLIGHT`, `PUSH_MAX_ATTEMPTS`, `PUSH_BASE_BACKOFF_MS`, `PUSH_MAX_BACKOFF_MS`, `PUSH_MAX_EVENT_AGE_SECS`, `PUSH_DEDUPE_CAPACITY` |
+| Deployment | One replica, `Recreate`; independently verified 1/1 Ready on v0.15.0 with synced APNs/FCM ExternalSecrets on 18 November 2026. Actual device delivery remains separate acceptance |
 | Runbooks | [push-notifications](../runbooks/push-notifications.md), [secret-rotation](../runbooks/secret-rotation.md#apns-key) |
 
 ## gateway
@@ -116,14 +116,15 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 | Purpose | Client WebSocket protocol (P7), sessions, guild processes, presence, typing, fan-out, E2EE inbox relay, P2P signaling relay, voice-server allocation, Watch Together relay, telemetry. |
 | Repo / image | `discordy-voics/gateway` / `ghcr.io/discordy-voics/gateway` |
 | Tech | Elixir 1.20 / OTP 29, Phoenix 1.8, brod, Redix, eetcd, libcluster |
-| Ports | 4000: WS `/gateway` (via `discordy-gateway.voics.nl`) and internal HTTP `/internal/v1/*`; Erlang distribution inside the cluster through a headless service |
+| Ports | 4000: WS `/gateway` (via `gateway.voics.nl`, old alias retained) and internal HTTP `/internal/v1/*`; Erlang distribution inside the cluster through a headless service |
 | Owns data | Valkey `gw:*`, `e2ee:*`, `voice:*`, `presence:*` |
 | Consumes | every `discordy.*.v1` topic (one consumer group per topic) |
 | Publishes | `discordy.telemetry.v1` |
 | Depends on | Valkey, etcd, Redpanda, api (internal), messages (internal) |
 | Called by | client, bots, admin-bff |
-| Snowflake workers | 128–191 |
-| Env vars | common + `VALKEY_URL` 🔒, `ETCD_ENDPOINTS`, `API_INTERNAL_URL`, `MESSAGES_INTERNAL_URL`, `VOICE_TOKEN_SECRET` 🔒, `PUBLIC_GATEWAY_URL`, `DEFAULT_VOICE_REGION`, `RELEASE_COOKIE` 🔒, `CLUSTER_DNS_QUERY` |
+| Runtime IDs | UUIDv4 session IDs and UUIDv7 event IDs; the legacy Snowflake setting is not a runtime allocator |
+| Cluster readiness | `discordy_gateway_cluster_ready`; DNS, distribution and session-directory membership gate new admission and ingestion with retryable 4015. Does not make in-flight fan-out transactional ([cluster runbook](../runbooks/gateway-cluster.md)) |
+| Env vars | common + `VALKEY_URL` 🔒, `ETCD_ENDPOINTS`, `API_INTERNAL_URL`, `MESSAGES_INTERNAL_URL`, `VOICE_TOKEN_SECRET` 🔒, `PUBLIC_GATEWAY_URL`, `DEFAULT_VOICE_REGION`, `RELEASE_COOKIE` 🔒, `CLUSTER_DNS_QUERY`, `MOBILE_BACKGROUND_PRESENCE_MS` (bounded mobile availability lease, default 86400000 ms) |
 | SLOs | Availability 99.5 % (successful IDENTIFY → READY); READY p95 < 1 s; dispatch fan-out p95 < 250 ms after consumption; consumer lag p99 < 5 s |
 | Runbooks | [voice failover](../runbooks/voice-regions/failover.md), [draining a region](../runbooks/voice-regions/draining-a-region.md), [secret-rotation](../runbooks/secret-rotation.md) (`VOICE_TOKEN_SECRET`, `RELEASE_COOKIE`) |
 
@@ -134,12 +135,12 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 | Purpose | Voice WebSocket (P8), room registry, speaking relay, DAVE MLS relay (external sender), etcd lease registration and load reporting, drain mode, SFU supervision with session replay. |
 | Repo / image | `discordy-voics/voice` (`signaling/`) / `ghcr.io/discordy-voics/voice-signaling` |
 | Tech | Elixir, Phoenix (no Ecto), eetcd |
-| Ports | 4100: WS `/voice` (via `discordy-rtc-<region>.voics.nl`). Runs with `hostNetwork` in the same pod as the SFU. |
+| Ports | 4100: WS `/voice` (via `rtc-<region>.voics.nl`, old alias retained). Runs with `hostNetwork` in the same pod as the SFU |
 | Owns data | etcd `/discordy/voice/nodes/<region>/<node_id>` (10 s lease, refreshed every 3 s) |
 | Publishes | `discordy.telemetry.v1` (VOICE_QUALITY) |
 | Depends on | sfu (local control socket), etcd, Redpanda |
 | Called by | client |
-| Snowflake workers | 192–255 |
+| Runtime identity | Explicit unique voice node/region and advertised endpoint; signaling does not generate Snowflakes. Atomic etcd claim/lease ownership is prepared in voice PR 33; duplicate public endpoints remain unsafe |
 | Env vars | common + `VOICE_REGION`, `VOICE_NODE_ID`, `VOICE_PUBLIC_WS_URL`, `VOICE_PUBLIC_IP`, `VOICE_UDP_PORT`, `ETCD_ENDPOINTS`, `VOICE_TOKEN_SECRET` 🔒, `SFU_CONTROL_ADDR` |
 | SLOs | Availability 99.0 % per region (voice WS handshake success); join-to-first-audio p95 < 1.5 s; lease never missed for more than 10 s outside drains |
 | Runbooks | [adding a region](../runbooks/voice-regions/adding-a-region.md), [draining](../runbooks/voice-regions/draining-a-region.md), [failover](../runbooks/voice-regions/failover.md), [troubleshooting](../runbooks/voice-regions/troubleshooting.md) |
@@ -209,9 +210,9 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 |---|---|---|---|---|
 | Postgres 17 (CloudNativePG) | `voics-data` | 5432 | api, admin-bff, messages (search index) | [backup-restore](../runbooks/backup-restore.md#postgres) |
 | ScyllaDB (developer mode) | `voics-data` | 9042 | messages | [backup-restore](../runbooks/backup-restore.md#scylladb) |
-| Redpanda | `voics-data` | 9092 internal, 19092 external, 9644 admin | api, messages, gateway, voice, admin-bff | [backup-restore](../runbooks/backup-restore.md#redpanda) |
+| Redpanda | `voics-data` | 9092 internal, 19092 external, 9644 admin | api, messages, gateway, voice, admin-bff | [backup-restore](../runbooks/backup-restore.md#redpanda-en-zoekindex) |
 | Valkey 8 (AOF) | `voics-data` | 6379 | api, gateway | [backup-restore](../runbooks/backup-restore.md#valkey) |
-| etcd 3.6 | `voics-data` | 2379 | voice-signaling, gateway, admin-bff | [backup-restore](../runbooks/backup-restore.md#etcd) |
+| etcd 3.6 | `voics-data` | 2379 | voice-signaling, gateway, admin-bff | [backup-restore](../runbooks/backup-restore.md#kubernetes-etcd-en-applicatie-etcd) |
 | MinIO | `voics-data` | 9000 API, 9001 console | api, messages, client updates | [backup-restore](../runbooks/backup-restore.md#minio) |
 | coturn | `voics-system` | UDP/TCP 3478 (port-forwarded) | client (P2P only) | [troubleshooting](../runbooks/voice-regions/troubleshooting.md) |
 | cloudflared | `voics-system` | outbound only | all public hostnames | [cloudflare-setup](../runbooks/cloudflare-setup.md) |

@@ -2,7 +2,7 @@
 
 Summary: the checklist for changing the product name (today "Voics") or its domain: which file or variable to change per repository, what to rebuild or redeploy, and the Cloudflare and DNS steps the owner performs by hand.
 
-Defaults today: name `Voics`, domain `voics.nl`, hosts `discordy-*.voics.nl`. Everything user-visible reads the name and hosts from one brand source per repository. Each repository also has a rebrand check that fails CI when the literal name or domain creeps back into user-visible code ([Guards](#guards)).
+Defaults checked on 18 November 2026: name `Voics`, domain `voics.nl`, primary hosts such as `api.voics.nl`, with legacy aliases retained ([hostnames](hostnames.md)). Brand sources and guards exist per repository; there is **not yet one global file that changes every repository at once**. Build-time constants, permission copy and compatibility/data identifiers still need coordinated review. This runbook documents the current controls and remaining work for docs#69/#135; it does not claim either card fully complete.
 
 Two kinds of change exist:
 
@@ -15,7 +15,7 @@ Change these, then rebuild and redeploy as the last column says. Open one PR per
 
 | Repository | Where to change it | What it controls | Rebuild or redeploy |
 |---|---|---|---|
-| gitops | `infrastructure/configs/cluster-config/cluster-config.yaml` `BRAND_NAME` (and `infrastructure/environments/dev/cluster-config/cluster-config.yaml` for dev) | Alert titles (alert relay), ops portal pages, and, through the api and messages ConfigMaps, the `BRAND_NAME` / `BRAND_URL` variables of those services | Merge to `main`. Flux applies it; the api, messages and alert relay pods roll because their ConfigMaps change |
+| gitops | `infrastructure/configs/cluster-config/cluster-config.yaml` `BRAND_NAME` (and `infrastructure/environments/dev/cluster-config/cluster-config.yaml` for dev) | Alert titles (alert relay), ops portal pages, and, through the api and messages ConfigMaps, the `BRAND_NAME` / `BRAND_URL` variables of those services | Release to `main`; Flux applies it. Verify whether pod templates change and explicitly restart affected consumers when required: changing a ConfigMap alone does not guarantee a rollout |
 | gitops | `site/invite/index.html`, the `BRAND` block at the top of the script | Invite landing page text, deep-link scheme | Merge to `main` touching `site/**` (`publish-site` runs), and rebuild the website, which copies this file |
 | api | env `BRAND_NAME` (set from gitops, see above; default in `crates/application/src/context.rs`) | Subject and body of verification, reset and security emails, TOTP issuer in authenticator apps | Roll the api; no rebuild when the variable comes from gitops |
 | messages | env `BRAND_NAME` and `BRAND_URL` (defaults in `bin/messages/src/config.rs`) | User-Agent of link previews (`<name>Bot`) | Roll the messages service |
@@ -51,7 +51,7 @@ All hosts live in one file per environment: gitops `cluster-config.yaml` (`DISCO
 1. **Owner, Cloudflare (by hand; this runbook only describes it):**
    1. Put the new domain's zone on the Cloudflare account, or confirm the existing one covers it.
    2. Free Universal SSL covers only one level (`*.newdomain`). Keep every host exactly one level below the zone, like the current `discordy-*` names.
-   3. Existing records stay untouched. Do not edit or delete DNS for `voics.nl`, `app.voics.nl` or any other product on the account.
+   3. Preserve the approved takeover: `voics.nl`, `www`, `ops`, `grafana` and `headlamp` already moved. Other-product records such as `app`, `voice`, `k8s`, Clerk and mail records remain protected. Any new takeover needs its own explicit scope; do not repeat the historic takeover blindly.
    4. The tunnel (`TUNNEL_NAME`) can serve several zones. Its ingress rules come from gitops, so the tunnel itself needs no change beyond the new hostnames. `bootstrap/40-cloudflare.sh` creates the proxied CNAMEs to `<tunnel-id>.cfargotunnel.com` for every `HOST_*` and `<RTC_HOST_PREFIX>-<region>`; run it with `DRY_RUN=true` first. The Access applications for the ops hosts follow the same keys.
    5. Voice hosts are DNS-only (not proxied) records to the public IP, one per region, see [Cloudflare setup](cloudflare-setup.md) and [Adding a voice region](voice-regions/adding-a-region.md).
 2. **gitops:** edit `DISCORDY_DOMAIN` and every `HOST_*` in both `cluster-config.yaml` files. The safety checks in `bootstrap/lib.sh` (`assert_not_protected`, `PROTECTED_HOSTS`) assume the current domain and the `discordy*` prefix; update them in the same PR, otherwise the Cloudflare script refuses the new hosts. Merge to `main`; Flux reconciles ingress and tunnel.
@@ -63,7 +63,7 @@ All hosts live in one file per environment: gitops `cluster-config.yaml` (`DISCO
 
 ## What stays as it is
 
-These are internal identifiers. They are not user-visible, renaming them is a **separate migration** (data, secrets and deployment change together), and a rebrand does not need it:
+These are remaining legacy identifiers. The owner requested their eventual removal under docs#135. Renaming them needs a **separate migration** (data, secrets, compatibility and deployment together); this guide does not treat them as already removed or as permanently exempt:
 
 - Crate, package and image names: `discordy-*` crates, `@discordy/*`, `@discordy-voics/bots`, `ghcr.io/discordy-voics/*`, class names such as `DiscordyApi`.
 - The GitHub organisation `discordy-voics` and the repository names.
@@ -77,7 +77,7 @@ These are internal identifiers. They are not user-visible, renaming them is a **
 
 These are build scripts rather than user-visible code, and the guards do not cover them. Update them by hand on a rename:
 
-- client `.github/workflows/release.yml`: `FEED`, the installer file names `Discordy-Setup-...`, the GitHub release title.
+- client `.github/workflows/release.yml`: `FEED`, the installer file names `Voics-Setup-...`, the GitHub release title.
 - client `.env.example` and the README table: the `UPDATE_FEED_URL` default.
 - client `apps/desktop/package.json` `homepage`.
 - gitops `apps/image-automation*/image-update-automation.yaml`: commit author email and message.

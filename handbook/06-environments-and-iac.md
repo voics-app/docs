@@ -34,7 +34,7 @@ Production `gen-serv` is **adopted by import only**: never apply it blindly.
 
 ## Disaster recovery
 
-Rebuilding production is `./env.sh up gen-serv` on a fresh node followed by the restore drills in [Backup and restore](../runbooks/backup-restore.md). The step list, including what to do with OpenBao keys, is in [Environments, Disaster recovery](../runbooks/environments.md#disaster-recovery-rebuild-production).
+Production recovery is a separate data-preserving project, not a routine `env.sh up gen-serv` action. There is no verified offsite set or restore drill yet. Read the [backup plan](../runbooks/backup-restore.md) and [revised recovery prerequisites](../runbooks/environments.md#disaster-recovery-rebuild-production). For prepare-only extra capacity use the [Dutch worker guide](../runbooks/server-uitbreiden.md).
 
 ## Local stack
 

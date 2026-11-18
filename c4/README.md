@@ -25,6 +25,12 @@
 
 ## Conventions
 
+Runtime notes reviewed on 18 November 2026, alongside the existing views:
+
+- Gateway routing uses shared Kafka groups and cluster-wide session directories. The new readiness gate waits for DNS/distribution/directory connectivity before admission and ingestion; it does not turn asynchronous fan-out into a transaction. Session IDs are UUIDv4 and event IDs UUIDv7, not Snowflakes.
+- Voice-signaling's `NodeRegistration` port separates etcd lease ownership from its health/lifecycle handling. Atomic claim and lease-fenced refresh/delete prevent a duplicate process from stealing a live registration; each media node still needs its own routable endpoint.
+- These code changes do not depict a newly provisioned cluster. Production remains one gen-serv with local storage; the extra-worker/controller profile is dormant. See [gateway and voice readiness](../runbooks/gateway-cluster.md) and [server preparation](../runbooks/server-uitbreiden.md) for acceptance boundaries.
+
 - **Layer colours** in the C3 views: yellow is `domain`, green is `application`, purple is `infrastructure` and blue is `interface`. They follow the Clean Architecture layering in [CONTRIBUTING.md](../CONTRIBUTING.md#clean-architecture).
 - **Code elements.** Structurizr has no code-level view type, so C4 code elements are modelled as components tagged `Code` plus one `Code<Module>` tag. The C3 views exclude them, and each C4 view includes only its own tag.
 - **UML class diagrams.** The class diagrams in [`code/`](code/) are hand-written PlantUML that sits next to the C4 code views. When you change one of these modules in its service repo, update its diagram in the same release.

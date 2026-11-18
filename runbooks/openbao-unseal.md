@@ -97,7 +97,7 @@ Then:
 
 1. Run the `secrets-sync` workflow once. It needs the GitHub secrets listed in the [inventory](../secrets/README.md).
 2. Check that every ExternalSecret reaches `SecretSynced`. `60-verify.sh` runs this check.
-3. Take the first Raft snapshot ([backup-restore → OpenBao](backup-restore.md#openbao)).
+3. Follow the proposed consistent PebbleDB backup procedure ([backup plan → OpenBao](backup-restore.md#openbao)) only when backup execution is authorized. The current backend is not Raft; no scheduled snapshot is established by this bootstrap.
 
 **Policies.** The bootstrap writes these read policies. They match the paths in the inventory:
 
@@ -156,4 +156,4 @@ The output contains five new shares. Replace the five key store items **immediat
 | Recovery progress resets | Shares from different key generations were mixed after a rekey. Use only the current key store items. |
 | `permission denied` for ESO after unseal | The Kubernetes auth config is stale after a cluster CA change. Re-run `bao write auth/kubernetes/config ...`. |
 | `secrets-sync` cannot log in | The `secrets-sync` role is bound to the `discordy-runner` service account. Check that the runner pods use that account. |
-| Raft data lost | Restore from a snapshot ([backup-restore → OpenBao](backup-restore.md#openbao)), then use the seal key and recovery keys that were current **when the snapshot was taken**. |
+| PebbleDB data lost | Preserve evidence and follow the [OpenBao recovery plan](backup-restore.md#openbao). A consistent data copy and the matching independently held static seal key are required; no verified current backup is assumed. Do not use Raft snapshot commands. |
