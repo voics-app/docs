@@ -5,7 +5,7 @@ This catalog lists every deployable unit in Voics. Ports, env vars, topics and i
 Each production service:
 
 - Exposes `GET /healthz`, `GET /readyz` and `GET /metrics`.
-- Is scraped by VictoriaMetrics under **its own job name**, which the admin health page groups by (`count by (job) (up)`): `api`, `messages`, `notifier` (port 8085, 0 replicas until the Apple key exists, see [push notifications](../runbooks/push-notifications.md); not in the admin health page), `gateway`, `voice-signaling` (port 4100), `sfu` (port 4102) and `admin-bff`. On the cluster these jobs live in `gitops/infrastructure/controllers/victoria-metrics/helmrelease.yaml` (`server.scrape.extraScrapeConfigs`), and the pods set `prometheus.io/scrape: "false"` so the generic `kubernetes-pods` job does not count them twice. Locally they live in `gitops/local/victoriametrics/scrape.yml`. A new service needs a job here too, and its name must match `PLATFORM_SERVICES` in `admin/bff/src/domain/service_health.rs`.
+- Is scraped by VictoriaMetrics under **its own job name**, which the admin health page groups by (`count by (job) (up)`): `api`, `messages`, `notifier` (port 8085, singleton/Recreate, see [push notifications](../runbooks/push-notifications.md)), `gateway`, `voice-signaling` (port 4100), `sfu` (port 4102) and `admin-bff`. On the cluster these jobs live in `gitops/infrastructure/controllers/victoria-metrics/helmrelease.yaml` (`server.scrape.extraScrapeConfigs`), and the pods set `prometheus.io/scrape: "false"` so the generic `kubernetes-pods` job does not count them twice. Locally they live in `gitops/local/victoriametrics/scrape.yml`. A new service needs a job here too, and its name must match `PLATFORM_SERVICES` in `admin/bff/src/domain/service_health.rs`.
 - Exports the **standard metric set** below (one naming scheme for every service; the `job` label identifies the service, so metric names carry no service prefix).
 - Logs JSON to stdout.
 - Exports OpenTelemetry data when `OTEL_EXPORTER_OTLP_ENDPOINT` is set.
@@ -20,6 +20,9 @@ Each production service:
 | `discordy_gateway_session_started_count`, `discordy_gateway_session_closed_count{code}` | counter | | gateway (WebSocket connect / close) |
 | `discordy_gateway_dispatch_sent_count{event}`, `discordy_gateway_events_consumed_count{topic,outcome}` | counter | | gateway (event dispatch) |
 | `discordy_gateway_gauges_sessions_local` | gauge | | gateway |
+| `notifier_pushes_total` | counter | `provider`, `outcome` | notifier; admin charts `increase(...{outcome="dropped"}[5m])` by provider |
+| `notifier_queue_depth`, `notifier_queue_capacity` | gauge | | notifier waiting jobs and configured capacity |
+| `notifier_in_flight`, `notifier_in_flight_limit` | gauge | | notifier active jobs (including retry waits) and configured cap |
 | `redpanda_kafka_consumer_group_lag_sum` / `_max` | gauge | `redpanda_group` | Redpanda `/public_metrics` (cluster property `enable_consumer_group_metrics` includes `consumer_lag`, set by the `redpanda-topics` Job in gitops) |
 
 Histogram buckets (seconds) are identical everywhere: 0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 10. WebSocket upgrades on the gateway are counted under `status="1xx"` (101). Postgres latency is taken from sqlx's per-statement `elapsed_secs` tracing events by a small tracing layer (no call-site changes); Scylla latency is measured in the shared `execute` / `fetch_all` helpers. voice-signaling and sfu are not yet covered (tracked separately).
