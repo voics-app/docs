@@ -934,7 +934,7 @@ A server template: a shareable snapshot of a guild's roles and channels (Discord
 | `updated_at` | `string (date-time)` |  |
 | `source_guild_id` | `any` |  |
 | `serialized_source_guild` | `TemplateSourceGuild` |  |
-| `is_dirty` | `boolean` | Always false: syncing is explicit (`PUT /guilds/{guild_id}/templates/{code}`). |
+| `is_dirty` | `boolean` | Whether the source guild's current template-visible structure differs from the saved snapshot. Built-ins are always false. Syncing is explicit (`PUT /guilds/{guild_id}/templates/{code}`). |
 
 ### InstallParams
 

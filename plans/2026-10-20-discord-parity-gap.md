@@ -73,7 +73,7 @@ Status counts in the matrix below: Implemented 32, Partial 25, Missing 50. 66 ne
 | Messaging | Announcement channels follow/publish | Yes | Missing | - | [api#36](https://github.com/discordy-voics/api/issues/36) | P1 |
 | Messaging | Text in voice channels | Yes | Missing | Existing issue | [api#23](https://github.com/discordy-voics/api/issues/23) | see issue |
 | Servers | Create server (name/icon), join via invite, leave, delete | Yes | Implemented | - | - | - |
-| Servers | Create from template | Yes | Implemented | Built-in templates, shareable template links (app deep link; no web landing page yet) | [api#44](https://github.com/discordy-voics/api/issues/44) | - |
+| Servers | Create from template | Yes | In review | Built-ins and lifecycle exist; public web preview and dirty-state completion in progress, independent UI/live proof pending | [api#44](https://github.com/discordy-voics/api/issues/44) | - |
 | Servers | Discovery and community | Yes | Missing | - | [api#45](https://github.com/discordy-voics/api/issues/45) | P2 |
 | Servers | Invites with expiry and max uses; revoke | Yes | Implemented | Temporary membership missing | - | - |
 | Servers | Vanity URL, banner, system channel, AFK, default notifications | Yes | Missing | - | [api#37](https://github.com/discordy-voics/api/issues/37) | P1 |

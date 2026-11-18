@@ -15,6 +15,9 @@ Architecture, decisions, references and runbooks for **Voics**, a Discord-equiva
 
 Publicatie volgt de bestaande [Notion-mirror en inhoudscontrole](runbooks/notion-publicatie-controleren.md).
 
+De [server-template-specificatie](specs/2026-11-04-server-templates.md) beschrijft
+de openbare voorvertoning, synchronisatie en de nog te bevestigen UI/livecontrole.
+
 ## Start here
 
 The [Community and discovery specification](specs/2026-11-03-server-discovery.md)

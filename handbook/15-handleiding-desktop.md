@@ -138,6 +138,21 @@ hoort bij de api#45-increment; onafhankelijke acceptatie van de geïntegreerde
 desktop/API/admin-versies blijft een aparte stap. Zie de
 [specificatie en uitrolgevolgen](../specs/2026-11-03-server-discovery.md).
 
+### Een server delen als sjabloon
+
+Onder **Server settings > Template** kun je met Manage Server een sjabloon
+maken van de kanalen, rollen en instellingen. Leden en berichten worden niet
+gekopieerd. Geef het sjabloon een naam en kies **Generate template link**.
+**Copy** kopieert de link. Na wijzigingen aan de server geeft het scherm aan
+dat het sjabloon verouderd is; **Sync with this server** vervangt de gedeelde
+structuur. **Delete template** maakt de link ongeldig.
+
+De afrondingswijziging van 18 november voegt een openbare webpagina toe die
+het sjabloon laat zien en de app opent. In de app kies je **Create server** en
+geef je de nieuwe server een naam. Je wordt eigenaar van een nieuwe server;
+je treedt hiermee niet toe tot de oorspronkelijke server. De publicatie en
+onafhankelijke controle van deze wijziging moeten nog worden bevestigd.
+
 ## 9. Handige toetsen
 
 Deze standaardtoetsen kun je onder Keybinds aanpassen. Een globale toets werkt alleen wanneer die optie door de geïnstalleerde desktopbuild wordt ondersteund en aangezet.

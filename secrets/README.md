@@ -28,6 +28,7 @@ Every secret on the Voics platform is listed here. The source is [`inventory.yam
 | [Firebase service-account key (FCM)](#fcm-service-account) | Authentication and service-to-service | notifier | `NOTIFIER_FCM_SERVICE_ACCOUNT` (env:production) | 365d |
 | [Internal service token](#internal-service-token) | Authentication and service-to-service | api, messages, notifier, gateway, voice-signaling, admin-bff | `SHARED_INTERNAL_SERVICE_TOKEN` (env:production) | 90d |
 | [Voice token secret (HS256)](#voice-token-secret) | Authentication and service-to-service | gateway, voice-signaling | `SHARED_VOICE_TOKEN_SECRET` (env:production) | 90d |
+| [Voice probe token signing key (prepared, inactive)](#voice-probe-token-secret) | Authentication and service-to-service | voice-prober, voice-signaling | not in GitHub | 90d |
 | [Erlang distribution cookie](#release-cookie) | Runtime | gateway | `GATEWAY_RELEASE_COOKIE` (env:production) | 180d |
 | [SMTP credentials](#smtp-credentials) | Runtime | api | `SMTP_USERNAME`, `SMTP_PASSWORD` (env:production) | on-change |
 | [Admin allowlist](#admin-allowed-emails) | Authentication and service-to-service | admin-bff | `ADMIN_ALLOWED_EMAILS` (env:production) | on-change |
@@ -217,6 +218,23 @@ Every secret on the Voics platform is listed here. The source is [`inventory.yam
 | Rotation | 90d — [secret-rotation.md#voice-token-secret](../runbooks/secret-rotation.md#voice-token-secret) |
 | Generate | openssl rand -base64 48 |
 | Notes | Every region reads the same path. Rotating it affects every region at once, so roll the gateway and all voice nodes together. |
+
+<a id="voice-probe-token-secret"></a>
+
+### Voice probe token signing key (prepared, inactive)
+
+| Field | Value |
+|---|---|
+| Purpose | Authenticates isolated synthetic voice probes; cannot authorize ordinary call tokens. |
+| Consumers | voice-prober, voice-signaling |
+| Env vars | `VOICE_PROBE_TOKEN_SECRET` |
+| GitHub secret | not in GitHub |
+| OpenBao | not in OpenBao |
+| Kubernetes Secret | — |
+| Owner | @oussamaelhajoui |
+| Rotation | 90d — [voice-regions/troubleshooting.md#prepared-active-health-probes](../runbooks/voice-regions/troubleshooting.md#prepared-active-health-probes) |
+| Generate | After rollout approval: openssl rand -base64 48. Never reuse VOICE_TOKEN_SECRET. |
+| Notes | Metadata only; no value, GitHub secret, OpenBao binding or Kubernetes Secret is created. Add the reviewed gitops binding before enabling the prepared prober. Missing key keeps probe admission disabled. |
 
 <a id="admin-allowed-emails"></a>
 
