@@ -125,6 +125,14 @@ When a friend request becomes a friendship (the gateway's `RELATIONSHIP_ADD` wit
 
 The profile dialog and the DM profile panel show "Friends since" with the date, read from `Relationship.since`. Clicking the avatar in either one opens it full size in the image viewer. The About me field allows 300 characters (`BIO_MAX_LENGTH`); the api stores and validates the same limit from api 0.13.0.
 
+Server avatars also appear in member rows and hover cards, chat authors and replies,
+command headers, mention/reaction lists, and voice occupants and tiles. These views
+use their explicit server context and the shared profile-image resolver, including
+the `/guilds/<guild>/users/<user>/avatars/<hash>` path. They react to member-profile
+updates; clearing an override restores the global avatar. DMs and account controls
+remain global. An image failure leaves initials, presence and speaking indicators
+visible, and changing the image starts a fresh load attempt.
+
 ## Pinned DMs and pinned channels
 
 Right-click a DM or group DM and choose Pin Conversation to keep it at the top of Direct Messages, marked with a small pin; up to 5 can be pinned (Pin is greyed out when full) and they stay in pin order above the rest, which keep their latest-activity order. Closing a pinned DM unpins it. In any server, right-click a channel and choose Pin Channel: pinned channels appear in a Pinned section above the categories, only for you, up to 10 per server. Both lists follow the account: they are stored as `pinned_dm_channel_ids` and `pinned_channel_ids` (server id to channel ids) in the user settings, validated by the api (limits, no duplicates), applied optimistically with rollback on failure and refreshed on other devices through `USER_SETTINGS_UPDATE`. Logic in `domain/pins.ts`, actions in `interface/app/pinActions.ts`, menus in `domain/dmModel.ts` and `domain/channelMenuModel.ts`.

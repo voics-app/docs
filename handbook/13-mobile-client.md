@@ -89,6 +89,14 @@ Colours, radii and sizes are desktop's Nightglass tokens (72 pt rail, 48 pt tile
 
 ## Direct messages, profiles and settings
 
+Server avatar overrides follow the explicit server context in member/profile views,
+chat authors and replies, message summaries, reactions and voice occupants/tiles.
+The shared profile-image resolver supplies the guild/user asset path, including
+animated GIFs. Clearing an override restores the global avatar; DM and account
+surfaces stay global. Image failures retain initials and presence/speaking indicators,
+and a changed image source is retried. These are component-tested rendering rules;
+they do not establish release or physical-device acceptance.
+
 | Topic | Behaviour |
 |---|---|
 | DM list | Lists your 1:1 and group conversations, most recent activity first, with the person's name (their nickname if they are a friend and you set one), or the group name, or the members' names. DMs you closed on this device stay hidden until a newer message arrives. The order and the hiding come from the core DM model. |
