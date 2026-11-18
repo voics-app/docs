@@ -165,6 +165,15 @@ template-visible structure with the saved snapshot. Public sharing uses
 
 ### P4. Internal HTTP APIs
 
+The channel-access lookup checks current account eligibility before returning permissions:
+missing, disabled, pending-deletion or currently suspended users receive 403. Expired
+suspensions and eligible bots retain ordinary membership/permission checks. A live user
+session is not required for this internal lookup, so an offline scheduled author may
+remain eligible. A scheduled worker must make a new uncached request after its durable
+claim, without joining an older in-flight lookup. This is a current authorization check,
+not an atomic transaction with a later cross-service message write. See
+[the account-access addendum](../specs/2026-11-18-scheduled-account-access.md).
+
 All calls carry the `X-Internal-Token` header. All IDs are strings.
 
 **api**
@@ -228,7 +237,7 @@ All calls carry the `X-Internal-Token` header. All IDs are strings.
 | Topic | Key | Producer | Event types |
 |---|---|---|---|
 | `discordy.guild.v1` | guild_id | api | GUILD_CREATE, GUILD_UPDATE, GUILD_DELETE, CHANNEL_CREATE, CHANNEL_UPDATE, CHANNEL_DELETE, GUILD_ROLE_CREATE, GUILD_ROLE_UPDATE, GUILD_ROLE_DELETE, GUILD_MEMBER_ADD, GUILD_MEMBER_UPDATE, GUILD_MEMBER_REMOVE, GUILD_BAN_ADD, GUILD_BAN_REMOVE, GUILD_EMOJIS_UPDATE, INVITE_CREATE, INVITE_DELETE, THREAD_CREATE, THREAD_UPDATE, THREAD_DELETE, APPLICATION_COMMAND_PERMISSIONS_UPDATE |
-| `discordy.message.v1` | channel_id | messages | MESSAGE_CREATE, MESSAGE_UPDATE, MESSAGE_DELETE, MESSAGE_DELETE_BULK, MESSAGE_REACTION_ADD, MESSAGE_REACTION_REMOVE, MESSAGE_REACTION_REMOVE_ALL, CHANNEL_PINS_UPDATE, MESSAGE_ACK |
+| `discordy.message.v1` | channel_id | messages | MESSAGE_CREATE, MESSAGE_UPDATE, MESSAGE_DELETE, MESSAGE_DELETE_BULK, MESSAGE_REACTION_ADD, MESSAGE_REACTION_REMOVE, MESSAGE_REACTION_REMOVE_ALL, CHANNEL_PINS_UPDATE, MESSAGE_ACK, READ_STATE_UPDATE |
 | `discordy.user.v1` | user_id | api | USER_UPDATE, USER_SETTINGS_UPDATE, RELATIONSHIP_ADD, RELATIONSHIP_REMOVE, CHANNEL_CREATE (DMs, with `target_user_ids`), CHANNEL_RECIPIENT_ADD, CHANNEL_RECIPIENT_REMOVE, SESSIONS_REPLACE, USER_DEVICES_UPDATE (`{user_id, devices:[{device_id, identity_key_b64}]}`, targeted at the user and every user who shares a DM, group DM or guild with them; drives MLS member/device removal) |
 | `discordy.interaction.v1` | application_id | api | INTERACTION_CREATE (routed to the bot's sessions) |
 | `discordy.telemetry.v1` | node/user | voice, client (via gateway), gateway | VOICE_QUALITY, USAGE_TICK |
@@ -621,5 +630,7 @@ Blocked on the owner prerequisites: VM group access, GitHub org and scopes, Clou
 ## Read-accounting extension — 18 November 2026
 
 Proposed [ADR 0026](../adr/0026-atomic-read-accounting.md) adds the optional messages P2 keyspace setting above; it does not provision another server or change public ACK/MESSAGE_ACK/READY payloads. The P4 recipient prerequisite is `GET /internal/v1/channels/{id}/notification-recipients?author_id&after&limit`, defined by [contracts#44](https://github.com/discordy-voics/contracts/pull/44) and implemented by [api#146](https://github.com/discordy-voics/api/pull/146). It returns current permission-filtered, token-independent pages with advancing candidate cursors, including empty filtered pages and empty terminal private-mode audiences.
+
+Separate proposed [ADR 0027](../adr/0027-versioned-read-state-snapshots.md) extends P4/P5/P7: an atomic per-channel version accompanies authoritative count snapshots; MESSAGE_ACK adds an optional decimal-string `read_state_version`; READ_STATE_UPDATE carries complete user-targeted snapshots on `discordy.message.v1`. The existing messages read-state array endpoint gains version fields and a capability header. Gateway fetches after session registration for READY and again during resume, dispatching READ_STATE_SYNC before RESUMED. Certified clients merge by version and stop deriving standard counts from CREATE. Legacy clients/servers retain the old behavior. No new server or outbox is introduced; failed accounting is still outside this reconciliation guarantee. Writer fencing and gateway-session invalidation after database restore are required.
 
 The writer applies eligible-message and mute/level/mention policy before idempotent accounting. Normal ACK preserves contributions newer than its marker; manual unread replaces the visible count without reopening delivery IDs. Legacy aggregate counts are preserved as an untracked baseline until an advancing ACK. Rollout must drain/fence every old unconditional writer and capture coherent backups of both keyspaces. Binary-only rollback after new writes is unsafe. See the [read-accounting runbook](../runbooks/read-accounting.md). No live rollout, durable accounting outbox or production capacity proof is claimed.

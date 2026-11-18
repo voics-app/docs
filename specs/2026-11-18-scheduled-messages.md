@@ -1,7 +1,10 @@
 # Scheduled messages
 
-Status: proposed contract for [messages#61](https://github.com/discordy-voics/messages/issues/61).
-The current server and clients do not implement this feature. See
+Status: implementation under review for [messages#61](https://github.com/discordy-voics/messages/issues/61).
+The canonical contract is merged; the [backend](https://github.com/discordy-voics/messages/pull/84)
+and [desktop/mobile client](https://github.com/discordy-voics/client/pull/358) implement the feature
+in review branches. Scheduling defaults to disabled. Real paired API/client acceptance and
+reviewed rollout configuration remain required; this specification does not claim production availability. See
 [ADR 0028](../adr/0028-scheduled-message-dispatch.md) for storage, dispatch and recovery.
 
 ## User behavior

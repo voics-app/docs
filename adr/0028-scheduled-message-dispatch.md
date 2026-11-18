@@ -66,6 +66,9 @@ A due reader never deletes a preparing entry as an orphan. Preparing reservation
 older than two minutes can be aborted by CAS; that state fences a paused creator
 from subsequently activating. Author operations reconcile at most 100 such active
 rows; an incomplete acceptance returns 503 and the caller retries the same key.
+HTTP inspection explicitly invokes this author-scoped maintenance command before
+querying; application `get` and `list` methods remain read-only. Invalid inspection
+paths, cursors and page limits are rejected before maintenance runs.
 Edits likewise retain the old discoverable entry until the new index entry and
 revision are committed. Real crash tests must prove both discovery and quota safety.
 
