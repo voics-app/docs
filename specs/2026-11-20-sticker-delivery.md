@@ -43,7 +43,7 @@ object. Image decoding currently checks the first decoded frame, not every frame
 of an animated upload. Review resource bounds, complete animation validation,
 Lottie rendering and asset-retention policy before release. The API resolver and
 messages write do not atomically fence membership or sticker removal across services.
-Mobile surfaces and compatibility with older clients require separate verification.
+Mobile renders native PNG/GIF where supported and shows an accessible label for Lottie or paused animation; mobile sticker selection, Lottie playback and compatibility with older clients remain incomplete.
 
 ## Verification before release
 
