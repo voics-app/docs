@@ -21,8 +21,10 @@ and the existing private attachment route.
 
 Android 10 and newer can record Ogg/Opus through the native recorder; permission
 failure and unsupported devices must fail without sending. The desktop recorder
-prefers Ogg/Opus and currently falls back to WebM/Opus when Chromium lacks Ogg
-recording. Mobile private file delivery and iOS recording remain open work.
+prefers Ogg/Opus and proposes remuxing Chromium WebM/Opus packets to Ogg when
+native Ogg recording is unavailable. Its pre-skip and final padding tests remain
+in progress; do not rely on that fallback until those checks pass. Mobile private
+file delivery and iOS recording remain open work.
 Do not present this feature as satisfying messages#15 until those gaps and normal
 user-route verification are resolved.
 
