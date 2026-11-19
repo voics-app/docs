@@ -79,7 +79,7 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 
 | | |
 |---|---|
-| Purpose | Auth (login, email verification, password recovery, TOTP two-factor with backup codes), account disable and delete, users, devices, push tokens (APNs and FCM, one per login session) and MLS key packages, relationships, per-guild notification settings and private user notes, reports of messages and users (`POST /api/v1/reports`, review through the internal admin routes), guilds, channels, roles and permissions, invites, applications and bots, slash commands, interactions, webhooks, admin endpoints. Transactional outbox to Redpanda. |
+| Purpose | Auth (login, email verification, password recovery, TOTP two-factor with backup codes), account disable and delete, users, devices, push tokens (APNs and FCM, one per login session) and MLS key packages, relationships, per-guild notification settings, guild-related new DM initiation preferences and private user notes, reports of messages and users (`POST /api/v1/reports`, review through the internal admin routes), guilds, channels, roles and permissions, invites, applications and bots, slash commands, interactions, webhooks, admin endpoints. Transactional outbox to Redpanda. |
 | Repo / image | `discordy-voics/api` / `ghcr.io/discordy-voics/api` |
 | Tech | Rust, axum 0.8, sqlx, Postgres 17 |
 | Ports | 8080: public `/api/v1/*` (via `discordy-api.voics.nl`) and internal `/internal/v1/*` (cluster only) |
