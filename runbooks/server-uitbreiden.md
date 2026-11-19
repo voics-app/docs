@@ -6,7 +6,7 @@ Summary: van een lokale inventaris naar een gecontroleerde worker, met uitleg ov
 
 ## Versies en werkelijke situatie
 
-De gepubliceerde docs v0.4.2 beschrijven een voorbereide workerroute; dat is geen bewijs dat een worker bestaat. De laatste vastgestelde productiebezetting is **1/1**, niet twee nodes of twee replica?s. Controleer de actuele clusterstatus voordat je beslissingen neemt. De workerimplementatie staat op gitops develop; gitops main bevatte bij deze controle `infra/workers` nog niet. Gebruik een bewust gekozen checkout en vergelijk de implementatie v??r uitvoering.
+Bij controle op 19 november 2026 had productie één Ready Kubernetes-node, één Messages-pod en één voice-pod voor nl-home. De voorbereiding voor een tweede worker stond op `gitops/develop`. Controleer de actuele clusterstatus en de Git-revisie die `infra/workers` bevat voordat je een plan maakt.
 
 [Gitops PR 135](https://github.com/discordy-voics/gitops/pull/135) stelt een gebonden planreceipt en gedeelde lock voor; die bescherming is pas beschikbaar wanneer de betreffende versie is opgenomen en gebruikt. Een geslaagd offline plan of een PR is geen productie-uitrol. [Messages 80](https://github.com/discordy-voics/messages/pull/80), [gateway 60](https://github.com/discordy-voics/gateway/pull/60) en [voice 33](https://github.com/discordy-voics/voice/pull/33) zijn naar develop gemerged; controleer releases en werkelijk draaiende versies afzonderlijk. [Messages 86](https://github.com/discordy-voics/messages/pull/86), [voice 38](https://github.com/discordy-voics/voice/pull/38) en [voice 39](https://github.com/discordy-voics/voice/pull/39) zijn voorstellen.
 
@@ -83,7 +83,7 @@ Voorbeeldadres `.214` en VM 109 zijn geen reserveringen: controleer eerst of ze 
 
 ### Offline voorbeeld voor een eigen inventaris
 
-Bewerk de lokale kopie met je eigen gecontroleerde waarden. Het onderstaande is uitsluitend fictief en bevat expres geen bruikbare publieke sleutel. `describe` valideert de vorm offline; vervang de placeholder door je eigen publieke sleutel v??r validatie. Reserveer IP en VM-ID via je eigen infrastructuurproces.
+Bewerk de lokale kopie met de waarden van jouw omgeving. Reserveer het IP-adres en VM-ID en vul je eigen publieke SSH-sleutel in. Daarna controleer je de vorm van de inventaris offline met `describe`.
 
 ```json
 {
@@ -113,7 +113,7 @@ terraform show infra/workers/.worker-state/voics-worker-1/worker.tfplan
 
 Het tweede pad gebruikt de `name` uit de inventaris. Pas dat naamdeel aan wanneer je een andere naam koos. `plan` leest de provider en schrijft lokaal metadata en een opgeslagen plan, zonder VM’s te maken. Providers kunnen worden gedownload. Publiceer geen plannen/state: die kunnen gevoelige configuratie bevatten.
 
-Controleer VM-ID, adres, datastore, capaciteit en alle acties. De bestaande planguard weigert ongewenste acties; PR 135 voegt daar de koppeling van het beoordeelde plan en inventaris via een receipt en lock aan toe. Vertrouw niet op die aanvullende garantie v??r opname van die PR. Omzeil de controles niet met een losse `terraform apply`.
+Controleer VM-ID, adres, datastore, capaciteit en alle geplande acties. Het bestaande script weigert ongewenste acties. PR 135 voegt een controlebestand en vergrendeling toe die het beoordeelde plan aan de inventaris koppelen. Gebruik voor de latere uitvoering het script uit dezelfde beoordeelde revisie.
 
 **Hier stopt de huidige opdracht.** Je hebt een reviewbaar plan en offline controles, nog geen nieuwe machine.
 
@@ -166,7 +166,7 @@ Het **niet-geactiveerde** profiel `worker-capacity` bereidt twee cloudflared- en
 | Scylla | Nu één developer-mode-node met vast broadcastadres `scylla-0`; eerst seeds, identiteit, replicatie en herstelproef |
 | Postgres, MinIO, OpenBao, Redpanda, Valkey | Eigen replicatie-/migratieplan; hostpath-PVC’s blijven op de oorspronkelijke node |
 
-Messages-replica?s verdelen zoekpartities momenteel niet: iedere replica consumeert iedere partitie. De voorgestelde [messages PR 86](https://github.com/discordy-voics/messages/pull/86) serialiseert checkpointbatches per partitie; meng oude en nieuwe binaries niet tijdens opschalen. Dit herstelt geen bestaande zoekcorruptie, co?rdineert geen backfill en bewijst geen productiegereedheid. Database- en objectopslagreplicatie is afzonderlijk werk.
+Elke Messages-replica leest momenteel alle zoekpartities. PR 86 verwerkt wijzigingen aan het checkpoint per partitie op volgorde. Schaal pas op wanneer alle pods dezelfde beoordeelde versie draaien en de verdeling van zoekwerk en het herstel van bestaande zoekgegevens zijn getest. Replicatie van de database en objectopslag vergt eigen controles. [Messages PR 86](https://github.com/discordy-voics/messages/pull/86)
 
 De nieuwe gatewaycontroles beoordelen verbindingen vóór eventverwerking. Een netwerkbreuk midden tijdens fan-out wordt daardoor niet transactioneel of precies-eenmaal. Een geldige voice-registratie bewijst evenmin dat elk geadverteerd endpoint bereikbaar is.
 
