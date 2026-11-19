@@ -6,7 +6,21 @@ Gecontroleerd op 18 november 2026. Windows 0.9.10 is de vastgestelde publieke ba
 
 ## 1. Installeren, bijwerken en inloggen
 
-Download de Windows-installer via [voics.nl](https://voics.nl) en voer die uit. De app controleert de Voics-updatefeed. Onder **Settings → About and updates** bekijk je de versie en update-informatie. macOS- en Linux-verpakkingen hebben afzonderlijke opleverkaarten; ga alleen uit van een ondersteunde download wanneer deze daadwerkelijk op de website en in de release staat.
+1. Ga naar [voics.nl](https://voics.nl) en kies **Download for Windows**. De officiële knop verwijst naar [Voics-Setup-latest.exe](https://updates.voics.nl/Voics-Setup-latest.exe). De installer is voor Windows x64.
+2. Open het gedownloade bestand en volg de installatiewizard. Je kunt de installatiemap kiezen. Start daarna Voics en log in.
+3. Controleer de geïnstalleerde versie onder **Settings → About and updates**. De [updatefeed](https://updates.voics.nl/latest.yml) vermeldt de aangeboden versie en de naam, grootte en SHA-512 van het versiegebonden installatiebestand. Op 19 november 2026 bood de feed 0.9.10 aan; controleer de feed opnieuw voor de actuele versie.
+
+Wil je de download op inhoud controleren, download dan het in `latest.yml` genoemde versiegebonden `.exe`-bestand vanaf `https://updates.voics.nl/`. Vervang het pad hieronder door dat bestand en vergelijk de uitvoer met `sha512` in de feed:
+
+```powershell
+$hash = (Get-FileHash -Algorithm SHA512 -LiteralPath 'C:\pad\naar\Voics-Setup-X.Y.Z.exe').Hash
+$bytes = [byte[]]($hash -split '(..)' | Where-Object { $_ } | ForEach-Object { [Convert]::ToByte($_, 16) })
+[Convert]::ToBase64String($bytes)
+```
+
+Controleer ook dat versie en bestand bij elkaar horen; tijdens een publicatie kunnen caches tijdelijk achterlopen.
+
+De geïnstalleerde app controleert automatisch op updates, downloadt een nieuwere versie en biedt **Restart to update** aan. Je kunt ook **Check for updates** gebruiken onder **Settings → About and updates**. Een gedownloade update wordt bij afsluiten geïnstalleerd. Bij een automatische upgrade blijven lokale gegevens behouden. Bij handmatige verwijdering is **Keep my data** standaard; **Remove everything** verwijdert ook lokale instellingen, opgeslagen berichten en versleutelingssleutels, maar niet je account. macOS en Linux hebben afzonderlijke opleverkaarten; ga alleen uit van een ondersteunde download wanneer deze daadwerkelijk op de website en in de release staat.
 
 Log in met je e-mailadres en wachtwoord. Bij tweestapsverificatie vraagt de app daarna een authenticator- of back-upcode. Wachtwoordherstel begint bij het inlogscherm. Gebruik voor normaal gebruik de standaard Voics-verbinding; **Connection** is bedoeld om bewust een andere omgeving te kiezen.
 
