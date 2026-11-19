@@ -30,6 +30,6 @@ still requires review and end-to-end testing, including removals, rejoin, replay
 
 ## Remaining work
 
-Automatic inactivity archiving, unarchive on a new message, message counts, private invitation UI,
-and end-to-end delivery and notification behavior are not established by this subset. Do not close
+Automatic inactivity archiving, unarchive on a new message, message counts, and end-to-end delivery,
+private invitation and notification behavior are not established by this subset. Do not close
 api#34 until its complete acceptance criteria and normal user flow are verified.
