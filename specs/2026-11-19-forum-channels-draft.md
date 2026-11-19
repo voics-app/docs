@@ -12,4 +12,4 @@ Thread creation and the first message currently use separate service operations.
 
 A complete single-request forum creation contract needs a durable, idempotent cross-service delivery design, including retries and reconciliation after a crash. Verify actual stored messages, gateway events, delivery modes, and recovery from failures before enabling it.
 
-Post previews, reliable reply counts, activity ordering, covers, and end-to-end behavior are not yet complete. Do not mark api#35 done or treat the draft PRs as feature-complete until these paths and deployment compatibility are verified.
+Post previews, reliable reply counts, authoritative activity ordering, covers, and end-to-end behavior are not yet complete. The draft client sorts by activity IDs it has already observed and falls back to creation order when activity is unavailable. Do not mark api#35 done or treat the draft PRs as feature-complete until these paths and deployment compatibility are verified.
