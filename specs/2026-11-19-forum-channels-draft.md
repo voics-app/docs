@@ -8,7 +8,7 @@ The API stores forum settings and applied tags on channels (migration 0085). Set
 
 ## Delivery and verification gaps
 
-Thread creation and the first message currently use separate service operations. If the message request fails or its response is lost, the thread may exist without a confirmed first message. A client must not blindly resend on an ambiguous failure: it should open the existing post and let the author inspect it first. The existing message nonce is a correlation value, not an idempotency key.
+Thread creation and the first message currently use separate service operations. The draft API rejects an embedded first message rather than silently discarding it. If the message request fails or its response is lost, the thread may exist without a confirmed first message. A client must not blindly resend on an ambiguous failure: it should open the existing post and let the author inspect it first. The existing message nonce is a correlation value, not an idempotency key.
 
 A complete single-request forum creation contract needs a durable, idempotent cross-service delivery design, including retries and reconciliation after a crash. Verify actual stored messages, gateway events, delivery modes, and recovery from failures before enabling it.
 
