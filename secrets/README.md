@@ -30,7 +30,7 @@ Every secret on the Voics platform is listed here. The source is [`inventory.yam
 | [Voice token secret (HS256)](#voice-token-secret) | Authentication and service-to-service | gateway, voice-signaling | `SHARED_VOICE_TOKEN_SECRET` (env:production) | 90d |
 | [Voice probe token signing key (prepared, inactive)](#voice-probe-token-secret) | Authentication and service-to-service | voice-prober, voice-signaling | not in GitHub | 90d |
 | [Erlang distribution cookie](#release-cookie) | Runtime | gateway | `GATEWAY_RELEASE_COOKIE` (env:production) | 180d |
-| [GitHub OAuth app credentials](#github-oauth) | Authentication and service-to-service | api | `CONNECTION_GITHUB_CLIENT_ID`, `CONNECTION_GITHUB_CLIENT_SECRET` (env:production) | on-change |
+| [GitHub OAuth app credentials](#github-oauth) | Authentication and service-to-service | api | not in GitHub | on-change |
 | [SMTP credentials](#smtp-credentials) | Runtime | api | `SMTP_USERNAME`, `SMTP_PASSWORD` (env:production) | on-change |
 | [Admin allowlist](#admin-allowed-emails) | Authentication and service-to-service | admin-bff | `ADMIN_ALLOWED_EMAILS` (env:production) | on-change |
 | [coturn static auth secret](#coturn-static-auth-secret) | Runtime | coturn, gateway | `COTURN_STATIC_AUTH_SECRET` (env:production) | 180d |
@@ -246,13 +246,13 @@ Every secret on the Voics platform is listed here. The source is [`inventory.yam
 | Purpose | Allows the api to verify ownership of linked GitHub accounts. |
 | Consumers | api |
 | Env vars | `CONNECTION_GITHUB_CLIENT_ID`, `CONNECTION_GITHUB_CLIENT_SECRET` |
-| GitHub secret | `CONNECTION_GITHUB_CLIENT_ID`, `CONNECTION_GITHUB_CLIENT_SECRET` (env:production) |
-| OpenBao | `discordy/github-oauth` → `CLIENT_ID` (from `CONNECTION_GITHUB_CLIENT_ID`); `discordy/github-oauth` → `CLIENT_SECRET` (from `CONNECTION_GITHUB_CLIENT_SECRET`) |
-| Kubernetes Secret | `voics-apps/api-github-oauth` |
+| GitHub secret | not in GitHub |
+| OpenBao | not in OpenBao |
+| Kubernetes Secret | — |
 | Owner | @oussamaelhajoui |
 | Rotation | on-change — [secret-rotation.md#github-oauth](../runbooks/secret-rotation.md#github-oauth) |
 | Generate | Register a GitHub OAuth app with the exact public API callback, then obtain its client ID and secret. |
-| Notes | Optional path; linking remains disabled until credentials are synced and the feature flag is explicitly enabled. |
+| Notes | Prepared metadata only; no GitHub, OpenBao or Kubernetes binding exists until a reviewed environment overlay and matching inventory entries are added. Linking remains disabled. |
 
 <a id="admin-allowed-emails"></a>
 
