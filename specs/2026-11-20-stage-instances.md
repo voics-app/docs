@@ -1,0 +1,13 @@
+﻿# Stage instances and voice enforcement
+
+Status: draft implementation for [voice#9](https://github.com/discordy-voics/voice/issues/9). The stage metadata and voice publishing controls are separate slices; this document does not claim an end-to-end stage call is available.
+
+A guild-only stage instance has an ID, guild and stage-channel IDs, and a topic. A member who can view the stage channel can fetch its active instance. A member with `MANAGE_CHANNELS` in that channel can start a stage, change its topic or end it. Starting twice for the same channel fails; the active channel key is unique in Postgres. The API commits each mutation and its `STAGE_INSTANCE_CREATE`, `STAGE_INSTANCE_UPDATE` or `STAGE_INSTANCE_DELETE` event in one transactional outbox operation. Gateway dispatch requires the `GUILDS` intent and channel visibility. Deleting the channel cascades its instance.
+
+The desktop stage page exposes those metadata controls and refreshes on lifecycle dispatches. Stage audio is unavailable until enforcement is connected: the gateway refuses direct joins and moderator moves into stage channels, and desktop navigation does not start a voice connection. This prevents the current ordinary voice route from presenting a false audience mute.
+
+The SFU draft can start with audio and video publishing separately disallowed, apply live permission changes, and refuse RTP for denied media. Signaling stores acknowledged permissions for SFU replay. Video covers camera and screen; another audio track such as soundboard must require both audio and its own soundboard permission. Compatibility defaults for old signaling are permissive, so they cannot be used as proof of stage protection during a mixed-version rollout.
+
+Before enabling stage joins, gateway state must own `suppress` and `request_to_speak_timestamp`, authorize requests and moderator moves with channel permissions, and propagate each session's capabilities to its assigned signaling node over a trusted, node-specific control route. The route must authenticate the caller, order and acknowledge changes, and fail closed when authorization or connectivity is uncertain. Tokens, reconnect/replay, revocation, node migration and simultaneous commands need explicit tests. A public WebSocket URL is not a trusted internal control identity. Camera, screen and soundboard must not bypass audience suppression.
+
+Acceptance remains open for the speakers/audience UI, hand raises and invitations, full voice enforcement and a two-client end-to-end call including revocation and reconnect. The metadata UI fixture test is not a live call. No production service, new server or deployment is part of this work.
