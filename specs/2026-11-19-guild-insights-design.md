@@ -48,6 +48,13 @@ days with a stable, documented response. Guild deletion must remove its data.
 Test concurrent changes, duplicate delivery, rollback, restart, day boundaries,
 authorization and deletion with real persistence.
 
+The draft API records actual membership insertions and deletions transactionally.
+Its preliminary read marks the collection's first day and the current day as
+incomplete; days before collection are null. Message and voice values are null
+and their coverage flags false until reliable feeds exist. The existing messages
+`MESSAGE_CREATE` publication is best effort after the Scylla write and cannot
+by itself support a complete counter. This partial API is not ready for release.
+
 ## Public widget
 
 Widgets default to disabled. Editing requires `MANAGE_GUILD`; the configured
