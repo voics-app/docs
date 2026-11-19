@@ -676,7 +676,6 @@ The bot's application.
 | `id` | `Snowflake` |  |
 | `flags` | `integer` |  |
 
-
 ## Passive sessions (proposed)
 
 A client opts into passive mode by sending `passive: true` in IDENTIFY and uses
