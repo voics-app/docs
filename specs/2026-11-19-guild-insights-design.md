@@ -56,11 +56,16 @@ partial or null and their coverage flags stay false while unverified. The existi
 by itself support a complete counter. The draft instead writes an idempotent,
 content-free `(guild, UTC day, message ID)` marker in a logged batch with the
 message. Markers survive message deletion and expire after 45 days. Ordinary and
-scheduled storage share this hook; crosspost and any future storage path must also
-use it. A successful marker read is only an observed count, not proof that every
+scheduled storage share this hook; it counts stored Standard guild messages,
+including bot, webhook and system messages. DM, ephemeral and P2P relays do not
+write markers. Crosspost and any future storage path must also use it. A successful
+marker read is only an observed count, not proof that every
 writer used the hook. Establish a coverage start only after all writers have been
 verified on the new version; mixed-version deployment and earlier history remain
-incomplete.
+incomplete. A future promotion must retain evidence of the writer inventory,
+drain of old instances and in-flight writes, and the confirmed UTC start time;
+the current reader always returns `coverage_complete: false` and provides no
+promotion mechanism.
 
 The draft gateway reports join, leave and periodic observations tagged with a
 session and a fresh gateway-process generation. The API deduplicates and orders
