@@ -676,7 +676,7 @@ The bot's application.
 | `id` | `Snowflake` |  |
 | `flags` | `integer` |  |
 
-## Passive sessions (proposed)
+## Passive sessions
 
 A client opts into passive mode by sending `passive: true` in IDENTIFY and uses
 SESSION_MODE (op 27) with `{"passive": boolean}` to change modes.
@@ -686,10 +686,10 @@ the existing count of unread channels computed by the client from latest-message
 and read markers, not a count of unread messages. Clients merge read states by
 `read_state_version`.
 
-This proposal requires certified versioned read states. Identification or a mode
+Passive mode requires certified versioned read states. Identification or a mode
 switch closes with retryable 4000 if certification is unavailable. The gateway
 emits at most one nonempty delta every five seconds. It rechecks current channel
-visibility before delivery. SESSION_MODE with `passive: false` fetches a fresh
+visibility, including private-thread membership, before delivery. SESSION_MODE with `passive: false` fetches a fresh
 certified read-state snapshot and sends fresh guild snapshots before resuming
 each guild's event stream. A session that has used passive mode must identify
 again after disconnect, rather than replay potentially stale passive frames.
