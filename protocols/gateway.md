@@ -686,7 +686,14 @@ the existing count of unread channels computed by the client from latest-message
 and read markers, not a count of unread messages. Clients merge read states by
 `read_state_version`.
 
-This is a proposed contract pending the gateway implementation and verification.
-Permission checks must apply at delivery, including after channel access changes;
-activation must refresh state before clients rely on normal dispatches. Passive
-mode does not alter other sessions or bypass heartbeat and resume rules.
+This proposal requires certified versioned read states. Identification or a mode
+switch closes with retryable 4000 if certification is unavailable. The gateway
+emits at most one nonempty delta every five seconds. It rechecks current channel
+visibility before delivery. SESSION_MODE with `passive: false` fetches a fresh
+certified read-state snapshot and sends fresh guild snapshots before resuming
+each guild's event stream. A session that has used passive mode must identify
+again after disconnect, rather than replay potentially stale passive frames.
+
+The underlying latest-message marker currently does not roll back when the last
+message is deleted, so unread channels retain that existing limitation. Passive
+mode is opt-in and requires a compatible client; it does not affect other sessions.
