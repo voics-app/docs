@@ -22,6 +22,17 @@ consumer starts at the latest offset and keeps deduplication in memory, while it
 queue can drop work. Restart, outage and overload therefore remain delivery gaps; real-device
 tests and a durable recovery strategy are required before this feature is complete.
 
+## Recovery still to implement
+
+Persist a per-device delivery record keyed by event, scheduled start, schedule revision,
+member and device. An event-specific notifier worker should lease pending records, recheck
+membership, visibility, interest, mute and the schedule before each attempt, and acknowledge
+each token only after the provider reports a terminal result. Expired leases return to pending;
+temporary failures retry within a bounded age window. A restart must resume pending records
+without depending on a fresh Kafka event. Provider acceptance is not proof of device display,
+and a lost acknowledgement can still cause a repeated alert unless the provider or client
+deduplicates the same stable key. This design is not implemented by the draft consumer.
+
 This is a proposed implementation, not a deployment or backup procedure. Verify the CRUD,
 visibility, RSVP, cancellation, rescheduling, restart and concurrent-replica paths together
 before release. Coordinate migration numbering with other API work before merging.
