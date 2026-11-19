@@ -50,10 +50,26 @@ authorization and deletion with real persistence.
 
 The draft API records actual membership insertions and deletions transactionally.
 Its preliminary read marks the collection's first day and the current day as
-incomplete; days before collection are null. Message and voice values are null
-and their coverage flags false until reliable feeds exist. The existing messages
+incomplete; days before collection are null. Message and voice values may be
+partial or null and their coverage flags stay false while unverified. The existing messages
 `MESSAGE_CREATE` publication is best effort after the Scylla write and cannot
-by itself support a complete counter. This partial API is not ready for release.
+by itself support a complete counter. The draft instead writes an idempotent,
+content-free `(guild, UTC day, message ID)` marker in a logged batch with the
+message. Markers survive message deletion and expire after 45 days. Ordinary and
+scheduled storage share this hook; crosspost and any future storage path must also
+use it. A successful marker read is only an observed count, not proof that every
+writer used the hook. Establish a coverage start only after all writers have been
+verified on the new version; mixed-version deployment and earlier history remain
+incomplete.
+
+The draft gateway reports join, leave and periodic observations tagged with a
+session and a fresh gateway-process generation. The API deduplicates and orders
+observations transactionally, splits time at UTC midnight, and counts only time
+between consecutive observations no more than 60 seconds apart. The gateway uses
+a bounded retry queue; a crash, a long outage or queue overflow can lose samples.
+Voice values are therefore observed lower bounds and voice coverage remains
+false. Gateway process restarts and time lost between samples cannot yet be
+reconstructed. This partial API is not ready for release.
 
 ## Public widget
 
