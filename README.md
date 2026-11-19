@@ -26,6 +26,9 @@ voornaamwoorden, profielkleuren en een eigen avatar, banner en bio per server (a
 
 ## Start here
 
+The [member screening and onboarding specification](specs/2026-11-20-member-screening.md)
+describes versioned rules, optional choices and welcome screens under review for api#40.
+
 The [scheduled messages specification](specs/2026-11-18-scheduled-messages.md)
 defines author-private drafts, send-time checks and visible delivery uncertainty
 for messages#61. Backend and client implementations are under review; scheduling
