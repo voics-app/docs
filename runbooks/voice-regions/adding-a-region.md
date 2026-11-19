@@ -30,6 +30,20 @@
 17. [Appendix A: Capacity worksheet](#appendix-a-capacity-worksheet)
 18. [Appendix B: What regionctl writes](#appendix-b-what-regionctl-writes)
 
+## Planning a second node in an existing region
+
+A second node needs a unique `VOICE_NODE_ID`, a distinct public WebSocket hostname routed to that node's signaling service, and a distinct reachable public IP/UDP-port pair routed to that node's SFU. A shared IP therefore requires different UDP ports and matching advertised, host and forwarding configuration. Use distinct Kubernetes Service selectors and labels for each signaling node, and pin each host-networked voice workload to its intended Kubernetes hostname. Verify the rendered selectors, EndpointSlices, tunnel/ingress routes and actual UDP reachability; a registration or HTTP health check alone does not prove them. Gateway rejects ambiguous registrations in [gateway 60](https://github.com/discordy-voics/gateway/pull/60); exclusive lease ownership is in [voice 33](https://github.com/discordy-voics/voice/pull/33). These develop changes are not proof of deployed versions or reachable traffic.
+
+[Voice PR 39](https://github.com/discordy-voics/voice/pull/39), stacked on [PR 38](https://github.com/discordy-voics/voice/pull/38), proposes an offline, read-only `plan-node` preview. It is not a released command. With that proposed branch checked out and an existing local gitops checkout, its test uses the following shape (documentation-only IP and hostname):
+
+```sh
+regionctl plan-node nl-home --node-id nl-home-2 --public-ip 198.51.100.4 \
+  --public-host rtc-2.example.invalid --udp-port 50001 --k8s-node node-2 \
+  --gitops-dir /path/to/gitops
+```
+
+The preview checks readable overlays and some literal collisions, and suggests a worker ID; it does not resolve substitutions, inspect live state, prove selector/ingress affinity or validate shared-IP port forwarding. It creates no overlay or DNS record. The existing `regionctl add` scaffolds one node per region and performs a real Cloudflare write; it is not an offline second-node planner. Review a separate GitOps change and test external WS, UDP, TURN, reconnect and failure behavior before traffic.
+
 ## Concepts
 
 | Term | Meaning |
@@ -59,7 +73,7 @@ A region therefore needs four things:
 | Failure mode | Losing the control plane takes the region down too | The region survives control-plane loss for existing calls, but no new allocations happen without etcd and the gateway |
 | Effort | Lower | Higher |
 
-> Rule of thumb: **use joined for anything on the home LAN** (for example a second Proxmox VM), and **standalone for every other site**. Never stretch a microk8s (dqlite) control plane across the internet. Remote sites join as **workers only**, if they join at all.
+A joined worker uses the existing cluster and its control plane; a standalone voice site still depends on central services and is not an independent full Voics cluster. A fully independent cluster requires its own identity, data, secrets, ingress and recovery design. Do not stretch the control plane across the internet. Verify the actual datastore and CNI: the present production cluster uses etcd and its configured networking, not an assumed dqlite/Calico installation.
 
 ## Prerequisites
 
