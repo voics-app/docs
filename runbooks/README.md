@@ -15,6 +15,7 @@
 | [Alerting](alerting.md) | Which alerts exist, adding the owner webhook (`ops-alerts`), what to do when one fires |
 | [Profile badge visibility](profile-badges.md) | Owner controls, public filtering, test coverage and open product choices |
 | [Push notifications](push-notifications.md) | APNs/FCM flow, deployed notifier status, credential maintenance and remaining real-device acceptance |
+| [Scheduled event reminders](scheduled-events.md) | Proposed outbox, deduplication, verification and offline push gap |
 | [Metrics and exporters](metrics-exporters.md) | Which components export metrics, scrape jobs, ports and main series; verifying a target is up |
 | [ScyllaDB maintenance](scylla-maintenance.md) | Adding a node, rolling restart, repair or draining ScyllaDB |
 | [Back-up- en herstelplan](backup-restore.md) | Voorgestelde doelen, sleutelbewaring en herstelproeven; nog geen geactiveerde jobs |
