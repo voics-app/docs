@@ -72,7 +72,7 @@ Desktop settings (including server administration), the emoji picker and the sla
 
 The client CI builds the renderer and reports the uncompressed JavaScript entry and its transitive static imports from the Vite manifest. The limit is 3,000,000 bytes; asynchronous chunks, CSS and workers are excluded. Run `pnpm --filter @discordy/desktop exec electron-vite build` followed by `node apps/desktop/scripts/check-renderer-budget.mjs` locally. Record the build revision, measured sizes and justification when changing the budget. The same check also runs in the container build.
 
-Cold-start comparisons must identify the reference machine, operating system, build type, network and account state. Launch with a fresh isolated user-data directory and record several process-to-visible-auth timings and the median. The client repository's renderer-performance guide contains the acceptance procedure; a fake-backend run is useful for repeatability but is not a production-network latency measurement.
+Cold-start comparisons must identify the reference machine, operating system, build type, network and account state. Launch with a fresh isolated user-data directory and record several process-to-visible-auth timings and the median. The catalog names a reference Windows laptop without identifying it or defining a fresh profile. The client #24 Linux runner/container measurements use new processes and fresh user-data directories without flushing OS caches, so they are an additional reference, not a Windows SLO measurement. The client repository's renderer-performance guide contains the acceptance procedure; a fake-backend run is useful for repeatability but is not a production-network latency measurement.
 
 ## Appearance and accessibility
 
