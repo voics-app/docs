@@ -233,3 +233,11 @@ The bootstrap is idempotent and creates a new key. Then run `flux reconcile sour
 1. Go to notion.so/my-integrations → Voics docs sync → **Refresh secret**.
 2. Run `gh secret set NOTION_TOKEN --org discordy-voics`.
 3. **Verify**: re-run the latest `notion-sync` workflow in `docs`.
+
+## GitHub OAuth
+
+1. Keep `CONNECTION_GITHUB_ENABLED=false` until the API and client have passed their integration checks. Register an OAuth app with callback `https://<PUBLIC_API_HOST>/api/v1/connections/github/callback`.
+2. Store its client ID and secret in the production GitHub environment as `CONNECTION_GITHUB_CLIENT_ID` and `CONNECTION_GITHUB_CLIENT_SECRET`; run the existing `secrets-sync` flow. The optional OpenBao path is `kv/discordy/github-oauth`, consumed by `api-github-oauth`. Never paste values into Git or logs.
+3. Check ExternalSecret readiness and the configured callback without printing secrets. After an approved rollout, enable the flag and test linking, default-private visibility, showing and hiding a profile, and disconnecting with a dedicated test account.
+4. For rotation, disable linking, create the replacement secret, sync it and restart API pods before re-enabling; invalidate the old secret at GitHub. Disabling linking preserves the ability to hide and remove existing links. Disconnecting removes the local record; revoke the OAuth app in GitHub settings separately.
+5. Before rollout, take and verify the normal database backup. To roll back, disable the flag and restore the previous image. Retain the connections tables until any rollback/data-retention decision is approved; do not drop them as part of rollback.
