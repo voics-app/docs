@@ -2,13 +2,13 @@
 
 Summary: de desktopapp installeren, gesprekken en servers gebruiken, bellen en schermdelen, instellingen vinden en problemen melden.
 
-Gecontroleerd op 18 november 2026. Windows 0.9.10 is de vastgestelde publieke basis. Nieuwe functies op develop worden pas beschikbaar na een clientrelease en, waar nodig, een serverrelease. Engelse knopnamen komen overeen met de huidige app. Zie ook de [mobiele handleiding](14-handleiding-mobiele-app.md).
+Deze handleiding gebruikt de Engelse knopnamen uit de Windows-app. Controleer je versie onder **Settings → About and updates**. Waar een functie een bepaalde versie vereist, staat die erbij. [Handleiding voor de mobiele app](14-handleiding-mobiele-app.md)
 
 ## 1. Installeren, bijwerken en inloggen
 
 1. Ga naar [voics.nl](https://voics.nl) en kies **Download for Windows**. De officiële knop verwijst naar [Voics-Setup-latest.exe](https://updates.voics.nl/Voics-Setup-latest.exe). De installer is voor Windows x64.
 2. Open het gedownloade bestand en volg de installatiewizard. Je kunt de installatiemap kiezen. Start daarna Voics en log in.
-3. Controleer de geïnstalleerde versie onder **Settings → About and updates**. De [updatefeed](https://updates.voics.nl/latest.yml) vermeldt de aangeboden versie en de naam, grootte en SHA-512 van het versiegebonden installatiebestand. Op 19 november 2026 bood de feed 0.9.10 aan; controleer de feed opnieuw voor de actuele versie.
+3. Controleer de geïnstalleerde versie onder **Settings → About and updates**. De updatefeed vermeldt onder `version` de actuele Windows-versie. Bij `files` staan de bestandsnaam, grootte en SHA-512 van het bijbehorende installatiebestand. [Windows-updatefeed](https://updates.voics.nl/latest.yml)
 
 Wil je de download op inhoud controleren, download dan het in `latest.yml` genoemde versiegebonden `.exe`-bestand vanaf `https://updates.voics.nl/`. Vervang het pad hieronder door dat bestand en vergelijk de uitvoer met `sha512` in de feed:
 
@@ -59,15 +59,23 @@ De gewone zoekindex bevat bewaarde Standard-berichten waarvoor je toegang hebt. 
 
 ## 4. Vrienden, groepen en servers
 
+Wil je aparte groepen in de ledenlijst, open dan **Server settings → Roles**, selecteer een rol en zet **Display separately** aan. Sla de rol op en wijs die toe aan de leden. Iemand die online is en meerdere van zulke rollen heeft, verschijnt onder de hoogste rol. Andere online leden en offline leden hebben elk hun eigen groep. Voor het wijzigen van rollen heb je beheerrechten nodig.
+
 Via Friends bekijk je je vrienden en openstaande verzoeken. Open een profiel om een DM te starten. In een groeps-DM kun je groepsinstellingen gebruiken; het verbergen van een gesprek uit de lijst is iets anders dan de groep verlaten.
 
 Open een serveruitnodiging of kies de join-optie bij **+** in de serverkolom. Controleer de servernaam en accepteer. Een verlopen of ingetrokken link kan alleen door een nieuwe uitnodiging worden vervangen. Een permanent eigen uitnodigingsadres wordt in de nieuwe serverbeheerwijziging toegevoegd en vereist de bijbehorende API- en clientrelease.
+
+Een uitnodiging in de browser kan vragen of je Voics wilt openen. Toont Windows **Electron** na het gebruik van een ontwikkelversie, start dan de geïnstalleerde Voics-app vanuit het Startmenu en open de uitnodiging opnieuw. De geïnstalleerde app registreert zichzelf als afhandelaar. Vanaf 0.9.11 neemt een gewone ontwikkelstart die koppeling over als de ontwikkelaar dat uitdrukkelijk inschakelt.
 
 De servernaam of een rechtsklik op het servericoon opent het servermenu. Daar staan onder andere uitnodigen, meldingsinstellingen en, wanneer toegestaan, Server settings. **Hide muted channels** verbergt gedempte kanalen zonder ze te verwijderen. **Collapse all categories** klapt de categorieën dicht. **Copy server ID** is nuttig voor een foutmelding; het is geen uitnodigingslink.
 
 De uitbreiding van deze menu’s, Active Now en de sluitknop bij DM’s is voorbereid in client#342. Active Now toont bekende activiteit en toegankelijke spraakkanalen; het is geen garantie dat iemand beschikbaar is. De kolom wordt bij een smal venster verborgen.
 
 ## 5. Bellen, video en schermdelen
+
+Vanaf Windows 0.9.11 opent de belweergave zodra je aan een gesprek deelneemt. In een privégesprek staat de chat eronder. In een spraakkanaal kun je de chat ernaast openen. Sleep de scheidingslijn om het gesprek of de chat meer ruimte te geven. Met het toetsenbord ga je met **Tab** naar de scheidingslijn. De pijltjestoetsen verplaatsen die in de richting van de twee vensters. Met **Home** en **End** kies je de kleinste of grootste stand, tussen 25% en 75%.
+
+Een gedeeld scherm krijgt de focus wanneer je nog geen andere indeling hebt opgeslagen. Klik op de microfoon om jezelf te dempen. Met het aparte pijltje ernaast kies je een invoerapparaat.
 
 1. Open een DM en gebruik de telefoonknop, of open een spraakkanaal.
 2. Kies onder **Settings → Voice and video** de juiste microfoon en uitvoer. Controleer de microfoon met de beschikbare testbediening.
@@ -83,6 +91,8 @@ Systeemrechten kunnen video en schermopname blokkeren, ook als de Voics-knop aan
 Bellen tussen desktop en iPhone is een afzonderlijk acceptatiescenario. Een eerder gemelde desktopcrash wordt door de kwaliteitswerkstroom onderzocht. Een geslaagde unit-test of lokale chatproef sluit die fout niet uit.
 
 ## 6. Status en meldingen
+
+Op Windows toont het taakbalkicoon vanaf 0.9.11 één tot negen vermeldingen als cijfer. Bij tien of meer zie je **9+**. In de venstertitel kun je het precieze aantal zien. Een ongelezen bericht zonder vermelding krijgt een stip.
 
 Via je profiel kies je **Online**, **Idle**, **Do not disturb** of **Invisible** en eventueel een tekststatus met eindtijd. Automatisch afwezig worden vervangt een bewuste niet-storen- of onzichtbaar-keuze niet. De desktop-idletijd vind je onder Desktop.
 
