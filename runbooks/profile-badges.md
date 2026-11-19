@@ -1,4 +1,4 @@
-﻿# Profile badge visibility
+# Profile badge visibility
 
 Status: proposed in [API pull request 158](https://github.com/discordy-voics/api/pull/158) and [desktop pull request 368](https://github.com/discordy-voics/client/pull/368). These changes are not a production rollout.
 
@@ -8,7 +8,7 @@ Profile badges are explicit grants stored separately from user flags. A grant is
 
 - `GET /api/v1/users/@me/badges` returns the authenticated owner's grants as `{ "id", "visible" }` objects.
 - `PUT /api/v1/users/@me/badges/{id}` with `{ "visible": false }` or `true` updates an existing grant owned by the caller. An unknown or unowned ID returns 404.
-- `GET /api/v1/users/{id}/badges` returns an array of visible badge IDs. Both users must be authenticated to call the public route.
+- `GET /api/v1/users/{id}/badges` returns an array of visible badge IDs. The caller must be authenticated.
 
 ## Verification and limits
 
