@@ -122,7 +122,7 @@ Open **Server settings** via de servernaam. De beschikbare pagina’s volgen jou
 | Roles | Rollen, kleur, volgorde en rechten |
 | Members | Leden zoeken en toegestane moderatieacties |
 | Invites | Uitnodigingen maken, kopiëren en intrekken |
-| Bans | Verbannen leden bekijken en, met rechten, een ban opheffen; beroepsvragen en beroepen beheren met Manage Ban Appeals |
+| Bans | Verbannen leden bekijken en, met rechten, een ban opheffen; na uitrol ook beroepsvragen en beroepen beheren met Manage Ban Appeals |
 | Audit log | Beheerdersacties bekijken met View Audit Log |
 | Template / Discovery | De bestaande template- en vindbaarheidsfuncties; niet alle geavanceerde communityfuncties zijn aanwezig |
 
