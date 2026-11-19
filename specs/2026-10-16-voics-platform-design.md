@@ -205,7 +205,7 @@ Modelled on *How Discord Handles 2.5M Concurrent Voice Users Using WebRTC*. Each
 | 22 | P2P_SIGNAL |
 
 **Behaviour**
-- **Encoding**: JSON in v1. Per-connection zstd streaming is proposed as an opt-in, negotiated at connect time (ADR-0014, [gateway#11](https://github.com/discordy-voics/gateway/issues/11)). ETF comes later.
+- **Encoding**: JSON in v1. Per-connection zstd streaming is opt-in with `compress=zstd-stream` on `/gateway`; server frames become binary and share one stream per connection, flushed per event. Inbound frames remain JSON text; reconnects start a fresh stream (ADR-0014, [gateway#11](https://github.com/discordy-voics/gateway/issues/11)). ETF comes later.
 - **Background clients**: passive sessions that receive deltas instead of the full dispatch stream are proposed in [gateway#12](https://github.com/discordy-voics/gateway/issues/12).
 - **Resume**: sessions are resumable for 2 minutes from a Valkey resume buffer.
 - **Intents**: follow the Discord model.

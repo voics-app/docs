@@ -4,6 +4,8 @@
 
 Clients connect to `wss://<gateway>/gateway?v=1&encoding=json`. The server sends HELLO with a heartbeat interval of 41250 ms. Sessions can be resumed for 120 s (up to 1000 buffered dispatches). Clients may send 120 frames per 60 s; exceeding it closes with 4008. Objects referenced below (User, Channel, ...) are described in rest.md.
 
+Add `&compress=zstd-stream` to receive binary frames containing one continuous zstd stream per WebSocket connection. Each event is flushed for immediate decoding. Client-to-server frames stay JSON text. A reconnect, including RESUME, starts a fresh stream. Without the parameter server frames are JSON text; unknown compression values are rejected.
+
 ## Frame
 
 ### GatewayFrame
