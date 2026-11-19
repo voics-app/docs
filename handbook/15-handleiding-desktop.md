@@ -122,7 +122,7 @@ Open **Server settings** via de servernaam. De beschikbare pagina’s volgen jou
 | Roles | Rollen, kleur, volgorde en rechten |
 | Members | Leden zoeken en toegestane moderatieacties |
 | Invites | Uitnodigingen maken, kopiëren en intrekken |
-| Bans | Verbannen leden bekijken en, met rechten, een ban opheffen |
+| Bans | Verbannen leden bekijken en, met rechten, een ban opheffen; beroepsvragen en beroepen beheren met Manage Ban Appeals |
 | Audit log | Beheerdersacties bekijken met View Audit Log |
 | Template / Discovery | De bestaande template- en vindbaarheidsfuncties; niet alle geavanceerde communityfuncties zijn aanwezig |
 
@@ -202,3 +202,10 @@ Neem bij een fout het versienummer, OS, concrete stappen en fouttekst op. Deel c
 ## Controle en beperkingen
 
 De bediening is gecontroleerd tegen de instellingenindex, toetsenregistratie en bestaande clientcomponenten. De [verificatiestatus](16-status-en-beheerkeuzes.md) houdt bij welke nieuwe werkstromen alleen code/tests hebben en welke release- of gebruikersproef nog ontbreekt. Deze handleiding verklaart een open opleverkaart niet automatisch voltooid.
+
+
+### Beroep tegen een ban
+
+Deze functie is in ontwikkeling en nog niet als uitgebrachte functie bevestigd. Een moderator met **Manage Ban Appeals** stelt onder **Server Settings > Bans** een korte beroepsvraag in en kan open beroepen accepteren of weigeren. Accepteren heft de ban op; de gebruiker heeft daarna nog een geldige uitnodiging nodig om terug te keren. De beslissing verschijnt in het auditlog als auditregistratie voor die server is ingeschakeld. De beroepsbevoegdheid geeft op zichzelf geen toegang tot de gewone banlijst.
+
+Een verbannen gebruiker kan via een geldige serveruitnodiging bij **You are banned** de ingestelde vraag beantwoorden en **Submit appeal** kiezen. De server accepteert maximaal ??n open beroep per gebruiker. Een moderator ziet de vraag en het antwoord; deel daarom alleen informatie die je aan de servermoderators wilt verstrekken. Als een ban op een andere manier is opgeheven, sluit het open beroep. Een oud beroep kan een latere ban niet opheffen. Er is nog geen mobiele beroepsinterface en een verlopen uitnodiging biedt geen ingang naar het formulier.
