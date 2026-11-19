@@ -1,0 +1,35 @@
+# Thread browsing and membership (draft)
+
+This describes the proposed browse and membership subset of api#34, not completed thread
+parity. The API, gateway, messages and desktop changes remain subject to review and verification.
+
+## Behavior
+
+- `GET /channels/{parent}/threads?archived=false|true` returns threads the caller can view.
+- `PUT` and `DELETE /channels/{thread}/thread-members/{user}` join/invite and leave/remove;
+  `@me` identifies the caller. Targets must belong to the guild and view the parent. A manager
+  can remove others; private-thread members can invite when the thread is invitable.
+- A private thread requires parent visibility plus creator, thread membership or MANAGE_THREADS.
+  If its parent is missing, access fails closed. The API and gateway enforce this separately.
+- Thread channel responses report the member count and, on viewer-specific REST responses,
+  `is_thread_member`. Shared events do not contain another user's membership flag.
+- Desktop uses the existing notification-settings resource for per-thread mute and levels.
+
+## Internal state and rollout dependency
+
+Migration 0084 stores memberships and versions. The API emits versioned full membership state
+on the internal guild bus and includes it in internal gateway seeds. Gateway discards stale
+versions, removes the internal fields before dispatch, and sends visibility changes to affected
+sessions. Guild-member removal deletes memberships and emits a newer state. Messages must recheck
+private-thread permissions rather than relying on its normal five-second access cache.
+
+The gateway and messages protections must be available before an API sends the internal state or
+allows membership changes; older gateways can forward unknown internal guild fields to clients.
+This is a deployment dependency, not authorization to deploy. The version and visibility design
+still requires review and end-to-end testing, including removals, rejoin, replay and passive sessions.
+
+## Remaining work
+
+Automatic inactivity archiving, unarchive on a new message, message counts, private invitation UI,
+and end-to-end delivery and notification behavior are not established by this subset. Do not close
+api#34 until its complete acceptance criteria and normal user flow are verified.
