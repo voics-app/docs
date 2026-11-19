@@ -16,9 +16,11 @@ At the scheduled time, API replicas use row locking to enqueue bounded batches o
 reminders. The persisted key includes the event, member, scheduled start and schedule
 revision. The desktop rechecks current visibility, interest and start time before showing
 a reminder. Outbox publication is at least once; its stable envelope ID and reminder key
-support deduplication. This does not establish offline delivery: the current notifier only
-handles message events, so mobile/background push needs an event-specific consumer and
-real-device verification before this feature is complete.
+support deduplication. The proposed event-specific notifier consumer rechecks the current
+recipient through an internal directory and sends generic APNs/FCM alerts. Its underlying
+consumer starts at the latest offset and keeps deduplication in memory, while its bounded
+queue can drop work. Restart, outage and overload therefore remain delivery gaps; real-device
+tests and a durable recovery strategy are required before this feature is complete.
 
 This is a proposed implementation, not a deployment or backup procedure. Verify the CRUD,
 visibility, RSVP, cancellation, rescheduling, restart and concurrent-replica paths together

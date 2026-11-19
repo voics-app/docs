@@ -6,9 +6,11 @@ records the event, user, start and schedule revision in the same transaction. A 
 retries uncommitted work; the relay can republish a committed record, so consumers must
 deduplicate. The desktop re-fetches event access and interest before showing a reminder.
 
-This path has not been deployed or verified end to end. The current mobile push notifier
-ignores the new event; a separate consumer, permission recheck and real-device test are
-required for offline delivery. Do not describe an outbox row as proof of a delivered push.
+This path has not been deployed or verified end to end. The proposed event-specific mobile
+consumer rechecks access and sends generic push text, but the underlying topic reader starts
+at the latest offset and its deduplication is in memory. A notifier outage, restart or full
+queue can therefore miss or duplicate an alert. A durable recovery strategy and real-device
+tests are required. Do not describe an outbox row as proof of a delivered push.
 
 Before release, exercise two API replicas, creation, interest, cancellation, rescheduling,
 permission removal, restart during enqueue, replay and the resulting desktop notification.
