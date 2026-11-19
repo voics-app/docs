@@ -1,5 +1,7 @@
 # Runbooks
 
+Desktop user privacy: [Streamer mode](desktop-streamer-mode.md).
+
 [Read-state accounting rollout and recovery](read-accounting.md) covers the proposed companion keyspace, coordinated writer drain and paired backups.
 
 | Runbook | Use it when |
