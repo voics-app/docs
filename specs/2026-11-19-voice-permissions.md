@@ -25,7 +25,9 @@ when all current sessions report automatic AFK. Invisible sessions count too;
 activity on any session cancels the timer. On expiry the gateway checks current
 presence and the target channel again, then uses the existing voice-move path.
 Unknown presence does not trigger a move. A move sends a fresh voice server
-update to the caller.
+update to the caller. The timeout starts when clients report AFK, not at the
+last OS interaction; client idle-detection delay can therefore postpone a move
+beyond the configured timeout.
 
 Before calling this complete, exercise real calls on desktop and mobile,
 including role and channel overrides, active second devices, cancellation,
