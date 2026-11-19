@@ -38,6 +38,7 @@ Every gateway frame (both directions). `s` and `t` are only set on DISPATCH (op 
 | 23 | `VOICE_TELEMETRY` | send | `VoiceTelemetryPayload` | Client voice quality sample, published to discordy.telemetry.v1. |
 | 24 | `WATCH_TOGETHER` | both | `WatchTogetherPayload` | Watch Together playback synchronisation. |
 | 25 | `CALL_DECLINE` | send | `CallDeclinePayload` | Declines the DM call ringing in a channel. The caller's call stops ringing for this user. |
+| 27 | `SESSION_MODE` | send | `SessionModePayload` | Switch between passive and active mode. |
 | 26 | `CALL_RING` | send | `CallRingPayload` | Rings 1 to 10 members of a DM channel for a call the sender is in. |
 
 ## Opcode payloads
@@ -59,6 +60,7 @@ Op 2 IDENTIFY.
 | `intents` | `integer` | Intent bitfield (intents.json). User sessions implicitly get all intents. |
 | `properties` | `IdentifyProperties` |  |
 | `presence?` | `PresenceUpdatePayload` |  |
+| `passive?` | `boolean` | Opt in to passive mode; omitted means active. |
 
 ### PresenceUpdatePayload
 
@@ -673,3 +675,19 @@ The bot's application.
 | --- | --- | --- |
 | `id` | `Snowflake` |  |
 | `flags` | `integer` |  |
+
+
+## Passive sessions (proposed)
+
+A client opts into passive mode by sending `passive: true` in IDENTIFY and uses
+SESSION_MODE (op 27) with `{"passive": boolean}` to change modes.
+`PASSIVE_UPDATE_V2` contains changed channel latest-message markers, authoritative
+versioned read states and voice states; absent fields mean unchanged. Unread means
+the existing count of unread channels computed by the client from latest-message
+and read markers, not a count of unread messages. Clients merge read states by
+`read_state_version`.
+
+This is a proposed contract pending the gateway implementation and verification.
+Permission checks must apply at delivery, including after channel access changes;
+activation must refresh state before clients rely on normal dispatches. Passive
+mode does not alter other sessions or bypass heartbeat and resume rules.
