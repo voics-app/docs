@@ -203,7 +203,6 @@ Neem bij een fout het versienummer, OS, concrete stappen en fouttekst op. Deel c
 
 De bediening is gecontroleerd tegen de instellingenindex, toetsenregistratie en bestaande clientcomponenten. De [verificatiestatus](16-status-en-beheerkeuzes.md) houdt bij welke nieuwe werkstromen alleen code/tests hebben en welke release- of gebruikersproef nog ontbreekt. Deze handleiding verklaart een open opleverkaart niet automatisch voltooid.
 
-
 ### Beroep tegen een ban
 
 Deze functie is in ontwikkeling en nog niet als uitgebrachte functie bevestigd. Een moderator met **Manage Ban Appeals** stelt onder **Server Settings > Bans** een korte beroepsvraag in en kan open beroepen accepteren of weigeren. Accepteren heft de ban op; de gebruiker heeft daarna nog een geldige uitnodiging nodig om terug te keren. De beslissing verschijnt in het auditlog als auditregistratie voor die server is ingeschakeld. De beroepsbevoegdheid geeft op zichzelf geen toegang tot de gewone banlijst.
