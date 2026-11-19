@@ -45,6 +45,8 @@ Controleer in ieder geval deze bronpaden na deze documentatierelease:
 - `handbook/15-handleiding-desktop.md`
 - `handbook/16-status-en-beheerkeuzes.md`
 - `runbooks/server-uitbreiden.md`
+- `runbooks/voice-regions/adding-a-region.md`
+- `runbooks/notion-publicatie-controleren.md`
 - `runbooks/backup-restore.md`
 - `plans/2026-10-19-rke2-rancher-migration.md`
 - `protocols/community-settings.md`
@@ -52,3 +54,5 @@ Controleer in ieder geval deze bronpaden na deze documentatierelease:
 - `plans/2026-11-18-completion-programme.md`
 
 Leg run-ID, main-commit, datum, pagina-URL’s en inhoudscontrole vast in de oplevering. Geen pagina-URL verzinnen wanneer de sync nog niet is uitgevoerd. Een herhaling hoort ongewijzigde inhoud over te slaan. Bij een afwijking corrigeer je de bron of het bestaande mirror-script; bouw geen tweede synchronisatieroute.
+
+Een bestaande succesvolle [mirror-run 44278139381](https://github.com/discordy-voics/docs/actions/runs/44278139381) hoort bij main-commit `74ccfdc98d9aa4ee98c542e378f7e96684e0f1fb`. Dit is historisch workflowbewijs, geen inhoudsverificatie van een toekomstige release. Leg na publicatie de nieuwe run en daadwerkelijke pagina-URL?s vast; zolang deze wijziging alleen in een PR staat bestaan daarvoor geen verificatieclaims.

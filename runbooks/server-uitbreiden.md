@@ -2,7 +2,13 @@
 
 Summary: van een lokale inventaris naar een gecontroleerde worker, met uitleg over verkeersverdeling, gegevensopslag en veilig onderhoud.
 
-**Stand: 18 november 2026. Alleen voorbereiding is nu toegestaan.** Er is geen nieuwe VM gemaakt, geen worker aangesloten en geen productieomgeving gemigreerd. Uitvoercommando’s staan apart voor een later, uitdrukkelijk aangevraagd onderhoudsmoment. Het back-upwerk is eveneens alleen een [plan](backup-restore.md).
+**Stand: 19 november 2026. Alleen voorbereiding is nu toegestaan.** Er is geen nieuwe VM gemaakt, geen worker aangesloten en geen productieomgeving gemigreerd. Uitvoercommando’s staan apart voor een later, uitdrukkelijk aangevraagd onderhoudsmoment. Het back-upwerk is eveneens alleen een [plan](backup-restore.md).
+
+## Versies en werkelijke situatie
+
+De gepubliceerde docs v0.4.2 beschrijven een voorbereide workerroute; dat is geen bewijs dat een worker bestaat. De laatste vastgestelde productiebezetting is **1/1**, niet twee nodes of twee replica?s. Controleer de actuele clusterstatus voordat je beslissingen neemt. De workerimplementatie staat op gitops develop; gitops main bevatte bij deze controle `infra/workers` nog niet. Gebruik een bewust gekozen checkout en vergelijk de implementatie v??r uitvoering.
+
+[Gitops PR 135](https://github.com/discordy-voics/gitops/pull/135) stelt een gebonden planreceipt en gedeelde lock voor; die bescherming is pas beschikbaar wanneer de betreffende versie is opgenomen en gebruikt. Een geslaagd offline plan of een PR is geen productie-uitrol. [Messages 80](https://github.com/discordy-voics/messages/pull/80), [gateway 60](https://github.com/discordy-voics/gateway/pull/60) en [voice 33](https://github.com/discordy-voics/voice/pull/33) zijn naar develop gemerged; controleer releases en werkelijk draaiende versies afzonderlijk. [Messages 86](https://github.com/discordy-voics/messages/pull/86), [voice 38](https://github.com/discordy-voics/voice/pull/38) en [voice 39](https://github.com/discordy-voics/voice/pull/39) zijn voorstellen.
 
 ## Wat een tweede server oplevert
 
@@ -75,6 +81,27 @@ kubectl --kubeconfig "$env:USERPROFILE/.kube/discordy-gen-serv.yaml" get nodes -
 
 Voorbeeldadres `.214` en VM 109 zijn geen reserveringen: controleer eerst of ze vrij zijn. `.204`, `.212` en de productie-VM zijn geen kandidaten. Houd lokale JSON-bestanden en `.worker-state` buiten Git. Bewaar de statusmap voor veilige herhaling van de latere uitvoering.
 
+### Offline voorbeeld voor een eigen inventaris
+
+Bewerk de lokale kopie met je eigen gecontroleerde waarden. Het onderstaande is uitsluitend fictief en bevat expres geen bruikbare publieke sleutel. `describe` valideert de vorm offline; vervang de placeholder door je eigen publieke sleutel v??r validatie. Reserveer IP en VM-ID via je eigen infrastructuurproces.
+
+```json
+{
+  "name": "voics-worker-1", "host": "192.0.2.14", "ssh_user": "ubuntu",
+  "control_plane_host": "192.0.2.12", "control_plane_user": "operator",
+  "control_plane_name": "control-plane-1",
+  "cluster_uid": "00000000-0000-0000-0000-000000000000",
+  "microk8s_version": "1.35.6",
+  "proxmox": {
+    "vm_id": 109, "node": "pve", "datastore": "local-lvm",
+    "ipv4_cidr": "192.0.2.14/24", "gateway": "192.0.2.1",
+    "ssh_public_keys": ["REPLACE_WITH_YOUR_REAL_SSH_PUBLIC_KEY"]
+  }
+}
+```
+
+Dit voorbeeld past alleen na aanpassing aan een bestaande, compatibele cluster en providerinrichting. Voor een onafhankelijke volledige cluster is een afzonderlijk ontwerp voor identity, ingress, secrets, databases, backups en routing nodig; een worker joinen maakt geen onafhankelijke omgeving.
+
 ## 4. Bekijk het Terraform-plan
 
 Na het veilig instellen van de bestaande Proxmox-toegang:
@@ -86,7 +113,7 @@ terraform show infra/workers/.worker-state/voics-worker-1/worker.tfplan
 
 Het tweede pad gebruikt de `name` uit de inventaris. Pas dat naamdeel aan wanneer je een andere naam koos. `plan` leest de provider en schrijft lokaal metadata en een opgeslagen plan, zonder VM’s te maken. Providers kunnen worden gedownload. Publiceer geen plannen/state: die kunnen gevoelige configuratie bevatten.
 
-Controleer VM-ID, adres, datastore, capaciteit en alle acties. Alleen bedoelde workerimage-/VM-creaties of geen wijziging passeren de guard. Updates, vervanging, verwijderen, clusterbootstrap en gewijzigde inventaris worden geweigerd. Omzeil dit niet met een losse `terraform apply`.
+Controleer VM-ID, adres, datastore, capaciteit en alle acties. De bestaande planguard weigert ongewenste acties; PR 135 voegt daar de koppeling van het beoordeelde plan en inventaris via een receipt en lock aan toe. Vertrouw niet op die aanvullende garantie v??r opname van die PR. Omzeil de controles niet met een losse `terraform apply`.
 
 **Hier stopt de huidige opdracht.** Je hebt een reviewbaar plan en offline controles, nog geen nieuwe machine.
 
@@ -138,6 +165,8 @@ Het **niet-geactiveerde** profiel `worker-capacity` bereidt twee cloudflared- en
 | SFU / signaling / TURN | Unieke registraties, endpoints en ID’s; eigen UDP-route; geen blinde replica-verhoging van de thuisregio |
 | Scylla | Nu één developer-mode-node met vast broadcastadres `scylla-0`; eerst seeds, identiteit, replicatie en herstelproef |
 | Postgres, MinIO, OpenBao, Redpanda, Valkey | Eigen replicatie-/migratieplan; hostpath-PVC’s blijven op de oorspronkelijke node |
+
+Messages-replica?s verdelen zoekpartities momenteel niet: iedere replica consumeert iedere partitie. De voorgestelde [messages PR 86](https://github.com/discordy-voics/messages/pull/86) serialiseert checkpointbatches per partitie; meng oude en nieuwe binaries niet tijdens opschalen. Dit herstelt geen bestaande zoekcorruptie, co?rdineert geen backfill en bewijst geen productiegereedheid. Database- en objectopslagreplicatie is afzonderlijk werk.
 
 De nieuwe gatewaycontroles beoordelen verbindingen vóór eventverwerking. Een netwerkbreuk midden tijdens fan-out wordt daardoor niet transactioneel of precies-eenmaal. Een geldige voice-registratie bewijst evenmin dat elk geadverteerd endpoint bereikbaar is.
 
