@@ -12,7 +12,7 @@ The independent [friend-request source controls](https://github.com/discordy-voi
 
 ## Wire and app links
 
-The machine-readable [contracts](https://github.com/discordy-voics/contracts) define the user-session-only API: `GET /users/@me/favourites`, `PUT` or `DELETE /users/@me/favourites/{user_id}`, `POST` or `DELETE /users/@me/friend-invites`, and `POST /friend-invites` with a token body. Invalid, expired or revoked tokens produce the unknown-invite response. A favourite PUT for a non-friend returns unknown user; DELETE is idempotent. The API does not publish favourite-change events in this draft.
+The proposed machine-readable [contracts#73](https://github.com/discordy-voics/contracts/pull/73) define the user-session-only API: `GET /users/@me/favourites`, `PUT` or `DELETE /users/@me/favourites/{user_id}`, `POST` or `DELETE /users/@me/friend-invites`, and `POST /friend-invites` with a token body. Invalid, expired or revoked tokens produce the unknown-invite response. A favourite PUT for a non-friend returns unknown user; DELETE is idempotent. The API does not publish favourite-change events in this draft.
 
 The shareable HTTPS path is `/friend-invite/#<token>` on the active instance's landing origin. A fragment is not included in the HTTP request. The separate landing page validates the token shape and opens `voics://friend-invite/<token>`; it has an explicit fallback button when automatic opening is blocked. Desktop and mobile queue an app route until sign-in. Guild `/invite/` URLs and their Windows registration stay independent. The configured app scheme and landing origin must correspond to the intended instance; this flow is not an identity proof or a server invite.
 
