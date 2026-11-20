@@ -7,7 +7,7 @@ The drafts have not been deployed. Verify the complete user flow on an isolated 
 
 Server managers can configure up to twenty rules. Invite and discovery joins create a pending membership when screening is enabled; existing members are not retroactively marked pending. Members see the current rules and explicitly accept the revision shown. A changed revision returns a conflict and the client must show the new rules before accepting again. Join and acceptance serialize with configuration changes. The member update and its event share a transaction. Ordinary member edits preserve pending status.
 
-The API removes both normal and thread send permissions from pending members, including the administrator bit that downstream services treat as an implicit grant. Messages refresh authorization for ordinary sends and forwards. Gateway encrypted envelopes and P2P signalling also require effective view and send permissions. This needs coordinated deployment of the API, messages, gateway, contracts and client changes; do not enable screening with a partial deployment.
+The API removes normal and thread send permissions and thread-creation permissions from pending members, including the administrator bit that downstream services treat as an implicit grant. Thread creation is restricted because it generates a system message. Messages refresh authorization for ordinary sends and forwards. Gateway encrypted envelopes and P2P signalling also require effective view and send permissions. This needs coordinated deployment of the API, messages, gateway, contracts and client changes; do not enable screening with a partial deployment.
 
 ## Choices and welcome
 
