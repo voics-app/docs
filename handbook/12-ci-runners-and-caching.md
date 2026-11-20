@@ -117,7 +117,7 @@ Without it, the run fails at startup with no jobs ("startup_failure").
 |---|---|---|---|
 | One PR built cold | add the label `ci-no-cache`, then **push a commit** (a re-run keeps the old labels) | that PR | remove the label, push |
 | One repository cold | `gh variable set CI_CACHE -R discordy-voics/<repo> -b off` | every run of that repo | `gh variable delete CI_CACHE -R discordy-voics/<repo>` |
-| Everything cold | `for r in api messages gateway voice admin client website gitops docs contracts .github bots-sdk; do gh variable set CI_CACHE -R discordy-voics/$r -b off; done` (per repository: on GitHub Free, private repositories cannot rely on organization-level settings, which is also why `runner.sh` sets `CI_RUNNER` per repository) | every repo | the same loop with `gh variable delete CI_CACHE -R discordy-voics/$r` |
+| Everything cold | `for r in api messages gateway voice admin client website gitops docs contracts .github bots-sdk; do gh variable set CI_CACHE -R discordy-voics/$r -b off; done` (repository values take precedence over organization values) | every repo | the same loop with `gh variable delete CI_CACHE -R discordy-voics/$r` |
 | Wipe the cache | on the VM: `cd ~/.github && scripts/runner.sh cache-clear --what all\|cargo\|target\|sccache\|pnpm\|trivy\|mix [--layers]` | VM volume (+ Docker layers with `--layers`) | it refills on the next runs |
 
 What "off" does: no `/cache`, no baked toolchain (Rust is installed fresh into `$RUNNER_TEMP`, Erlang/Elixir and Node through their setup actions), no Actions cache, a `no-cache` Docker build and a temporary Trivy DB. That is the same as a fresh GitHub-hosted machine.
