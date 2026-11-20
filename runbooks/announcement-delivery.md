@@ -20,6 +20,18 @@ deleted the delivered message. The relay therefore does not automatically send
 an unknown delivery again. Investigate unknowns before deciding on any manual
 action; never create a replacement message solely because the ID is absent.
 
+The publication's `(source channel, source message)` key is unique, as is each
+`(source channel, source message, destination)` delivery. Workers lock and claim
+one pending row at a time. A second publisher cannot create another set of
+deliveries for the same source message. A worker that dies before its claim is
+committed leaves the row pending; once a claim is committed, a crash or a
+transport error can leave the outcome unknown. A successful marker response
+that is lost may be repeated: it changes only the separate source marker.
+Repeated marker events can reach clients, so clients should apply updates
+idempotently. If a source message disappears before its marker is written, the
+relay cancels its pending deliveries. Deleting a follower cancels pending rows,
+but cannot recall a request already claimed by a worker.
+
 Inspect aggregate state without exposing message contents:
 
 ```sql
