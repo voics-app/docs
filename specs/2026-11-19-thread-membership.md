@@ -30,6 +30,20 @@ allows membership changes; older gateways can forward unknown internal guild fie
 This is a deployment dependency, not authorization to deploy. The version and visibility design
 still requires review and end-to-end testing, including removals, rejoin, replay and passive sessions.
 
+## Proposed lock and lifecycle changes
+
+A separate draft exposes the current `thread_locked` state on internal access and webhook
+routing responses. The corresponding messages and gateway changes reject sends and relays to
+locked threads, including sends with administrator permissions. A thread response without the
+new lock field is treated as locked by updated consumers. Ship the API field before either
+consumer; validate the combined forum-opener path and concurrent lock/send behavior before release.
+
+The lifecycle draft stores clock-driven inactivity state and puts archive/reopen events in the
+same transaction as the channel change. Its worker is not enabled: ordinary message writes do
+not yet provide durable activity updates. Message count, deletes and historical backfill also need
+an authoritative, retry-safe source. Do not infer successful archiving from the presence of the
+migration or the lifecycle store.
+
 ## Remaining work
 
 Automatic inactivity archiving, unarchive on a new message, message counts, and end-to-end delivery,
