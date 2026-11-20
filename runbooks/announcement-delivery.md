@@ -39,3 +39,7 @@ can make a prior delivery ambiguous; keep the relay disabled until reconciled.
 Keep `ANNOUNCEMENT_DELIVERY_ENABLED=false` during restore; this disables new
 follow and publication admission as well as the worker. Enable it consistently
 on all API replicas only after reconciling the journal with message storage.
+Before enabling a new installation, migrate messages and drain older messages
+replicas: older readers do not know the separate CROSSPOSTED marker column.
+The optional GitOps ingress must be reviewed and activated separately; it is
+not referenced by the reconciled default overlays.
