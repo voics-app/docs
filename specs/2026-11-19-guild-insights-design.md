@@ -67,9 +67,9 @@ drain of old instances and in-flight writes, and the confirmed UTC start time;
 the current reader always returns `coverage_complete: false` and provides no
 promotion mechanism.
 The reader exposes the stored Scylla schema-migration timestamp as
-`source_initialized_at_ms`. This establishes when the marker table was created;
-it is not evidence that every writer had upgraded. A null timestamp means the
-source cannot supply even that initialization evidence.
+`source_initialized_at_ms`. This is the recorded migration time, at or after
+table creation; it is not evidence that every writer had upgraded. A null
+timestamp means the source cannot supply even that initialization evidence.
 The API also exposes its own persisted activity-schema start as
 `activity_source_initialized_at_ms`; it bounds membership collection but does
 not establish complete voice coverage.
