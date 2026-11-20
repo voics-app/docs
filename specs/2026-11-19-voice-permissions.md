@@ -7,7 +7,9 @@ as a complete authorization boundary.
 `STREAM` controls the camera and screen-share voice-state flags. The gateway
 checks effective channel permissions, including role and member overwrites,
 before accepting either flag. A refused update to an existing valid call echoes
-the previous voice state to that session. Actual media publication needs a
+the previous voice state to that session. Desktop and mobile clients refuse to
+start camera or screen capture without `STREAM` and stop active capture when
+the permission is revoked. Actual media publication needs a
 separate server-side capability and live revocation; the gateway flag alone
 cannot prevent a modified client from sending media.
 
