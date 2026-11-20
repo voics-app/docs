@@ -11,6 +11,8 @@ parity. The API, gateway, messages and desktop changes remain subject to review 
   can remove others; private-thread members can invite when the thread is invitable.
 - A private thread requires parent visibility plus creator, thread membership or MANAGE_THREADS.
   If its parent is missing, access fails closed. The API and gateway enforce this separately.
+- The internal channel-access endpoint must reject a user without VIEW_CHANNEL before exposing
+  relay recipient IDs. The gateway separately checks the sender's permissions before relaying.
 - Thread channel responses report the member count and, on viewer-specific REST responses,
   `is_thread_member`. Shared events do not contain another user's membership flag.
 - Desktop uses the existing notification-settings resource for per-thread mute and levels.
