@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   sync:
-    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
+    runs-on: ${{ (vars.CI_RUNNER != '' && vars.CI_RUNNER != 'github' && !startsWith(vars.CI_RUNNER, 'ubuntu-') && !startsWith(vars.CI_RUNNER, 'windows-') && !startsWith(vars.CI_RUNNER, 'macos-') && vars.CI_RUNNER) || 'vm-runner' }}
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v5

@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   markdownlint:
-    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
+    runs-on: ${{ (vars.CI_RUNNER != '' && vars.CI_RUNNER != 'github' && !startsWith(vars.CI_RUNNER, 'ubuntu-') && !startsWith(vars.CI_RUNNER, 'windows-') && !startsWith(vars.CI_RUNNER, 'macos-') && vars.CI_RUNNER) || 'vm-runner' }}
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
@@ -30,7 +30,7 @@ jobs:
         run: pnpm run secrets:check
 
   links:
-    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
+    runs-on: ${{ (vars.CI_RUNNER != '' && vars.CI_RUNNER != 'github' && !startsWith(vars.CI_RUNNER, 'ubuntu-') && !startsWith(vars.CI_RUNNER, 'windows-') && !startsWith(vars.CI_RUNNER, 'macos-') && vars.CI_RUNNER) || 'vm-runner' }}
     steps:
       - uses: actions/checkout@v5
       - name: Link check (lychee)

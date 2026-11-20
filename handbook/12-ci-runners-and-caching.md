@@ -7,37 +7,29 @@ Last reviewed: 2026-11-03 (`.github` v0.6.3). Story: [gitops#59](https://github.
 ## The big picture in five sentences
 
 1. Every repository's `ci.yml` calls reusable workflows in the `.github` repository (`rust.yml`, `elixir.yml`, `node.yml`, `docker.yml`, `gitflow-guard.yml`), always `@main`. A change there affects every repository at once.
-2. Jobs run on the self-hosted VM runners (label `vm-runner`, 2 runners on VM `192.168.1.219`), or on GitHub-hosted `ubuntu-latest` when the variable `CI_RUNNER` is unset or `github`.
-3. The same workflow code serves both. A step called **CI cache policy** at the start of each job decides, writes `CI cache: on=… (why)` to the log and the job summary, and everything after it follows that decision.
-4. On the VM, toolchains are baked into the runner image and build outputs live on a persistent `/cache` volume. On GitHub runners nothing is preinstalled for us, so the normal setup actions and the GitHub Actions cache are used.
+2. Linux jobs use the self-hosted pool labelled `vm-runner`. The runner VM is `192.168.1.219`. Docker Desktop can join the pool with additional runners.
+3. A step called **CI cache policy** at the start of each job decides, writes `CI cache: on=… (why)` to the log and the job summary, and everything after it follows that decision.
+4. On the VM, toolchains are baked into the runner image and build outputs live on a persistent `/cache` volume. Historical hosted-runner measurements below used setup actions and the GitHub Actions cache.
 5. Releases never reuse a persistent build directory, and caching can always be turned off with one variable or one PR label.
 
 ## Where a job runs
 
-```text
-runs-on = (CI_RUNNER set and != "github") ? CI_RUNNER : "ubuntu-latest"
+`CI_RUNNER=vm-runner` routes shared Linux workflows and direct Linux jobs to the self-hosted pool. Inspect repository variables in **Settings → Secrets and variables → Actions → Variables**.
+
+| Selector | Destination |
+|---|---|
+| `vm-runner`, empty, `github` or a legacy `ubuntu-*`, `windows-*` or `macos-*` value in the updated direct Linux selectors | The `vm-runner` pool |
+| An explicit self-hosted Linux label | An online member of that pool |
+| A native Windows or macOS job | A runner matching the job's platform labels |
+| `discordy` | The in-cluster ARC runner for service-account operations |
+
+```bash
+gh variable get CI_RUNNER -R discordy-voics/api
+gh api orgs/discordy-voics/actions/runners --jq '.runners[] | [.name,.status,.busy] | @tsv'
+gh api repos/discordy-voics/api/actions/runs/RUN_ID/jobs --jq '.jobs[] | [.name,.status,.runner_name] | @tsv'
 ```
 
-| `CI_RUNNER` value | Jobs go to |
-|---|---|
-| `vm-runner` (current value in 11 repositories) | the two VM runners |
-| `ubuntu-latest` (docs, since 2026-11-03: its lint jobs are tiny and were clogging the VM queue) | GitHub-hosted |
-| unset, or `github` | GitHub-hosted `ubuntu-latest` (costs GitHub minutes; $15/month budget) |
-| any other label | runners registered with that label (a PC, another VM) |
-
-- `CI_RUNNER` is declared per repository; see the next section.
-- `.github/scripts/runner.sh use github` or `use vm-runner` switches every repository at once.
-- Jobs that name a runner explicitly ignore `CI_RUNNER`: `windows-latest` for the desktop installer, the in-cluster `discordy` runners for secrets-sync and minio-publish.
-- If `CI_RUNNER` names a label with no online runner, jobs queue forever without failing. That is the first thing to check when CI "hangs".
-
-### Where `CI_RUNNER` is declared
-
-- It is a **GitHub Actions repository variable**, set separately in **each of the 12 repositories**. There is **no** organization-level `CI_RUNNER`, because on GitHub Free private repositories cannot rely on organization settings.
-- **To see it:** GitHub → the repository → **Settings → Secrets and variables → Actions → Variables** tab. On the CLI: `gh variable list -R discordy-voics/<repo>`. All repos at once: `for r in api messages gateway voice admin client website gitops docs contracts .github bots-sdk; do echo "$r=$(gh variable get CI_RUNNER -R discordy-voics/$r)"; done`.
-- **Who writes it:** `scripts/runner.sh` in the `.github` repo (function `set_runner_var`). `runner.sh up` and `runner.sh use <label>` set it in every repo; `runner.sh use github` deletes it everywhere.
-- **Who reads it:** the `runs-on:` line of every reusable workflow in `.github/.github/workflows/*.yml`, plus `notion-sync.yml` and `runner-maintenance.yml`. The expression is shown above.
-- **Moving one repo:** `gh variable set CI_RUNNER -R discordy-voics/<repo> -b github`.
-- **Moving it back:** set it to `vm-runner` again. **Do not `delete` it**: there is no organization fallback, so deleting it also sends the repo to GitHub-hosted runners. On 2026-11-03 a measurement script deleted it on four repos after a hosted test, and their CI quietly ran on paid runners until it was restored.
+A repository variable takes precedence over the organization value. Use `scripts/runner.sh use vm-runner` from the shared repository to set the Linux pool for every project. When a job waits, compare its requested labels against the labels and status of available runners. Rerun the affected current check after fixing the routing. Keep release publishing on its intended branch and service account.
 
 ## What is preinstalled where
 
@@ -61,7 +53,7 @@ All versions are variables at the top of `.github/scripts/runner.sh`: `RUST_TOOL
 
 ### On the VM runners (cache on)
 
-The named Docker volume `discordy-ci-cache-vm-runner` is mounted at `/cache` in both runner containers and survives `runner.sh down`/`up`.
+The named Docker volume `discordy-ci-cache-vm-runner` is mounted at `/cache` in runner containers on each host and survives `runner.sh down`/`up`.
 
 | Cache | Location | Reused on | Key: what makes it start fresh |
 |---|---|---|---|
@@ -127,7 +119,6 @@ Without it, the run fails at startup with no jobs ("startup_failure").
 | One repository cold | `gh variable set CI_CACHE -R discordy-voics/<repo> -b off` | every run of that repo | `gh variable delete CI_CACHE -R discordy-voics/<repo>` |
 | Everything cold | `for r in api messages gateway voice admin client website gitops docs contracts .github bots-sdk; do gh variable set CI_CACHE -R discordy-voics/$r -b off; done` (per repository: on GitHub Free, private repositories cannot rely on organization-level settings, which is also why `runner.sh` sets `CI_RUNNER` per repository) | every repo | the same loop with `gh variable delete CI_CACHE -R discordy-voics/$r` |
 | Wipe the cache | on the VM: `cd ~/.github && scripts/runner.sh cache-clear --what all\|cargo\|target\|sccache\|pnpm\|trivy\|mix [--layers]` | VM volume (+ Docker layers with `--layers`) | it refills on the next runs |
-| Everything on GitHub runners | `scripts/runner.sh use github` | every repo | `scripts/runner.sh use vm-runner` |
 
 What "off" does: no `/cache`, no baked toolchain (Rust is installed fresh into `$RUNNER_TEMP`, Erlang/Elixir and Node through their setup actions), no Actions cache, a `no-cache` Docker build and a temporary Trivy DB. That is the same as a fresh GitHub-hosted machine.
 
@@ -168,19 +159,15 @@ When to go cold: a PR is green but you suspect it should not be, a failure only 
 | Quirk | What happens | What we do |
 |---|---|---|
 | `gh` is not in the runner image | a script that calls `gh` fails, and if its error is swallowed it silently does nothing (the tag skip did that until v0.6.3) | use `curl` + `jq` against `$GITHUB_API_URL` with `$GITHUB_TOKEN` |
-| `CI_RUNNER=github` | used to queue jobs forever for a non-existent runner label "github" | the expression maps `github` to `ubuntu-latest` |
-| `CI_RUNNER` beats the workflow's `runs-on` input | a test meant for hosted runners still lands on the VM | set or delete `CI_RUNNER` on the repo instead |
 | Runners use the host's Docker | `docker run -v <path>` mounts a **host** path | the work dir is at the same path on host and container (`/srv/discordy-runner/<container>/_work`) |
 | The VM disk filled to 100% (2026-11-02) | release builds wrote cold targets into the workspace; every job failed | clean builds go to `$RUNNER_TEMP`, the disk guard, and the disk grown to 146 GB |
 | A `ci-no-cache` label added after the run started | has no effect on a re-run | push a commit |
 | Docker Desktop on a PC runner | testcontainers reach containers via `host.docker.internal`, not `localhost` | `runner.sh` sets `TESTCONTAINERS_HOST_OVERRIDE` |
 | ScyllaDB tests skip themselves | the VM CPU type lacks SSE4.2/PCLMUL | the Proxmox CPU type must be `host` |
 | `runner.sh up` while a job runs | kills it (happened twice) | check `runner.sh status` first; re-run the killed job |
-| Windows builds | a native Windows runner picked WSL `bash.exe` | the installer builds on GitHub `windows-latest`; no self-hosted Windows runner |
+| Windows builds | a native Windows runner picked WSL `bash.exe` | Use Git for Windows Bash. `karma-win` registration is not yet verified; check availability and a safe job before relying on it. |
 | An empty `.dockerignore` | sent 18.8 GB of context; the api image took 835 s | `.dockerignore` is reviewed in every Dockerfile PR |
 | The runner updates itself | GitHub's runner auto-updates inside the container. The 2.338.0 → 2.338.2 update left `externals/node24/bin/npm` broken (`Cannot find module '../lib/cli.js'`), so every step that installs pnpm through `pnpm/action-setup` failed; cold client runs died after 14 s | self-hosted cold runs install pnpm with corepack instead. Also bump `IMAGE` in `runner.sh` to the latest runner release and rebuild when idle, so runners start from a clean install |
-| `CI_RUNNER=github` in a repo with its own workflows | the shared workflows map `github` to `ubuntu-latest`, but a repo's own workflows (docs `docs.yml`, `notion-sync.yml`) use `vars.CI_RUNNER \|\| 'ubuntu-latest'` directly, so they waited forever for a runner labelled "github" (2026-11-03, docs CI stuck for hours) | to move a repo to GitHub-hosted, set `ubuntu-latest`, which works with both expressions |
-| Deleting `CI_RUNNER` on a repo | does not "reset" it: there is no organization fallback, so the repo moves to paid GitHub-hosted runners | set it back to `vm-runner` instead of deleting it |
 
 ## Disk space: what grows, what cleans it, what to do when it is full
 
@@ -243,7 +230,7 @@ What each one costs:
 5. If it keeps happening, grow the disk:
    - In Proxmox (`https://192.168.1.88:8006`), VM 108 → Hardware → the `tb` disk → Disk Action → Resize. Never use the thin pool `local-lvm`.
    - Then on the VM: `sudo growpart /dev/sda 3 && sudo pvresize /dev/sda3 && sudo lvextend -r -l +100%FREE /dev/ubuntu-vg/ubuntu-lv`.
-6. The fallback while you fix it: `scripts/runner.sh use github` moves all CI to GitHub-hosted runners (costs minutes), and `use vm-runner` moves it back.
+6. Keep CI routed to `vm-runner`. Verify another pool member is online while the affected host is under maintenance.
 
 ## How to read a run
 

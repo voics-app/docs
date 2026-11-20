@@ -88,33 +88,29 @@ Docker builds win when source changes but dependencies do not (api halves, clien
 
 ## Where jobs run
 
-GitHub-hosted `ubuntu-latest` is the default. When the GitHub Free minutes run low you can send every repository to your own machines and back with one command.
-
-| Where | Label | How |
+| Work | Runner label | Machine or identity |
 |---|---|---|
-| GitHub-hosted (default) | `ubuntu-latest` | `scripts/runner.sh use github` |
-| Owner PC (Docker Desktop) | `karma-pc` | `scripts/runner.sh up` starts the runners and switches |
-| A VM | `vm-<host>` | bootstrap once, `up --host`, then `use vm-<host>` |
-| In-cluster ARC | `discordy` | named explicitly by jobs that need the cluster network (secrets-sync, minio-publish) |
-| GitHub-hosted Windows | `windows-latest` | the desktop installer build |
+| Linux tests, containers, docs and Android tooling | `vm-runner` | Shared Linux pool on the runner VM at `192.168.1.219` and participating Docker Desktop PCs |
+| Windows desktop packaging | `karma-win` | Intended native Windows runner; registration and successful jobs are not yet verified |
+| Windows install and protocol smoke test | `voics-windows-disposable` plus Windows platform labels | Requires a disposable runner; none is verified online |
+| Native iOS jobs | Matching macOS, architecture and Xcode labels in the client workflow | Requires an Apple runner with the required Xcode version; none is verified online |
+| MinIO publication and OpenBao secret synchronization | `discordy` | In-cluster ARC with its Kubernetes service account |
 
 ### How switching works
 
-The shared workflows' default `runs-on` follows the caller repository variable **`CI_RUNNER`** when it is set. `runner.sh use <label>` sets that variable in every repository; `use github` deletes it. Jobs that name a runner explicitly keep it. This repository's own `notion-sync` workflow reads the same variable.
+The private organization and its twelve project repositories use `CI_RUNNER=vm-runner`. An explicit repository value takes precedence. The shared Linux workflows use the pool when the value is empty or carries a legacy hosted label. Windows and iOS jobs select their own platforms. A Linux runner on a Windows PC runs Linux jobs.
 
 ### Build a runner
 
-`scripts/runner.sh up` starts `--count` containers (default 3) of `ghcr.io/actions/actions-runner:2.338.0`, one job each. Each registers at org level with the label, mounts the host Docker socket for image builds and installs the packages `ubuntu-latest` ships (`libatomic1`, build tools, cmake, clang, jq).
+On the owner PC, run the Linux launcher in Git Bash with Docker Desktop running. The PC joins the same queue as the VM. A machine-specific suffix distinguishes their runner names.
 
 ```bash
 cd .github
-scripts/runner.sh up                      # three runners on this PC, label karma-pc, switches CI_RUNNER
-scripts/runner.sh up --count 5            # five parallel jobs on this machine
-scripts/runner.sh status                  # active CI_RUNNER and online runners
-scripts/runner.sh down                    # deregister, remove, switch back to GitHub
+scripts/runner.sh up --count 2 --label vm-runner
+scripts/runner.sh status --label vm-runner
 ```
 
-Run `down` before shutting the PC off: the containers have no restart policy, so after a reboot they are gone and queued jobs would wait for `karma-pc`.
+Use PowerShell for the native Windows runner and set `WINDOWS_RUNNER=karma-win` on `client` after GitHub shows it online. Check the runner assigned to a real job in **Actions → workflow run → job → Set up job**. A runner processes one job at a time.
 
 ### Use a VM: set up on the VM itself (easiest)
 
@@ -136,30 +132,23 @@ cd ~/.github && git pull
 scripts/runner-vm-bootstrap.sh      # no argument = this machine
 newgrp docker                       # or log out and back in
 
-# 5. Start the runners: 3 parallel jobs, label vm-<hostname>, switches every repo's CI to this VM
-scripts/runner.sh up
-scripts/runner.sh status            # vm-<hostname>-1..3 should be online
+# 5. Join the shared pool and check runner status
+scripts/runner.sh up --label vm-runner --count 3
+scripts/runner.sh status --label vm-runner
 ```
 
 Stop or switch later, on the VM:
 
 ```bash
-scripts/runner.sh use github        # jobs back to GitHub-hosted (runners keep running)
-scripts/runner.sh use vm-<hostname> # jobs to this VM again
-scripts/runner.sh down              # remove the runners (switches back to GitHub if they were active)
+scripts/runner.sh use vm-runner
+scripts/runner.sh down --label vm-runner  # remove this host's runners; check remaining capacity
 ```
 
 On a Linux VM the runners use host networking, so integration tests (testcontainers) reach their containers on `localhost`.
 
-### Which repos run where (split)
+### Repository routing
 
-| Runners | Repos | Cost |
-|---|---|---|
-| Self-hosted VM (`vm-runner`, 2 runners) | all repos (`CI_RUNNER=vm-runner`) | free |
-| GitHub-hosted `ubuntu-latest` | fallback only: all 12 repos have `CI_RUNNER=vm-runner` (`runner.sh use github` switches back) | GitHub minutes, $15/month budget (org Settings → Billing → Budgets) |
-| GitHub-hosted `windows-latest` | client installer, on client releases (merge to main or tag) | about $0.30 per release |
-
-`runner.sh up` and `use <label>` switch only the heavy repos; `use github` resets all. Change the set with `SELF_HOSTED_REPOS="api messages" scripts/runner.sh up`.
+From the `.github` repository, `scripts/runner.sh use vm-runner` selects the pool for all twelve repositories. For a deliberate subset, set `SELF_HOSTED_REPOS="api client"` on that command. `scripts/runner.sh down --label vm-runner` stops the local pool members. Check the organization runner list for remaining capacity.
 
 The runner VM's Proxmox CPU type must be `host`. ScyllaDB needs SSE4.2 and PCLMUL, which `x86-64-v2-AES` and qemu64 lack, and the Scylla integration tests skip themselves without it.
 
@@ -167,11 +156,9 @@ Runner containers use the VM's Docker through its socket, so any `docker run -v 
 
 **Runner VM disk:** 150 GB on the Proxmox `tb` pool (`scsi0 tb:vm-108-disk-0`, VMID 108). The Ubuntu installer only gave the root LV half of it. On 2026-11-02 it was grown online to the whole VG (`sudo lvextend -r -l +100%FREE /dev/ubuntu-vg/ubuntu-lv`): 146 GB, after the CI caches filled the old 73 GB root. To grow it further, resize the disk on `tb` in Proxmox first (never the thin pool `local-lvm`), then `growpart /dev/sda 3`, `pvresize /dev/sda3` and the same `lvextend`.
 
-### Client installer: GitHub `windows-latest` (owner PC runner retired)
+### Client installer on Windows
 
-The client installer (NSIS and the native crypto module) must be built on Windows. Since 2026-11-02 it **builds on GitHub's `windows-latest`** again: the owner decided not to use the PC runner (`karma-win`). The client repo variable `WINDOWS_RUNNER` is deleted and the runner is deregistered; `release.yml` uses `${{ vars.WINDOWS_RUNNER || 'windows-latest' }}`, so leaving the variable unset is all it takes.
-
-`.github/scripts/runner-win.ps1` is kept but unused. Do not set `WINDOWS_RUNNER` again without the owner's go-ahead. If it is ever revived, note that on a native Windows runner `shell: bash` can resolve to `C:\Windows\System32\bash.exe` (WSL) and fail with `Bash/Service/0x8007274c`; this is what broke the 0.4.2 publish twice.
+The client release builds the NSIS installer and native crypto module on Windows. Native `karma-win` registration has not yet been verified. After it is online and approved, set the client repository variable `WINDOWS_RUNNER=karma-win` and verify the assigned runner on a safe job. Use Git for Windows Bash for bash steps. The install smoke test needs a disposable Windows environment because it changes the installed app and its protocol registration.
 
 ### Several VMs
 
@@ -180,7 +167,7 @@ Every machine names its runners `<label>-<machine id>-N` (for example `vm-runner
 - **One pool** (recommended): use the same label on every VM, for example `scripts/runner.sh up --label vm-pool --count 3` on each, then `scripts/runner.sh use vm-pool` once. Jobs go to whichever runner is free.
 - **Separate VMs**: keep the default label `vm-<hostname>` (give the VMs different hostnames), and `use` picks one.
 
-`down` on a VM removes only that VM's runners. It switches CI back to GitHub only when no other runner with the label is still online.
+`down` on a VM removes only that VM's runners. Check `CI_RUNNER` afterwards and restore `vm-runner` if needed; do not select a paid hosted fallback.
 
 ### Use a VM: managed from the PC over SSH
 
@@ -189,14 +176,13 @@ ssh-copy-id user@vm                         # once: your SSH key on the VM
 scripts/runner-vm-bootstrap.sh user@vm      # once: installs Docker (asks for the VM sudo password)
 scripts/runner.sh up --host user@vm --count 3
 scripts/runner.sh use vm-<ip-with-dashes>   # send every repo's jobs there
-scripts/runner.sh use github                # and back
 ```
 
 `--host` runs Docker over SSH. Requirements on the PC: `gh` with `admin:org`, Docker CLI and `jq`.
 
 ### When a VM dies
 
-Its runners stay registered as offline, and jobs queue for its label. Fix: set up the new VM as above (`up` switches `CI_RUNNER` to it), or run `scripts/runner.sh use github`. Remove the dead registrations under GitHub → org Settings → Actions → Runners, or wait for GitHub to drop them after 14 days.
+Jobs wait if no matching runner is online. Restore a pool member, check the runner and job labels, and remove stale registrations only after verifying the host is offline.
 
 ### Resources
 
@@ -206,11 +192,11 @@ One runner handles one job at a time and needs about 2 vCPU, 6 to 8 GB RAM and 4
 
 | Symptom | Cause and fix |
 |---|---|
-| Jobs queue forever | `CI_RUNNER` points at a label with no online runner: `runner.sh status`, then `up` or `use github` |
+| Jobs queue forever | `CI_RUNNER` points at a label with no online runner: `runner.sh status`, then restore a matching runner and retain `CI_RUNNER=vm-runner` |
 | `libatomic` or compiler errors | The runner image is minimal; `up` installs the base packages, re-run it |
 | Docker build fails with permissions | The runner needs the host Docker socket; use the scripts instead of starting containers by hand |
 | Registration fails | `gh auth status` needs `admin:org`: `gh auth refresh -s admin:org` |
 | `Permission denied` running a script | `git pull` (scripts are executable since v0.5.4) or run it as `bash scripts/<name>.sh` |
 | `Permission denied (publickey)` or `sudo: a terminal is required` | You ran the bootstrap with `sudo`, or against the VM's own IP; on the VM run `scripts/runner-vm-bootstrap.sh` with no argument and no sudo |
 
-More: [Release, On-demand runner](../runbooks/release.md).
+More: [Release, CI runners](../runbooks/release.md#ci-runners-for-releases).
