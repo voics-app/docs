@@ -43,7 +43,7 @@ object. Image decoding currently checks the first decoded frame, not every frame
 of an animated upload. Review resource bounds, complete animation validation,
 Lottie rendering and asset-retention policy before release. The API resolver and
 messages write do not atomically fence membership or sticker removal across services.
-Mobile renders native PNG/GIF where supported and shows an accessible label for Lottie or paused animation; mobile sticker selection, Lottie playback and compatibility with older clients remain incomplete.
+Mobile can select and send stickers in Standard chats and uses the Expo-compatible native Lottie renderer. Animated GIF/APNG show an accessible label when animation is disabled; invalid or unavailable Lottie also falls back to a label. A native rebuild, device acceptance and compatibility with older clients remain unverified.
 
 ## Verification before release
 
