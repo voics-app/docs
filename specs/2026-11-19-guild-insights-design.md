@@ -104,3 +104,16 @@ consumers with their migrations, then exercise the ordinary HTTP and gateway
 routes against disposable services. Roll out producers, durable consumers and
 API together according to a reviewed compatibility plan. No production
 deployment or backup execution is implied by this design.
+
+### Coverage in the response
+
+Each UTC day reports `coverage.membership`, `coverage.messages`, and
+`coverage.voice` as `complete`, `partial`, or `unavailable`. The period-level
+`coverage` summarizes each source with its status and counts of complete,
+partial, and unavailable days. `partial` values are observations that may omit
+activity; `unavailable` values are null, not synthetic zeros. The current UTC
+day is not a complete day. Message days before the marker schema was initialized
+are unavailable; initialization alone does not establish writer coverage.
+Voice observations remain partial because checkpoints cannot prove uninterrupted
+fleet coverage. A controlled fixture can compare observed values with its known
+inputs without asserting that production history is complete.
