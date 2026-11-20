@@ -1,20 +1,5 @@
 # Scheduled event reminders (draft)
 
-The proposed API worker scans due events, claims rows with `SKIP LOCKED`, and enqueues
-user-targeted `GUILD_SCHEDULED_EVENT_START` records in the existing Postgres outbox. It
-records the event, user, start and schedule revision in the same transaction. A restart
-retries uncommitted work; the relay can republish a committed record, so consumers must
-deduplicate. The desktop re-fetches event access and interest before showing a reminder.
+The API stores event changes and gateway outbox records transactionally. Due reminders create per-device delivery records keyed by event, user, session, start and revision. A notifier worker leases pending records, rechecks access, interest, mute, schedule and token, then acknowledges terminal outcomes or retries temporary failures. Expired leases can be reclaimed after restart; attempts expire five minutes after the scheduled start. A stable delivery ID is supplied for provider collapse.
 
-This path has not been deployed or verified end to end. The proposed event-specific mobile
-consumer rechecks access and sends generic push text, but the underlying topic reader starts
-at the latest offset and its deduplication is in memory. A notifier outage, restart or full
-queue can therefore miss or duplicate an alert. A durable recovery strategy and real-device
-tests are required. Do not describe an outbox row as proof of a delivered push.
-
-Before release, exercise two API replicas, creation, interest, cancellation, rescheduling,
-permission removal, restart during enqueue, replay and the resulting desktop notification.
-Inspect outbox backlog and worker errors if a reminder is late. Do not manually delete
-claims to retry: that can duplicate reminders. Back up and restore Postgres event, interest,
-claim and outbox state together according to the existing backup plan; no backup action is
-authorized by this draft.
+The new delivery path and restart behavior have not been verified end to end. Provider acceptance does not prove display; a crash after sending and before acknowledgement can cause repeated alerts, and provider collapse is best effort. Real-device delivery remains unverified. Before release, test concurrent workers, cancellation, rescheduling, membership and permission removal, silent or signed-out accounts, delayed reception and restart during delivery. Inspect backlog and worker errors; do not manually delete claims. Back up and restore event, interest, delivery and outbox state together according to the existing backup plan. No backup action is authorized by this draft.

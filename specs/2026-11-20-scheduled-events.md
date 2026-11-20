@@ -12,27 +12,6 @@ is unique per member and event; repeated PUT or DELETE requests do not emit dupl
 interest events. A channel change emits a delete to the old visibility scope and a create
 to the new scope. The gateway uses the `GUILD_SCHEDULED_EVENTS` intent for these events.
 
-At the scheduled time, API replicas use row locking to enqueue bounded batches of targeted
-reminders. The persisted key includes the event, member, scheduled start and schedule
-revision. The desktop rechecks current visibility, interest and start time before showing
-a reminder. Outbox publication is at least once; its stable envelope ID and reminder key
-support deduplication. The proposed event-specific notifier consumer rechecks the current
-recipient through an internal directory and sends generic APNs/FCM alerts. Its underlying
-consumer starts at the latest offset and keeps deduplication in memory, while its bounded
-queue can drop work. Restart, outage and overload therefore remain delivery gaps; real-device
-tests and a durable recovery strategy are required before this feature is complete.
+At the scheduled time API replicas enqueue targeted gateway reminders and durable per-device delivery records. A notifier leases records, rechecks access, interest, mute, schedule and token, then acknowledges terminal results or retries transient failures. Expired leases can be reclaimed; retries expire five minutes after the scheduled start. A stable delivery ID supports provider collapse.
 
-## Recovery still to implement
-
-Persist a per-device delivery record keyed by event, scheduled start, schedule revision,
-member and device. An event-specific notifier worker should lease pending records, recheck
-membership, visibility, interest, mute and the schedule before each attempt, and acknowledge
-each token only after the provider reports a terminal result. Expired leases return to pending;
-temporary failures retry within a bounded age window. A restart must resume pending records
-without depending on a fresh Kafka event. Provider acceptance is not proof of device display,
-and a lost acknowledgement can still cause a repeated alert unless the provider or client
-deduplicates the same stable key. This design is not implemented by the draft consumer.
-
-This is a proposed implementation, not a deployment or backup procedure. Verify the CRUD,
-visibility, RSVP, cancellation, rescheduling, restart and concurrent-replica paths together
-before release. Coordinate migration numbering with other API work before merging.
+The new delivery and restart paths require integrated verification. Provider acceptance does not prove display; a crash between sending and acknowledgement can cause duplicate alerts, and collapse is best effort. Real-device delivery remains unverified. Verify CRUD, visibility, RSVP, cancellation, rescheduling, restart and concurrent replicas before release. Coordinate migration numbering before merging. No deployment or backup action is authorized by this draft.
