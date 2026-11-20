@@ -127,6 +127,12 @@ Onder **Privacy and delivery** vind je bezorginstellingen, gespreksversleuteling
 
 Bij ongewenst gedrag kun je vanuit het profiel blokkeren of een bericht/gebruiker melden. Lees welke tekst en bewijsmaterialen de melding meestuurt, vooral bij privéberichten. De melding is een bewuste verstrekking aan moderators. Een melding verzenden verwijdert het oorspronkelijke bericht niet automatisch.
 
+## Beroep tegen een ban
+
+Deze functie is in ontwikkeling en nog niet als uitgebrachte functie bevestigd. Een verbannen gebruiker opent een geldige serveruitnodiging, kiest **Accept invite** en kan op **You are banned** de ingestelde vraag beantwoorden en **Submit appeal** kiezen. Er kan maximaal een beroep tegelijk openstaan. Een verlopen uitnodiging biedt geen ingang naar het formulier.
+
+Een moderator met **Manage Ban Appeals** kan onder **Server Settings > Bans** een vraag instellen en beroepen accepteren of weigeren. Accepteren heft de ban op; de gebruiker heeft daarna een geldige uitnodiging nodig om terug te keren. De beroepslijst toont maximaal 100 zaken met hun status en reviewer, ook als het serverauditlog uitstaat. Bij ingeschakelde auditregistratie verschijnt de beslissing ook in het auditlog. Definitieve anonimisering van je account verwijdert je beroepsteksten.
+
 ## 10. Problemen oplossen
 
 | Probleem | Eerste stappen |
@@ -144,9 +150,3 @@ Geef bij een fout je appversie/build, telefoonmodel, OS-versie, tijdstip, stappe
 ## Controle en beperkingen
 
 De handleiding is vergeleken met de mobiele schermen, instellingenindex en spraakbediening in de clientrepo. De geïsoleerde Android-QA-app is geïnstalleerd en gecontroleerd op aanmelden, berichten, opgeslagen bijlagewijzigingen, achtergrondstatus en tweerichtingsvideo met een desktopdeelnemer. De video bleef na de reparatie werken tijdens twee vertrek-/terugkeercycli van die deelnemer. De iOS-simulator heeft de native app en ReplayKit-uitbreiding gebouwd en de start-/aanmeldschermen doorlopen. Dit bewijst geen productiepush of fysieke iPhone-schermuitzending. Het [testverslag](../plans/2026-11-18-acceptance-evidence.md), de [actuele verificatiestatus](16-status-en-beheerkeuzes.md) en het [opleverprogramma](../plans/2026-11-18-completion-programme.md) onderscheiden deze controles van een uitgebrachte versie.
-
-### Beroep tegen een ban
-
-Deze functie is in ontwikkeling en nog niet als uitgebrachte functie bevestigd. Een verbannen gebruiker opent een geldige serveruitnodiging, kiest **Accept invite** en kan op **You are banned** de ingestelde vraag beantwoorden en **Submit appeal** kiezen. Er kan maximaal een beroep tegelijk openstaan. Een verlopen uitnodiging biedt geen ingang naar het formulier.
-
-Een moderator met **Manage Ban Appeals** kan onder **Server Settings > Bans** een vraag instellen en beroepen accepteren of weigeren. Accepteren heft de ban op; de gebruiker heeft daarna een geldige uitnodiging nodig om terug te keren. De beroepslijst toont maximaal 100 zaken met hun status en reviewer, ook als het serverauditlog uitstaat. Bij ingeschakelde auditregistratie verschijnt de beslissing ook in het auditlog. Definitieve anonimisering van je account verwijdert je beroepsteksten.
