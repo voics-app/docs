@@ -44,6 +44,12 @@ not yet provide durable activity updates. Message count, deletes and historical 
 an authoritative, retry-safe source. Do not infer successful archiving from the presence of the
 migration or the lifecycle store.
 
+## Verification
+
+A synthetic Electron route covers signing in, browsing a channel?s active threads, joining a
+thread and archiving it. This exercises a local fake backend, not the combined services or live
+delivery.
+
 ## Remaining work
 
 Automatic inactivity archiving, unarchive on a new message, message counts, and end-to-end delivery,
