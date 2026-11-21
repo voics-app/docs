@@ -5,7 +5,7 @@
 | Status | Draft — awaiting owner review |
 | Date | 2026-10-16 |
 | Owner | @oussamaelhajoui |
-| GitHub org | `voics-app` (private repos) |
+| GitHub org | `voics-app` (public repos since 2026-11-21, except `gitops`) |
 | Product name | **Voics** (lives at `discordy.voics.nl`; the earlier product on `voics.nl` / `app.voics.nl` is separate and untouched) |
 | Scope | Full Discord-equivalent platform, excluding payments (Nitro, boosts, shop) |
 
@@ -205,7 +205,7 @@ Modelled on *How Discord Handles 2.5M Concurrent Voice Users Using WebRTC*. Each
 | 22 | P2P_SIGNAL |
 
 **Behaviour**
-- **Encoding**: JSON in v1. Per-connection zstd streaming is proposed as an opt-in, negotiated at connect time (ADR-0014, [gateway#11](https://github.com/voics-app/gateway/issues/11)). ETF comes later.
+- **Encoding**: JSON in v1. Per-connection zstd streaming is opt-in with `compress=zstd-stream` on `/gateway`; server frames become binary and share one stream per connection, flushed per event. Inbound frames remain JSON text; reconnects start a fresh stream (ADR-0014, [gateway#11](https://github.com/voics-app/gateway/issues/11)). ETF comes later.
 - **Background clients**: passive sessions that receive deltas instead of the full dispatch stream are proposed in [gateway#12](https://github.com/voics-app/gateway/issues/12).
 - **Resume**: sessions are resumable for 2 minutes from a Valkey resume buffer.
 - **Intents**: follow the Discord model.

@@ -11,7 +11,7 @@ Summary: org defaults, the reusable CI workflows and the self-hosted runner scri
 
 | Path | What is there |
 |---|---|
-| `.github/workflows/` | Reusable workflows (`on: workflow_call`): `rust.yml`, `elixir.yml`, `node.yml`, `docker.yml`, `release-please.yml`, `gitflow-guard.yml`, `ghcr-retention.yml`, `secrets-inventory-check.yml`, `minio-publish`. |
+| `.github/workflows/` | Reusable workflows (`on: workflow_call`): `rust.yml`, `elixir.yml`, `node.yml`, `docker.yml`, `release-please.yml`, `gitflow-guard.yml`, `ghcr-retention.yml`, `secrets-inventory-check.yml`, `minio-publish` (needs the in-cluster runner, so only the private gitops calls it; the public repos are published by gitops `publish-public`). |
 | `.github/ISSUE_TEMPLATE/` | Issue forms: bug report, feature request, platform change. |
 | `.github/pull_request_template.md` | The PR template with the Definition of Done checklist. |
 | `.github/CODEOWNERS`, `dependabot.yml` | Ownership and pin updates. |

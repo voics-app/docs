@@ -1,5 +1,7 @@
 # Runbooks
 
+Desktop user privacy: [Streamer mode](desktop-streamer-mode.md).
+
 [Read-state accounting rollout and recovery](read-accounting.md) covers the proposed companion keyspace, coordinated writer drain and paired backups.
 
 | Runbook | Use it when |
@@ -13,6 +15,7 @@
 | [Gatewaycluster en voice-registraties](gateway-cluster.md) | DNS/distributie, readiness, reconnects, lease-eigendom en endpointidentiteit vóór opschaling |
 | [OpenBao unseal](openbao-unseal.md) | After every OpenBao restart; bootstrap; rekeying |
 | [Alerting](alerting.md) | Which alerts exist, adding the owner webhook (`ops-alerts`), what to do when one fires |
+| [Profile badge visibility](profile-badges.md) | Owner controls, public filtering, test coverage and open product choices |
 | [Push notifications](push-notifications.md) | APNs/FCM flow, deployed notifier status, credential maintenance and remaining real-device acceptance |
 | [Metrics and exporters](metrics-exporters.md) | Which components export metrics, scrape jobs, ports and main series; verifying a target is up |
 | [ScyllaDB maintenance](scylla-maintenance.md) | Adding a node, rolling restart, repair or draining ScyllaDB |

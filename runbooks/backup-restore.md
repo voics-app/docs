@@ -31,6 +31,7 @@ De vorige tekst beschreef geplande jobs alsof ze draaiden. Die claims en instruc
 | Postgres `discordy_admin` | Beheerdersdata, schema en rollen afzonderlijk meenemen |
 | Postgres `discordy_search` | Afgeleide zoekindex; herbouwbaar vanuit Scylla, maar backfill/checkpoints kosten tijd en moeten zijn getest |
 | Scylla-keyspace `discordy` | Berichten, reacties, pins, read states; schema, volledige SSTablecomponenten en migratiestatus |
+| Voorgestelde poll-keyspace `<SCYLLA_KEYSPACE>_polls` | Stemrevisies, tellingen, definitieve/verwijderde status en vervalindex; samen met het hoofdkeyspace back-uppen en herstellen nadat alle poll-writers/workers zijn gedraind. Een leeg companion-keyspace is geen geldige nulstand. Zie [ADR0029](../adr/0029-persistent-polls.md). |
 | MinIO | Gebruikersassets/bijlagen met metadata en beleid; daarna updatefeed, installers, website en uitnodigingspagina’s |
 | OpenBao | Consistente PebbleDB-data, configuratie, versie en secret-inventaris; static seal key onafhankelijk bewaren |
 | Kubernetes-etcd | Clusterobjecten, PVC-/PV-koppelingen, Secrets; gevoelige data. Niet dezelfde etcd als voice-discovery |

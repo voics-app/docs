@@ -165,6 +165,15 @@ template-visible structure with the saved snapshot. Public sharing uses
 
 ### P4. Internal HTTP APIs
 
+The channel-access lookup checks current account eligibility before returning permissions:
+missing, disabled, pending-deletion or currently suspended users receive 403. Expired
+suspensions and eligible bots retain ordinary membership/permission checks. A live user
+session is not required for this internal lookup, so an offline scheduled author may
+remain eligible. A scheduled worker must make a new uncached request after its durable
+claim, without joining an older in-flight lookup. This is a current authorization check,
+not an atomic transaction with a later cross-service message write. See
+[the account-access addendum](../specs/2026-11-18-scheduled-account-access.md).
+
 All calls carry the `X-Internal-Token` header. All IDs are strings.
 
 **api**
@@ -333,6 +342,19 @@ All calls carry the `X-Internal-Token` header. All IDs are strings.
 - **Crash recovery**: if the SFU restarts, signaling replays `create_session` for every live session (state rebuild, as at Discord).
 
 ### P9. REST API (public, `/api/v1`, JSON, snake_case, Discord-shaped objects)
+
+**Proposed scheduling extension (18 November 2026, not implemented):**
+[ADR 0028](../adr/0028-scheduled-message-dispatch.md) and the
+[scheduled messages contract](../specs/2026-11-18-scheduled-messages.md) add user-only
+`GET/POST /channels/{id}/messages/scheduled` and
+`GET/PATCH/DELETE /channels/{id}/messages/scheduled/{schedule_id}`, owned by messages.
+The schedule ID is a UUIDv4 request key, an explicit P5 exception; a normal message
+Snowflake is allocated only at dispatch. No new P6/P7 event is introduced.
+Proposed P2 variables are `SCHEDULED_MESSAGES_ENABLED` (false by default) and
+`SCYLLA_SCHEDULED_MESSAGE_KEYSPACE` (default `<SCYLLA_KEYSPACE>_scheduled`). The latter
+is a vnode keyspace on the existing cluster, included in coordinated backup/restore.
+The scheduler makes one attempt after its atomic claim and exposes uncertain
+outcomes; it must not retry the current non-idempotent create-message use case.
 
 **Endpoints** — owner is `api` unless marked **(messages)**:
 

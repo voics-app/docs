@@ -1,5 +1,19 @@
 # Service catalog
 
+## Proposed scheduled-message extension
+
+[ADR 0028](../adr/0028-scheduled-message-dispatch.md) proposes a scheduler inside
+the existing messages service, using the existing Scylla cluster and a dedicated
+vnode keyspace. This is not deployed or implemented. It adds no server, port or
+secret. Proposed settings are `SCHEDULED_MESSAGES_ENABLED` (default false) and
+`SCYLLA_SCHEDULED_MESSAGE_KEYSPACE` (default `<SCYLLA_KEYSPACE>_scheduled`). Public
+routes stay beneath `/channels/{id}/messages/scheduled` on the messages port.
+
+Enablement requires competing-worker/race/fault tests, paired message/journal
+backup and restore fencing. Metrics must expose pending/due age, dispatch results,
+dependency retries, uncertain outcomes and stale-index cleanup without author,
+channel, schedule or message IDs as labels. No new delivery SLO is claimed.
+
 This catalog lists every deployable unit in Voics. Ports, env vars, topics and images come from the pinned interfaces (P1–P11) in the master plan, so change them there first.
 
 Each production service:
@@ -95,6 +109,7 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 | Env vars | common + `SCYLLA_NODES`, `SCYLLA_KEYSPACE`, `SCYLLA_READ_STATE_KEYSPACE` (distinct same-cluster companion, defaults to `<SCYLLA_KEYSPACE>_reads`), `API_INTERNAL_URL`, `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY` 🔒, `MINIO_SECRET_KEY` 🔒, `MINIO_BUCKET_ATTACHMENTS`, `CDN_PUBLIC_URL`, `ATTACHMENT_SIGNING_KEY` 🔒, `ATTACHMENT_URL_TTL_SECONDS`, `SEARCH_DATABASE_URL` 🔒 (search is disabled when unset), `SEARCH_BACKFILL_ON_START` |
 | SLOs | Availability 99.5 %; search p95 < 300 ms; history p95 < 100 ms; send p95 < 200 ms; send-to-dispatch p95 < 500 ms (with the gateway) |
 | Read-accounting prerequisite | Token-independent uncached API recipient directory (contracts#44/API#146); coordinated old-writer drain, both-keyspace readiness and backups; [rollout and rollback](../runbooks/read-accounting.md) |
+| Proposed polls prerequisite | [ADR0029](../adr/0029-persistent-polls.md): optional `POLLS_ENABLED=false` and `SCYLLA_POLL_KEYSPACE` (defaults to `<SCYLLA_KEYSPACE>_polls`, same-cluster vnode companion with matching replication). Before enabling, ship poll routes at `/api/v1/channels/*/polls/*`, fresh API access, intent/content-aware gateway and version-aware clients. Include main/poll keyspaces in one drained backup/restore procedure; no new secret or production expiry SLO is introduced. |
 | Runbooks | [backup-restore](../runbooks/backup-restore.md#scylladb), [release](../runbooks/release.md) |
 
 ## notifier
@@ -200,7 +215,7 @@ This service is defined by [ADR-0025](../adr/0025-active-voice-health-probes.md)
 | | |
 |---|---|
 | Purpose | End-user Electron app: chat, voice, video, screen share, Watch Together, the three delivery modes. |
-| Repo / artefact | `voics-app/client` / NSIS installer (Windows), dmg (macOS), AppImage/deb (Linux), published to the MinIO `updates` bucket at `discordy-updates.voics.nl` |
+| Repo / artefact | `voics-app/client` / NSIS installer (Windows), dmg (macOS), AppImage/deb (Linux), published by gitops `publish-public` to the MinIO `discordy-updates` bucket at `updates.voics.nl` |
 | Tech | Electron 38, React 19, TypeScript 5.9, Vite 7, Zustand, TanStack Query, napi-rs (OpenMLS, Ed25519, SQLCipher) |
 | Ports | 5173 (renderer dev server) |
 | Depends on | api, messages, gateway, voice-signaling, sfu, coturn, CDN, update feed |

@@ -5,7 +5,7 @@ Summary: the Electron and React desktop app, with a Rust native crypto module.
 | | |
 |---|---|
 | Repository | `voics-app/client` |
-| Output | Windows NSIS installer on the update feed `https://discordy-updates.voics.nl`; macOS and Linux build from the same sources but CI does not publish them yet |
+| Output | Windows NSIS installer on the update feed `https://updates.voics.nl` (published by gitops `publish-public`); macOS and Linux build from the same sources but CI does not publish them yet |
 | Tech | Electron, React, Zustand, WebRTC, Rust (napi-rs, OpenMLS) |
 | Catalog entry | [Service catalog: Desktop client](../services/catalog.md#desktop-client) |
 
@@ -66,6 +66,14 @@ pnpm test:e2e        # Playwright against the real Electron app and a fake backe
 
 Releases and the auto-updater are explained in [Desktop client release and auto-update](09-desktop-client-release.md). Renaming the app is a `brand.json` edit. The mobile app skeleton in the same repository is described in [Mobile client](13-mobile-client.md).
 
+## Renderer boot budget
+
+Desktop settings (including server administration), the emoji picker and the slash-command panel load on demand. Transient import failures retry after 250, 500 and 1000 ms; the user can retry, close the feature or reload the app. A reload may discard unsaved work and can be necessary when the browser has cached a failed module request.
+
+The client CI builds the renderer and reports the uncompressed JavaScript entry and its transitive static imports from the Vite manifest. The limit is 2,800,000 bytes; asynchronous chunks, CSS and workers are excluded. Run `pnpm --filter @discordy/desktop exec electron-vite build` followed by `node apps/desktop/scripts/check-renderer-budget.mjs` locally. Record the build revision, measured sizes and justification when changing the budget. The same check also runs in the container build.
+
+Cold-start comparisons must identify the reference machine, operating system, build type, network and account state. Launch with a fresh isolated user-data directory and record several process-to-visible-auth timings and the median. The catalog names a reference Windows laptop without identifying it or defining a fresh profile. The client #24 Linux runner/container measurements use new processes and fresh user-data directories without flushing OS caches, so they are an additional reference, not a Windows SLO measurement. The client repository's renderer-performance guide contains the acceptance procedure; a fake-backend run is useful for repeatability but is not a production-network latency measurement.
+
 ## Appearance and accessibility
 
 Settings, Appearance holds theme (Dark, OLED, Light, or sync with the computer), accent, message density and group spacing, channel list density, text size and window zoom (Ctrl plus, Ctrl minus, Ctrl 0, through `webFrame`). Settings, Accessibility holds reduced motion (also synced with the OS), GIF, emoji and sticker animation, saturation, role colour display, high contrast, link underlines and text to speech (`/tts`, read-aloud, speech rate). Everything is applied by `interface/app/appearance.ts` as data attributes and custom properties on the root element, styled in `theme/access.css`; Windows forced-colors mode uses the system palette. Zoom, the two sync-with-computer switches and channel list density stay on the device; the rest follows the account. Details: [Appearance and accessibility](../specs/2026-10-23-appearance-and-accessibility.md).
@@ -124,6 +132,14 @@ Report Message (message menu, other people's messages), Report (user menu and pr
 When a friend request becomes a friendship (the gateway's `RELATIONSHIP_ADD` with type 1, on either side) the client creates the DM with `POST /users/@me/channels` (idempotent), adds it to Direct Messages and reopens it if it had been closed. The top of an empty or fully loaded 1:1 DM shows a large avatar, the display name, the username and "This is the beginning of your direct message history with @name."; while the DM has no messages, a "Wave to name" button sends a wave message and then disappears. Logic in `domain/dmIntro.ts`, view in `interface/features/chat/DmIntro.tsx`.
 
 The profile dialog and the DM profile panel show "Friends since" with the date, read from `Relationship.since`. Clicking the avatar in either one opens it full size in the image viewer. The About me field allows 300 characters (`BIO_MAX_LENGTH`); the api stores and validates the same limit from api 0.13.0.
+
+Server avatars also appear in member rows and hover cards, chat authors and replies,
+command headers, mention/reaction lists, and voice occupants and tiles. These views
+use their explicit server context and the shared profile-image resolver, including
+the `/guilds/<guild>/users/<user>/avatars/<hash>` path. They react to member-profile
+updates; clearing an override restores the global avatar. DMs and account controls
+remain global. An image failure leaves initials, presence and speaking indicators
+visible, and changing the image starts a fresh load attempt.
 
 ## Pinned DMs and pinned channels
 

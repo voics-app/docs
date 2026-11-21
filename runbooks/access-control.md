@@ -27,7 +27,7 @@ The Headlamp **pod** has no rights of its own: chart value `clusterRoleBinding.c
 
 | Who | Rights | Why | Defined in |
 |---|---|---|---|
-| `voics-system/discordy-runner` | `get` on Secret `voics-data/minio` only | `minio-publish.yml` reads the MinIO key to upload installers and website files | `gitops/infrastructure/controllers/actions-runner-controller/runner-scale-set/publish-rbac.yaml` |
+| `voics-system/discordy-runner` | `get` on Secret `voics-data/minio` only | `minio-publish.yml` (gitops publish-site) and gitops `publish-public` read the MinIO key to upload installers, the APK and website files | `gitops/infrastructure/controllers/actions-runner-controller/runner-scale-set/publish-rbac.yaml` |
 | same | no Kubernetes rights. `secrets-sync.yml` logs in to **OpenBao** with its service account token (OpenBao role `secrets-sync`, write-only on the secret paths) | OpenBao checks the token through a TokenReview, using its own `system:auth-delegator` binding | OpenBao config (`bootstrap/20-openbao.sh`) |
 
 ### Platform controllers (rights come with their Helm chart or manifest)

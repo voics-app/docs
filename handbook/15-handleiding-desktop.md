@@ -8,7 +8,7 @@ Deze handleiding gebruikt de Engelse knopnamen uit de Windows-app. Controleer je
 
 1. Ga naar [voics.nl](https://voics.nl) en kies **Download for Windows**. De officiële knop verwijst naar [Voics-Setup-latest.exe](https://updates.voics.nl/Voics-Setup-latest.exe). De installer is voor Windows x64.
 2. Open het gedownloade bestand en volg de installatiewizard. Je kunt de installatiemap kiezen. Start daarna Voics en log in.
-3. Controleer de geïnstalleerde versie onder **Settings → About and updates**. De updatefeed vermeldt onder `version` de actuele Windows-versie. Bij `files` staan de bestandsnaam, grootte en SHA-512 van het bijbehorende installatiebestand. [Windows-updatefeed](https://updates.voics.nl/latest.yml)
+3. Controleer de geïnstalleerde versie onder **Settings → About and updates**. De [updatefeed](https://updates.voics.nl/latest.yml) vermeldt de aangeboden versie en de naam, grootte en SHA-512 van het versiegebonden installatiebestand. Op 19 november 2026 bood de feed 0.9.10 aan; controleer de feed opnieuw voor de actuele versie.
 
 Wil je de download op inhoud controleren, download dan het in `latest.yml` genoemde versiegebonden `.exe`-bestand vanaf `https://updates.voics.nl/`. Vervang het pad hieronder door dat bestand en vergelijk de uitvoer met `sha512` in de feed:
 
