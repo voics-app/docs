@@ -24,6 +24,9 @@ de openbare voorvertoning, synchronisatie en de nog te bevestigen UI/livecontrol
 [Profielaanpassing](specs/2026-11-18-profile-customization.md) beschrijft de uitbreiding met
 voornaamwoorden, profielkleuren en een eigen avatar, banner en bio per server (api#43).
 
+[Taalkeuze op desktop](runbooks/desktop-localization.md) beschrijft de Engelse en
+Nederlandse catalogus, accountvoorkeur en onafhankelijke Windowsacceptatie (client#64).
+
 ## Start here
 
 The [scheduled messages specification](specs/2026-11-18-scheduled-messages.md)
