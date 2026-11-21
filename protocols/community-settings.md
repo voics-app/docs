@@ -1,6 +1,6 @@
 # Serverinstellingen: permanente uitnodigingen en auditbeleid
 
-Gecontroleerd op 18 november 2026. [Contracts PR 37](https://github.com/discordy-voics/contracts/pull/37) is naar develop gemerged (`9a0c487`). De runtime en bediening staan in [API PR 139](https://github.com/discordy-voics/api/pull/139) en [client PR 341](https://github.com/discordy-voics/client/pull/341). De coördinator herhaalde tien echte Postgres-tests voor vanity, audit, templates en discovery op API-head `bcc4386`; lokale contract-/clienttests zijn eveneens uitgevoerd. API/client-merge, release en onafhankelijke UI-/productieverificatie blijven afzonderlijke stappen; deze tekst verklaart de functies niet live.
+Gecontroleerd op 18 november 2026. [Contracts PR 37](https://github.com/voics-app/contracts/pull/37) is naar develop gemerged (`9a0c487`). De runtime en bediening staan in [API PR 139](https://github.com/voics-app/api/pull/139) en [client PR 341](https://github.com/voics-app/client/pull/341). De coördinator herhaalde tien echte Postgres-tests voor vanity, audit, templates en discovery op API-head `bcc4386`; lokale contract-/clienttests zijn eveneens uitgevoerd. API/client-merge, release en onafhankelijke UI-/productieverificatie blijven afzonderlijke stappen; deze tekst verklaart de functies niet live.
 
 ## Permanente uitnodigingscode (api#96)
 
