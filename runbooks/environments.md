@@ -12,7 +12,7 @@ one command from the `gitops` repository:
 | `gen-serv` (production) | Proxmox VM 107, 192.168.1.212 | `main`, `clusters/gen-serv` | `discordy*.voics.nl` | `kv/discordy/*`, GitHub `production` environment | live, adopted into Terraform by import only |
 | `dev` (dev/test) | its own small VM (Proxmox by default, Hetzner or AWS possible) | `develop`, `clusters/dev` | `discordy-dev*.voics.nl` | `kv/discordy-dev/*`, GitHub `dev` environment | defined, not deployed yet |
 
-Related: [Bootstrap scripts](https://github.com/discordy-voics/gitops/blob/develop/bootstrap/README.md) · [Release](release.md) · [OpenBao unseal](openbao-unseal.md) · [Backup and restore](backup-restore.md) · [Cloudflare setup](cloudflare-setup.md)
+Related: [Bootstrap scripts](https://github.com/voics-app/gitops/blob/develop/bootstrap/README.md) · [Release](release.md) · [OpenBao unseal](openbao-unseal.md) · [Backup and restore](backup-restore.md) · [Cloudflare setup](cloudflare-setup.md)
 
 > Status of this runbook: written together with the code, **not yet run against a real Proxmox, Hetzner or AWS account**. Timings are marked "not measured yet" until the first run (gitops#28, gitops#27).
 
@@ -70,7 +70,7 @@ The Terraform module `node-proxmox` encodes what production needed:
 | CPU type | **`host`** | ScyllaDB needs PCLMUL; the default `qemu64`/`kvm64` CPU breaks it |
 | Memory | gen-serv 12 GB, dev 8 GB | measured budgets: `scripts/memory-budget.sh` |
 | `scsi0` | main disk on the data datastore (production: lvmthin `tb`, HDD RAID, slow flush) | bulk data |
-| `scsi1` | 16 GB on an **SSD** datastore (production: `local-lvm`), `cache=none` | etcd needs fsync below 10 ms ([gitops#20](https://github.com/discordy-voics/gitops/issues/20)); mounted at `/var/snap/microk8s/common/var/run/etcd` by `15-etcd-disk.sh` |
+| `scsi1` | 16 GB on an **SSD** datastore (production: `local-lvm`), `cache=none` | etcd needs fsync below 10 ms ([gitops#20](https://github.com/voics-app/gitops/issues/20)); mounted at `/var/snap/microk8s/common/var/run/etcd` by `15-etcd-disk.sh` |
 | Datastore of the guest agent | not used | the cloud image has no agent; Terraform does not wait for it |
 | Network | static IP, e.g. 192.168.1.212/24 | the router forwards UDP 50000, UDP/TCP 3478 and UDP 49160-49170 to it |
 | microk8s | channel `1.34/stable` (variable), **etcd datastore, `ha-cluster` disabled** | k8s-dqlite stalls watches (gitops#20) |
@@ -137,7 +137,7 @@ never touch disk or git; the OpenBao unseal keys of an environment live under th
 ## Dev/test environment
 
 A second, always-on environment that runs the whole suite from `develop`, separate from production
-([gitops#27](https://github.com/discordy-voics/gitops/issues/27)).
+([gitops#27](https://github.com/voics-app/gitops/issues/27)).
 
 | Topic | Dev | Production |
 |---|---|---|
@@ -192,7 +192,7 @@ the bootstrap scripts on the live node.
 
 ## State and credentials hygiene
 
-- Terraform state may contain secrets. It is local and git-ignored by default (`*.tfstate`, `*.tfvars`, `backend.hcl` are in `.gitignore`); back it up. Use a remote backend through `-backend-config=backend.hcl` for a shared state ([gitops/infra/terraform/README.md](https://github.com/discordy-voics/gitops/blob/develop/infra/terraform/README.md)).
+- Terraform state may contain secrets. It is local and git-ignored by default (`*.tfstate`, `*.tfvars`, `backend.hcl` are in `.gitignore`); back it up. Use a remote backend through `-backend-config=backend.hcl` for a shared state ([gitops/infra/terraform/README.md](https://github.com/voics-app/gitops/blob/develop/infra/terraform/README.md)).
 - Provider tokens only in environment variables; rotate them when a machine that held them is lost.
 - `env.sh destroy <env>` refuses to run for `gen-serv`.
 
@@ -202,7 +202,7 @@ the bootstrap scripts on the live node.
 |---|---|
 | `terraform apply` hangs on the Proxmox image download | the datastore lacks the `import` content type: `pvesm set local --content iso,vztmpl,backup,snippets,import` |
 | Cluster module fails at `15-etcd-disk.sh` with "has partitions" or "already has a filesystem" | the device is not the empty etcd disk; check `lsblk`. The script refuses to touch a disk with data. |
-| etcd logs `apply request took too long` | the etcd disk is not on SSD or has the wrong cache mode: measure with `dd ... oflag=dsync` ([bootstrap README](https://github.com/discordy-voics/gitops/blob/develop/bootstrap/README.md#datastore-etcd-not-k8s-dqlite)) |
+| etcd logs `apply request took too long` | the etcd disk is not on SSD or has the wrong cache mode: measure with `dd ... oflag=dsync` ([bootstrap README](https://github.com/voics-app/gitops/blob/develop/bootstrap/README.md#datastore-etcd-not-k8s-dqlite)) |
 | `20-openbao.sh` says "cannot reach OpenBao" | Flux has not deployed it yet: wait for `infra-controllers`, run the stage again |
 | `40-cloudflare.sh` refuses a host | the host is not a one-level `discordy*` name under `voics.nl`; fix the environment's cluster-config |
 | Dev pods `ImagePullBackOff` right after bring-up | the dev image policies have not selected a `-dev.N` tag yet (initial tag is `develop`); check `flux get image policy -A` and that the service repos pushed a `-dev.N` image |

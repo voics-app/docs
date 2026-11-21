@@ -3,7 +3,7 @@
 - Status: accepted (implementation in progress)
 - Date: 2026-10-18
 - Deciders: @oussamaelhajoui (feature implementation authorized 2026-11-18)
-- Technical story: [docs#9](https://github.com/discordy-voics/docs/issues/9), [api#19](https://github.com/discordy-voics/api/issues/19)
+- Technical story: [docs#9](https://github.com/voics-app/docs/issues/9), [api#19](https://github.com/voics-app/api/issues/19)
 - Related: [research note, post 7](../research/discord-engineering-comparison.md), spec section 5
 
 ## Context and Problem Statement

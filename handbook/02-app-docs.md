@@ -4,7 +4,7 @@ Summary: this repository: specs, plans, ADRs, runbooks, service catalog, secrets
 
 | | |
 |---|---|
-| Repository | `discordy-voics/docs` |
+| Repository | `voics-app/docs` |
 | Output | GitHub (source of truth) and the existing Voics Notion space (same root page, formerly named Discordy) |
 | Tech | Markdown, Structurizr DSL, a Node script for the Notion mirror |
 

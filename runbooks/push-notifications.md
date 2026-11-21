@@ -22,7 +22,7 @@ flowchart LR
 ```
 
 1. The app registers its APNs device token with the api, one per login session, together with the APNs environment it was issued for (`sandbox` or `production`) and two device preferences (message previews, only mentions). It registers again on every start. The api removes the token with its session (logout, remote revoke, logout everywhere, suspension), with its encrypted-message device, and when it was not refreshed for `DEVICE_MAX_IDLE_DAYS`.
-2. The **notifier** (`messages` repo, image `ghcr.io/discordy-voics/messages-notifier`, namespace `voics-apps`, port 8085) reads `MESSAGE_CREATE` from `discordy.message.v1`. For each message it asks the api for the members who can view the channel, are not the author and hold a token on a live session.
+2. The **notifier** (`messages` repo, image `ghcr.io/voics-app/messages-notifier`, namespace `voics-apps`, port 8085) reads `MESSAGE_CREATE` from `discordy.message.v1`. For each message it asks the api for the members who can view the channel, are not the author and hold a token on a live session.
 3. It applies the clients' rules to each of them: a live gateway socket alone does not suppress push, because a mobile socket may linger in the background; the client handles foreground duplicate suppression. Then apply mute (guild, channel or category), the effective level (channel, category, guild, server default), direct messages, direct mentions, role mentions, `@everyone` (unless suppressed), `@here` (never reaches an offline member), `@silent`, and the device's own only-mentions preference.
 4. It sends through APNs over HTTP/2 with a provider token signed by the `.p8` key. Each token goes to the sandbox or the production host it was issued for; on `BadDeviceToken` the other host gets one try, and a host that works is remembered. A token APNs rejects for good (`410`, `BadDeviceToken` on both hosts, `DeviceTokenNotForTopic`) is deleted through the api.
 
@@ -62,7 +62,7 @@ Production already runs at **1 replica** with synced APNs and FCM secrets. The v
 | Its Key ID (10 characters, shown beside the key) | Same page | GitHub secret `NOTIFIER_APNS_KEY_ID` |
 | The Team ID (10 characters) | Apple Developer account, Membership details | GitHub secret `NOTIFIER_APNS_TEAM_ID` |
 
-One key serves the sandbox and production hosts. The bundle id (`nl.voics.app`, the APNs topic) is not a secret and is already in the ConfigMap. The app's App ID must also have the **Push Notifications** capability: the first iOS build after this change adds the `aps-environment` entitlement, and EAS syncs the capability and regenerates the provisioning profile when you build interactively (owner steps, [docs#10](https://github.com/discordy-voics/docs/issues/10)). Nothing in the repositories can create these values.
+One key serves the sandbox and production hosts. The bundle id (`nl.voics.app`, the APNs topic) is not a secret and is already in the ConfigMap. The app's App ID must also have the **Push Notifications** capability: the first iOS build after this change adds the `aps-environment` entitlement, and EAS syncs the capability and regenerates the provisioning profile when you build interactively (owner steps, [docs#10](https://github.com/voics-app/docs/issues/10)). Nothing in the repositories can create these values.
 
 ### Android (FCM)
 
@@ -71,8 +71,8 @@ One key serves the sandbox and production hosts. The bundle id (`nl.voics.app`, 
 | The Firebase service-account key, a JSON file | Firebase console, Project settings (project `voics-cf336`), Service accounts, **Generate new private key** | GitHub secret `NOTIFIER_FCM_SERVICE_ACCOUNT` (the whole file) |
 
 ```bash
-gh secret set NOTIFIER_FCM_SERVICE_ACCOUNT --repo discordy-voics/gitops --env production < key.json
-gh workflow run secrets-sync.yml --repo discordy-voics/gitops -f paths=discordy/notifier-fcm
+gh secret set NOTIFIER_FCM_SERVICE_ACCOUNT --repo voics-app/gitops --env production < key.json
+gh workflow run secrets-sync.yml --repo voics-app/gitops -f paths=discordy/notifier-fcm
 ```
 
 The project id is read from the key file. The value lands in `kv/discordy/notifier-fcm` (dev: `kv/discordy-dev/notifier-fcm`, written by hand) and the ExternalSecret `notifier-fcm` turns it into the Secret `notifier-fcm`, which the notifier reads as the optional env var `NOTIFIER_FCM_SERVICE_ACCOUNT` (locally `FCM_SERVICE_ACCOUNT_FILE` may name a file instead). It is a separate path on purpose: iOS and Android credentials can be provided in either order, and until this one exists `secrets-sync` reports `skip kv/discordy/notifier-fcm: optional` without failing. Restart the notifier after the Secret appears (`kubectl -n voics-apps rollout restart deploy/notifier`); the log line `FCM is not configured` is gone once it works. The notifier must be scaled to 1 as in the steps below, which needs either provider's credentials. The Android app registers the token with `POST /users/@me/devices/push` `{"platform":"fcm","token":"<FCM registration token>"}` (`environment` is ignored for FCM; `previews` and `only_mentions` work as on iOS).
@@ -84,12 +84,12 @@ Use this checklist only for a genuinely unconfigured environment or an authorize
 1. **Store the values** in the gitops repository's `production` environment. Pipe the key from the file, never as an argument:
 
    ```bash
-   gh secret set NOTIFIER_APNS_KEY --repo discordy-voics/gitops --env production < AuthKey_XXXXXXXXXX.p8
-   gh secret set NOTIFIER_APNS_KEY_ID --repo discordy-voics/gitops --env production --body XXXXXXXXXX
-   gh secret set NOTIFIER_APNS_TEAM_ID --repo discordy-voics/gitops --env production --body YYYYYYYYYY
+   gh secret set NOTIFIER_APNS_KEY --repo voics-app/gitops --env production < AuthKey_XXXXXXXXXX.p8
+   gh secret set NOTIFIER_APNS_KEY_ID --repo voics-app/gitops --env production --body XXXXXXXXXX
+   gh secret set NOTIFIER_APNS_TEAM_ID --repo voics-app/gitops --env production --body YYYYYYYYYY
    ```
 
-2. **Sync to OpenBao**: `gh workflow run secrets-sync.yml --repo discordy-voics/gitops -f paths=discordy/notifier`, then `gh run watch`. Until the three GitHub secrets exist, every `secrets-sync` run reports `skip kv/discordy/notifier: missing GitHub secret(s)` for this path and ends red, as it does for any unprovisioned path (the other paths are still written). For dev write the same three values to `kv/discordy-dev/notifier` (`25-secrets.sh` skips this path on purpose).
+2. **Sync to OpenBao**: `gh workflow run secrets-sync.yml --repo voics-app/gitops -f paths=discordy/notifier`, then `gh run watch`. Until the three GitHub secrets exist, every `secrets-sync` run reports `skip kv/discordy/notifier: missing GitHub secret(s)` for this path and ends red, as it does for any unprovisioned path (the other paths are still written). For dev write the same three values to `kv/discordy-dev/notifier` (`25-secrets.sh` skips this path on purpose).
 3. **Check the secret reached the cluster**: `kubectl -n voics-apps get externalsecret notifier-secrets` shows `SecretSynced`, and `kubectl -n voics-apps get secret notifier-secrets` exists. Force a refresh with `kubectl -n voics-apps annotate externalsecret notifier-secrets force-sync="$(date +%s)" --overwrite`.
 4. **Check desired replicas**: production is already one. For a separately authorized unconfigured environment, set that environment’s notifier overlay to one through the normal [release flow](release.md). Do not change another environment or add concurrent notifier replicas.
 5. **Verify**: `kubectl -n voics-apps rollout status deploy/notifier`; `kubectl -n voics-apps logs deploy/notifier` shows `notifier listening` and `consumer started` once per partition; `curl` of `/readyz` through a port-forward answers `ok`. A wrong key makes the pod exit at startup with `APNs key is not a valid .p8`.

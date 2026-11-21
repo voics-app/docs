@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Each workstream (WS) below is executed by one autonomous agent working in its own repo. **The "Pinned interfaces" section is law**: never change a name, port, topic, env var or payload shape defined there without updating this document first.
 
-**Goal:** Build Voics, a Discord-equivalent platform (minus payments), as a set of repos in the `discordy-voics` GitHub org. It runs locally via docker compose and on microk8s through Flux.
+**Goal:** Build Voics, a Discord-equivalent platform (minus payments), as a set of repos in the `voics-app` GitHub org. It runs locally via docker compose and on microk8s through Flux.
 
 **Architecture:**
 - Elixir gateway; Rust `api` and `messages` services.
@@ -41,11 +41,11 @@ template-visible structure with the saved snapshot. Public sharing uses
 `/template.html?code=...` on the landing host. See the
 [server-template specification](../specs/2026-11-04-server-templates.md).
 
-- **Org and repos**: GitHub org `discordy-voics`; all repos private. Local root is `C:\Users\Karma\Projects\discordy\voics\<repo>`, with one git repo per directory.
+- **Org and repos**: GitHub org `voics-app`; all repos private. Local root is `C:\Users\Karma\Projects\discordy\voics\<repo>`, with one git repo per directory.
 - **Repo names**: `api`, `gateway`, `messages`, `voice`, `admin`, `client`, `bots-sdk`, `contracts`, `gitops`, `docs`, `.github`.
 - **git-flow**: branches `main` + `develop`; work on `feature/<ws>-<topic>` branches, merged into `develop` with `--no-ff`.
 - **Commits**: Conventional Commits, each ending with the line `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
-- **Images**: `ghcr.io/discordy-voics/<repo>[-<component>]`. OCI labels required: `org.opencontainers.image.{title,description,source,version,revision,licenses}`; licenses = `UNLICENSED`.
+- **Images**: `ghcr.io/voics-app/<repo>[-<component>]`. OCI labels required: `org.opencontainers.image.{title,description,source,version,revision,licenses}`; licenses = `UNLICENSED`.
 - **Versioning**: semver via release-please. The initial version is `0.1.0`.
 - **Code structure**: Clean Architecture folders `domain/`, `application/`, `infrastructure/`, `interface/`, plus a composition root. `domain` imports nothing from frameworks or IO. One use case per file.
 - **Secrets**: no secrets in source. Config comes only from env vars, validated at startup; each repo ships an `.env.example` with dev-only values.
@@ -55,7 +55,7 @@ template-visible structure with the saved snapshot. Public sharing uses
   - `GET /metrics` (Prometheus)
   - JSON structured logs to stdout
   - OpenTelemetry via `OTEL_EXPORTER_OTLP_ENDPOINT`, when that variable is set
-- **Each repo contains**: `README.md`, `ARCHITECTURE.md` (with a C4 component diagram as Mermaid), `Makefile` (targets `dev`, `test`, `lint`, `build`, `docker`), `Dockerfile` (multi-stage, non-root, distroless or alpine), `.github/workflows/ci.yml` (calls the reusable workflows in `discordy-voics/.github`), `CHANGELOG.md`, `release-please-config.json` and `.release-please-manifest.json`.
+- **Each repo contains**: `README.md`, `ARCHITECTURE.md` (with a C4 component diagram as Mermaid), `Makefile` (targets `dev`, `test`, `lint`, `build`, `docker`), `Dockerfile` (multi-stage, non-root, distroless or alpine), `.github/workflows/ci.yml` (calls the reusable workflows in `voics-app/.github`), `CHANGELOG.md`, `release-please-config.json` and `.release-please-manifest.json`.
 - **Testing**: TDD for the domain and application layers. Integration tests use testcontainers, or the local compose stack where the language has no testcontainers support.
 - **Hostnames**: one level deep under `voics.nl`, and always configurable. Defaults:
 
@@ -450,7 +450,7 @@ Each WS runs in its own repo, with its own agent, on `feature/<ws>-bootstrap`, w
 - `schemas/voice/*.json`
 - `permissions.json`, `intents.json`
 - `codegen/` (scripts)
-- `packages/ts/` (npm `@discordy-voics/contracts`)
+- `packages/ts/` (npm `@voics-app/contracts`)
 - `packages/rust/` (crate `discordy-contracts`)
 - `packages/elixir/` (generated constants module `Discordy.Contracts`)
 
@@ -465,7 +465,7 @@ Each WS runs in its own repo, with its own agent, on `feature/<ws>-bootstrap`, w
 ### WS1 — `.github` (reusable workflows) + `gitops/local` (compose dev stack)
 
 **Tasks:**
-- [ ] **Task 1.1 — `discordy-voics/.github/.github/workflows/`**: reusable workflows `rust.yml`, `elixir.yml`, `node.yml`, `docker.yml`, `release-please.yml`, `gitflow-guard.yml`, `ghcr-retention.yml`.
+- [ ] **Task 1.1 — `voics-app/.github/.github/workflows/`**: reusable workflows `rust.yml`, `elixir.yml`, `node.yml`, `docker.yml`, `release-please.yml`, `gitflow-guard.yml`, `ghcr-retention.yml`.
   - `docker.yml`: buildx, OCI labels from inputs, push to GHCR with tags derived from the branch (`develop` → `X.Y.Z-dev.<run>`, `release/*` → `X.Y.Z-rc.<run>`, tag `vX.Y.Z` → `X.Y.Z`, `X.Y`, `latest`), cosign keyless signing, SBOM via syft, Trivy scan (fail on CRITICAL).
   - `gitflow-guard.yml`: fail when a PR to `main` doesn't come from `release/*` or `hotfix/*`, or a PR to `develop` doesn't come from `feature/*`, `release/*`, `hotfix/*` or `dependabot/*`.
   - `ghcr-retention.yml`: keep every stable version and the latest 5 prereleases.
@@ -575,7 +575,7 @@ Each WS runs in its own repo, with its own agent, on `feature/<ws>-bootstrap`, w
 ### WS7 — `bots-sdk` + bot platform verification
 
 **Tasks:**
-- [ ] **7.1 SDK**: TypeScript `@discordy-voics/bots`: `Client` (gateway with intents, auto-resume), REST with rate-limit bucket handling, slash-command builder and registration, interaction handlers (reply, defer, follow-up, components, modals), webhooks. Unit tests with a mocked gateway.
+- [ ] **7.1 SDK**: TypeScript `@voics-app/bots`: `Client` (gateway with intents, auto-resume), REST with rate-limit bucket handling, slash-command builder and registration, interaction handlers (reply, defer, follow-up, components, modals), webhooks. Unit tests with a mocked gateway.
 - [ ] **7.2 Example bot**: `examples/moderation-bot` (`/ping`, `/kick`, buttons), plus docs.
 
 ### WS8 — `admin` (React + Rust BFF)
@@ -606,7 +606,7 @@ Blocked on the owner prerequisites: VM group access, GitHub org and scopes, Clou
 - [ ] **9.3 Bring-up on the VM**:
   1. Inventory the cluster.
   2. Enable microk8s addons `dns`, `hostpath-storage` and `metrics-server`.
-  3. `flux bootstrap github --owner discordy-voics --repository gitops --private --path clusters/gen-serv`.
+  3. `flux bootstrap github --owner voics-app --repository gitops --private --path clusters/gen-serv`.
   4. Initialize and unseal OpenBao (keys to 1Password via `op`).
   5. Create the Cloudflare tunnel and DNS records via API.
   6. Install ARC with a runner scale set labeled `discordy`.
@@ -631,7 +631,7 @@ Blocked on the owner prerequisites: VM group access, GitHub org and scopes, Clou
 
 ## Read-accounting extension — 18 November 2026
 
-Proposed [ADR 0026](../adr/0026-atomic-read-accounting.md) adds the optional messages P2 keyspace setting above; it does not provision another server or change public ACK/MESSAGE_ACK/READY payloads. The P4 recipient prerequisite is `GET /internal/v1/channels/{id}/notification-recipients?author_id&after&limit`, defined by [contracts#44](https://github.com/discordy-voics/contracts/pull/44) and implemented by [api#146](https://github.com/discordy-voics/api/pull/146). It returns current permission-filtered, token-independent pages with advancing candidate cursors, including empty filtered pages and empty terminal private-mode audiences.
+Proposed [ADR 0026](../adr/0026-atomic-read-accounting.md) adds the optional messages P2 keyspace setting above; it does not provision another server or change public ACK/MESSAGE_ACK/READY payloads. The P4 recipient prerequisite is `GET /internal/v1/channels/{id}/notification-recipients?author_id&after&limit`, defined by [contracts#44](https://github.com/voics-app/contracts/pull/44) and implemented by [api#146](https://github.com/voics-app/api/pull/146). It returns current permission-filtered, token-independent pages with advancing candidate cursors, including empty filtered pages and empty terminal private-mode audiences.
 
 Separate proposed [ADR 0027](../adr/0027-versioned-read-state-snapshots.md) extends P4/P5/P7: an atomic per-channel version accompanies authoritative count snapshots; MESSAGE_ACK adds an optional decimal-string `read_state_version`; READ_STATE_UPDATE carries complete user-targeted snapshots on `discordy.message.v1`. The existing messages read-state array endpoint gains version fields and a capability header. Gateway fetches after session registration for READY and again during resume, dispatching READ_STATE_SYNC before RESUMED. Certified clients merge by version and stop deriving standard counts from CREATE. Legacy clients/servers retain the old behavior. No new server or outbox is introduced; failed accounting is still outside this reconciliation guarantee. Writer fencing and gateway-session invalidation after database restore are required.
 
