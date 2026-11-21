@@ -3,7 +3,7 @@
 - Status: proposed
 - Date: 2026-11-18
 - Deciders: @oussamaelhajoui (pending)
-- Technical story: [messages#61](https://github.com/discordy-voics/messages/issues/61)
+- Technical story: [messages#61](https://github.com/voics-app/messages/issues/61)
 - Related: [delivery modes](0003-delivery-modes.md), [atomic read accounting](0026-atomic-read-accounting.md)
 
 ## Context and Problem Statement

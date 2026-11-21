@@ -1,7 +1,7 @@
 # Scheduled dispatch account eligibility
 
 Status: account eligibility correction implemented on API `develop` in
-[PR150](https://github.com/discordy-voics/api/pull/150), supporting messages#61
+[PR150](https://github.com/voics-app/api/pull/150), supporting messages#61
 and ADR0028. The API change has not been released to production; the scheduler
 remains under implementation and disabled by default.
 

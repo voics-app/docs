@@ -3,7 +3,7 @@
 - Status: proposed
 - Date: 2026-11-18
 - Deciders: Voics maintainer review
-- Technical story: [messages#23](https://github.com/discordy-voics/messages/issues/23), [contracts#44](https://github.com/discordy-voics/contracts/pull/44), [api#146](https://github.com/discordy-voics/api/pull/146)
+- Technical story: [messages#23](https://github.com/voics-app/messages/issues/23), [contracts#44](https://github.com/voics-app/contracts/pull/44), [api#146](https://github.com/voics-app/api/pull/146)
 
 ## Context and Problem Statement
 

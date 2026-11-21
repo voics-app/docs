@@ -4,7 +4,7 @@ Summary: everything that runs the platform: Flux manifests, bootstrap scripts, T
 
 | | |
 |---|---|
-| Repository | `discordy-voics/gitops` |
+| Repository | `voics-app/gitops` |
 | Tech | Flux, Kustomize, Helm, Terraform, bash |
 | Deploys | Flux watches `main`, path `clusters/gen-serv` (production) and `develop`, path `clusters/dev` |
 

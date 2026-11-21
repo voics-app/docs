@@ -35,7 +35,7 @@ What is cached, per layer (gitops#38; shared workflows `.github` v0.5.16 and new
 
 | Layer | Hosted runners | Self-hosted runners |
 |---|---|---|
-| Docker layers | Registry cache in GHCR (`ghcr.io/discordy-voics/<image>:buildcache`, `mode=max`, OCI), written by the push build on develop, main, release branches and tags | Host builder cache plus registry cache import; the pushed image carries an inline cache (the `docker` driver cannot export a registry cache) |
+| Docker layers | Registry cache in GHCR (`ghcr.io/voics-app/<image>:buildcache`, `mode=max`, OCI), written by the push build on develop, main, release branches and tags | Host builder cache plus registry cache import; the pushed image carries an inline cache (the `docker` driver cannot export a registry cache) |
 | Dockerfiles | BuildKit cache mounts (cargo registry and git, pnpm store, hex packages) and cargo-chef (api, messages, voice sfu, admin bff) so the dependency layer is rebuilt only when `Cargo.toml` or `Cargo.lock` change | Same |
 | Rust jobs | `Swatinem/rust-cache` | `rust-cache` plus sccache in `/cache/sccache` |
 | Node and Elixir jobs | `setup-node` pnpm cache, `actions/cache` for `deps` and `_build` | Persistent store in `/cache` (`npm_config_store_dir`, `HEX_HOME`, `MIX_HOME`) |
@@ -55,11 +55,11 @@ On the VM runners the shared workflows use the `/cache` volume and the toolchain
 
 Releases are always clean: pushes to `main`, tags, `release/*`, `hotfix/*` and PRs into `main` compile Rust from an empty `target/` and Docker images compile inside the Dockerfile (no persistent `target/`). A target dir is used by one job at a time (`flock`; a concurrent job gets a private clean dir).
 
-**Switch it off** (clean from-scratch build, same as GitHub-hosted): set the variable `CI_CACHE=off` (`gh variable set CI_CACHE --body off -R discordy-voics/<repo>` or at organization level; delete it or set `on` to switch back), or label a pull request `ci-no-cache` and push a commit (a re-run keeps the old labels). Every scheduled run (weekly, Monday 04:17 UTC on `develop`, in api, messages, gateway, voice and client) is a cold build, so a cache that hides a breakage shows up within a week and alerts like any red CI.
+**Switch it off** (clean from-scratch build, same as GitHub-hosted): set the variable `CI_CACHE=off` (`gh variable set CI_CACHE --body off -R voics-app/<repo>` or at organization level; delete it or set `on` to switch back), or label a pull request `ci-no-cache` and push a commit (a re-run keeps the old labels). Every scheduled run (weekly, Monday 04:17 UTC on `develop`, in api, messages, gateway, voice and client) is a cold build, so a cache that hides a breakage shows up within a week and alerts like any red CI.
 
 **Clear it:** `scripts/runner.sh cache-clear --host user@vm [--what all|cargo|target|sccache|pnpm|trivy|mix] [--layers] [--force]` (refuses while a runner is busy). For new toolchains, first drain and stop the selected runners explicitly, then use `up --recreate` within the preflight budget. Plain `up` keeps running containers. Versions are listed at the top of `runner.sh`.
 
-Measured on the VM runners (job duration, `gh api repos/discordy-voics/<repo>/actions/runs/<id>/jobs`). Before: api `test` 1794 s (cargo test 1477 s plus rust-cache upload 298 s) and `clippy` 229 s in parallel jobs, messages `test` 575 s, client `checks` 652 s. After (PR runs, unit tests only):
+Measured on the VM runners (job duration, `gh api repos/voics-app/<repo>/actions/runs/<id>/jobs`). Before: api `test` 1794 s (cargo test 1477 s plus rust-cache upload 298 s) and `clippy` 229 s in parallel jobs, messages `test` 575 s, client `checks` 652 s. After (PR runs, unit tests only):
 
 | Job | Before | After, first run (cold target) | After, warm |
 |---|---|---|---|
@@ -88,14 +88,14 @@ Docker builds win when source changes but dependencies do not (api halves, clien
 
 ## Where jobs run
 
-GitHub-hosted `ubuntu-latest` is the default. When the GitHub Free minutes run low you can send every repository to your own machines and back with one command.
+Since 2026-11-21 every repository except `gitops` is **public**, so its CI runs on GitHub-hosted runners for free (`CI_RUNNER` is unset there). Only the private `gitops` uses the self-hosted VM pool (`CI_RUNNER=vm-runner`, VM `192.168.1.219`) and the in-cluster `discordy` runner. The runner group *Default* refuses public repositories, so our own runners never run a public repository's job, and workflows of outside contributors need an approval first. `scripts/repo-visibility.sh` in `.github` switches the repositories between public and private together with their runner. The PC runners (Docker Desktop) are retired.
 
 | Where | Label | How |
 |---|---|---|
-| GitHub-hosted (default) | `ubuntu-latest` | `scripts/runner.sh use github` |
-| Owner PC (Docker Desktop) | `karma-pc` | `scripts/runner.sh up` starts the runners and switches |
-| A VM | `vm-<host>` | bootstrap once, `up --host`, then `use vm-<host>` |
-| In-cluster ARC | `discordy` | named explicitly by jobs that need the cluster network (secrets-sync, minio-publish) |
+| GitHub-hosted (default, all public repos) | `ubuntu-latest` | `CI_RUNNER` unset |
+| The VM pool (private gitops only) | `vm-runner` | bootstrap once, `up --host`, then set `CI_RUNNER` on gitops |
+| Owner PC (Docker Desktop), retired | `karma-pc` | only if ever needed again: `scripts/runner.sh up` |
+| In-cluster ARC | `discordy` | named explicitly by jobs that need the cluster network, in the private gitops only: secrets-sync, publish-site, publish-public (public repositories cannot use it) |
 | GitHub-hosted Windows | `windows-latest` | the desktop installer build |
 
 ### How switching works
@@ -104,7 +104,7 @@ The shared workflows' default `runs-on` follows the caller repository variable *
 
 ### Build a runner
 
-These capacity-aware commands require [.github PR44](https://github.com/discordy-voics/.github/pull/44),
+These capacity-aware commands require [.github PR44](https://github.com/voics-app/.github/pull/44),
 merged to develop as `1f7cbf132856130c75256929e991bd67eda98c5d` on 18 November.
 They are not a claim that the older `main` download already has this behavior.
 Use that reviewed checkout before invoking the commands below.
@@ -148,7 +148,7 @@ gh auth login                       # GitHub.com, SSH, upload your SSH key, logi
 gh auth refresh -s admin:org        # runner registration tokens need admin:org
 
 # 3. Get the scripts (first time), or update them (every time after)
-git clone git@github.com:discordy-voics/.github.git ~/.github
+git clone git@github.com:voics-app/.github.git ~/.github
 cd ~/.github && git pull
 
 # 4. Install Docker (once), then make the docker group active
@@ -172,11 +172,13 @@ On a Linux VM the runners use host networking, so integration tests (testcontain
 
 ### Which repos run where (split)
 
+The table below is the state since 2026-11-21. The dated snapshot after it describes the earlier split and is kept for history.
+
 | Runners | Repos | Cost |
 |---|---|---|
-| Self-hosted VM (`vm-runner`, count limited by host capacity) | repositories whose current `CI_RUNNER` names that pool | existing VM resources |
-| GitHub-hosted `ubuntu-latest` | repositories explicitly routed there or using their hosted default | GitHub minutes, existing $15/month budget (org Settings → Billing → Budgets) |
-| GitHub-hosted `windows-latest` | client installer, on client releases (merge to main or tag) | about $0.30 per release |
+| Self-hosted VM (`vm-runner`, count limited by host capacity) | gitops (private) | existing VM resources |
+| GitHub-hosted `ubuntu-latest` | every public repository | free (public repositories) |
+| GitHub-hosted `windows-latest` / macOS | client installer and iOS checks | free (client is public) |
 
 `runner.sh up` and `use <label>` switch only the heavy repos; `use github` resets all. Change the set with `SELF_HOSTED_REPOS="api messages" scripts/runner.sh up`.
 

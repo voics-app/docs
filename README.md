@@ -6,7 +6,7 @@ in-progress authorization contract, release dependency and remaining parity work
 [Age-restricted channels](specs/2026-11-18-age-restricted-channels.md): account
 preference and desktop/mobile confirmation boundaries under review for client#76.
 
-Architecture, decisions, references and runbooks for **Voics**, a Discord-equivalent platform (without payments) built in the `discordy-voics` GitHub org. Git is the source of truth; the content is mirrored to Notion on every merge to `main`.
+Architecture, decisions, references and runbooks for **Voics**, a Discord-equivalent platform (without payments) built in the `voics-app` GitHub org. Git is the source of truth; the content is mirrored to Notion on every merge to `main`.
 
 > Voics is live at `voics.nl`, with production on gen-serv (`192.168.1.212`). The approved hostname takeover is complete; compatibility aliases remain. The unrelated VM `.204` and the old product’s other records remain protected. See [public hostnames](runbooks/hostnames.md).
 
@@ -27,12 +27,22 @@ de openbare voorvertoning, synchronisatie en de nog te bevestigen UI/livecontrol
 [Profielaanpassing](specs/2026-11-18-profile-customization.md) beschrijft de uitbreiding met
 voornaamwoorden, profielkleuren en een eigen avatar, banner en bio per server (api#43).
 
+[Taalkeuze op desktop](runbooks/desktop-localization.md) beschrijft de Engelse en
+Nederlandse catalogus, accountvoorkeur en onafhankelijke Windowsacceptatie (client#64).
+
 ## Start here
+
+The [member screening and onboarding specification](specs/2026-11-20-member-screening.md)
+describes versioned rules, optional choices and welcome screens under review for api#40.
 
 The [scheduled messages specification](specs/2026-11-18-scheduled-messages.md)
 defines author-private drafts, send-time checks and visible delivery uncertainty
 for messages#61. Backend and client implementations are under review; scheduling
 remains disabled until coupled acceptance and rollout review are complete.
+
+The [persistent poll specification](specs/2026-11-18-polls.md) and
+[ADR0029](adr/0029-persistent-polls.md) define message polls, voting, finalization
+and recovery. Implementation and device acceptance remain separate gates.
 
 The [integrations and authorization specification](specs/2026-11-18-integrations-and-authorizations.md)
 defines webhook credential rotation, supported bot-install consent and precise

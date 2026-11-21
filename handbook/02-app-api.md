@@ -4,8 +4,8 @@ Summary: the REST API and owner of the relational data (Postgres), in Rust.
 
 | | |
 |---|---|
-| Repository | `discordy-voics/api` |
-| Image | `ghcr.io/discordy-voics/api` (namespace `voics-apps`, port 8080) |
+| Repository | `voics-app/api` |
+| Image | `ghcr.io/voics-app/api` (namespace `voics-apps`, port 8080) |
 | Tech | Rust 1.99, axum 0.8, sqlx, Postgres 17 |
 | Owns | Postgres database `discordy` (migrations in `migrations/`), Valkey `rl:*` and `cache:*` (reads the gateway's `presence:*` for the invite online count), MinIO bucket `discordy-assets` |
 | Publishes | `discordy.guild.v1`, `discordy.user.v1`, `discordy.interaction.v1`, `discordy.audit.v1` through a transactional outbox |
