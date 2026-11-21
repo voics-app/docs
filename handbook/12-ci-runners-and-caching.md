@@ -18,7 +18,7 @@ is separate. Fetch and check out that reviewed revision when using these command
 do not assume an older downloaded script implements `preflight` or `--dry-run`.
 
 1. Every repository's `ci.yml` calls reusable workflows in the `.github` repository (`rust.yml`, `elixir.yml`, `node.yml`, `docker.yml`, `gitflow-guard.yml`), always `@main`. A change there affects every repository at once.
-2. Jobs run on the self-hosted VM pool (label `vm-runner`, VM `192.168.1.219`) within its host capacity, or on GitHub-hosted `ubuntu-latest` when the variable `CI_RUNNER` is unset or `github`.
+2. Since 2026-11-21 every repository except `gitops` is **public** and runs on GitHub-hosted `ubuntu-latest` (free and unlimited for public repositories): `CI_RUNNER` is deleted there. Only the private `gitops` keeps `CI_RUNNER=vm-runner` (VM `192.168.1.219`). The runner group `Default` has *Allow public repositories* off, so the VM and the in-cluster `discordy` runners never take a job from a public repository (a fork PR cannot run code on our machines), and the org requires approval before workflows of any outside contributor run. See *Public repositories and publishing* below.
 3. The same workflow code serves both. A step called **CI cache policy** at the start of each job decides, writes `CI cache: on=… (why)` to the log and the job summary, and everything after it follows that decision.
 4. On the VM, toolchains are baked into the runner image and build outputs live on a persistent `/cache` volume. On GitHub runners nothing is preinstalled for us, so the normal setup actions and the GitHub Actions cache are used.
 5. Releases never reuse a persistent build directory, and caching can always be turned off with one variable or one PR label.
@@ -41,6 +41,12 @@ runs-on = (CI_RUNNER set and != "github") ? CI_RUNNER : "ubuntu-latest"
 - `.github/scripts/runner.sh use github` or `use vm-runner` switches every repository at once.
 - Jobs that name a runner explicitly ignore `CI_RUNNER`: `windows-latest` for the desktop installer, the in-cluster `discordy` runners for secrets-sync and minio-publish.
 - If `CI_RUNNER` names a label with no online runner, jobs queue forever without failing. That is the first thing to check when CI "hangs".
+
+### Public repositories and publishing
+
+- Public repositories cannot use the in-cluster `discordy` runner, which is the only one that reaches MinIO. They therefore only build and upload an artifact; the private gitops workflow **`publish-public`** (every 10 minutes, or run by hand) publishes it: website `site-dist` to `discordy-site`, client `installer-windows` (plus the `Voics-Setup-latest.exe` copy) and `android-apk` to `discordy-updates`. A marker object `.published/<repo>-<artifact>` in the bucket records the run last published; the workflow input `run_id` republishes a specific run. Script: gitops `scripts/publish-public.sh`.
+- `secrets-sync` stays in gitops on the `discordy` runner.
+- `ubuntu-latest` is Ubuntu 26.04 since November 2026. Playwright cannot install Chromium there yet, so the website check job pins `ubuntu-24.04`.
 
 ### Where `CI_RUNNER` is declared
 
@@ -192,7 +198,7 @@ When to go cold: a PR is green but you suspect it should not be, a failure only 
 | An empty `.dockerignore` | sent 18.8 GB of context; the api image took 835 s | `.dockerignore` is reviewed in every Dockerfile PR |
 | The runner updates itself | GitHub's runner auto-updates inside the container. The 2.338.0 → 2.338.2 update left `externals/node24/bin/npm` broken (`Cannot find module '../lib/cli.js'`), so every step that installs pnpm through `pnpm/action-setup` failed; cold client runs died after 14 s | self-hosted cold runs install pnpm with corepack instead. Also bump `IMAGE` in `runner.sh` to the latest runner release and rebuild when idle, so runners start from a clean install |
 | `CI_RUNNER=github` in a repo with its own workflows | the shared workflows map `github` to `ubuntu-latest`, but a repo's own workflows (docs `docs.yml`, `notion-sync.yml`) use `vars.CI_RUNNER \|\| 'ubuntu-latest'` directly, so they waited forever for a runner labelled "github" (2026-11-03, docs CI stuck for hours) | to move a repo to GitHub-hosted, set `ubuntu-latest`, which works with both expressions |
-| Deleting `CI_RUNNER` on a repo | does not "reset" it: there is no organization fallback, so the repo moves to paid GitHub-hosted runners | set it back to `vm-runner` instead of deleting it |
+| Deleting `CI_RUNNER` on a repo | moves the repo to GitHub-hosted runners: free for the public repositories (that is the intended state since 2026-11-21), billed minutes for the private gitops | keep gitops on `vm-runner` |
 
 ## Disk space: what grows, what cleans it, what to do when it is full
 

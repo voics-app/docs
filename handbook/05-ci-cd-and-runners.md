@@ -95,7 +95,7 @@ GitHub-hosted `ubuntu-latest` is the default. When the GitHub Free minutes run l
 | GitHub-hosted (default) | `ubuntu-latest` | `scripts/runner.sh use github` |
 | Owner PC (Docker Desktop) | `karma-pc` | `scripts/runner.sh up` starts the runners and switches |
 | A VM | `vm-<host>` | bootstrap once, `up --host`, then `use vm-<host>` |
-| In-cluster ARC | `discordy` | named explicitly by jobs that need the cluster network (secrets-sync, minio-publish) |
+| In-cluster ARC | `discordy` | named explicitly by jobs that need the cluster network, in the private gitops only: secrets-sync, publish-site, publish-public (public repositories cannot use it) |
 | GitHub-hosted Windows | `windows-latest` | the desktop installer build |
 
 ### How switching works
