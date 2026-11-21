@@ -1,6 +1,6 @@
 # Client UX: user context menu and profile popout
 
-Status: implemented in [client#80](https://github.com/discordy-voics/client/issues/80) (supersedes client#52). Part of the Discord parity plan ([2026-10-20-discord-parity-gap](../plans/2026-10-20-discord-parity-gap.md), P0).
+Status: implemented in [client#80](https://github.com/voics-app/client/issues/80) (supersedes client#52). Part of the Discord parity plan ([2026-10-20-discord-parity-gap](../plans/2026-10-20-discord-parity-gap.md), P0).
 
 ## Design
 

@@ -1,5 +1,5 @@
 {
-  "name": "@discordy-voics/docs",
+  "name": "@voics-app/docs",
   "version": "0.1.0",
   "private": true,
   "description": "Voics architecture, decisions, references and runbooks",

@@ -4,8 +4,8 @@ Summary: the operator portal, a Rust backend-for-frontend with an embedded React
 
 | | |
 |---|---|
-| Repository | `discordy-voics/admin` |
-| Image | `ghcr.io/discordy-voics/admin-bff` (namespace `voics-apps`, port 8090; the SPA is embedded) |
+| Repository | `voics-app/admin` |
+| Image | `ghcr.io/voics-app/admin-bff` (namespace `voics-apps`, port 8090; the SPA is embedded) |
 | Tech | Rust 1.99, axum, sqlx; React, Vite, Recharts |
 | Owns | Postgres database `discordy_admin` (minute, hour and day rollups of event counters) |
 | URL | `https://discordy-admin.voics.nl` behind the IP lock and Cloudflare Access ([Ops and access](04-ops-and-access.md)) |

@@ -2,7 +2,7 @@
 
 Summary: welke gebruikersfuncties en beheeronderdelen aantoonbaar bestaan, welke alleen zijn voorbereid en welke keuzes nog van de eigenaar afhangen.
 
-Momentopname: **18 november 2026**. Dit is geen lijst met automatisch afgeronde kaarten. De [GitHub-projectkaart](https://github.com/orgs/discordy-voics/projects/1) en [het opleverprogramma](../plans/2026-11-18-completion-programme.md) blijven leidend voor latere wijzigingen. Een lokale test, groene PR, merge naar develop, uitgebrachte versie en praktijkproef zijn verschillende bewijzen.
+Momentopname: **18 november 2026**. Dit is geen lijst met automatisch afgeronde kaarten. De [GitHub-projectkaart](https://github.com/orgs/voics-app/projects/1) en [het opleverprogramma](../plans/2026-11-18-completion-programme.md) blijven leidend voor latere wijzigingen. Een lokale test, groene PR, merge naar develop, uitgebrachte versie en praktijkproef zijn verschillende bewijzen.
 
 De uitgebreidere onafhankelijke controles staan in het [testverslag van 18 november](../plans/2026-11-18-acceptance-evidence.md). De nieuwe features hieronder zijn nog geen productie- of store-release.
 

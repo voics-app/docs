@@ -36,7 +36,7 @@ before claiming a leak is fixed or ruled out.
 
 ## Recovery through GitOps
 
-[gitops PR 131](https://github.com/discordy-voics/gitops/pull/131) restores the production reflector
+[gitops PR 131](https://github.com/voics-app/gitops/pull/131) restores the production reflector
 limit to 1Gi in `clusters/gen-serv/flux-system/kustomization.yaml`, matching the
 [upstream v1.2.5 Deployment](https://github.com/fluxcd/image-reflector-controller/blob/v1.2.5/config/manager/deployment.yaml).
 Its 64Mi request and concurrency of one stay unchanged. `GOMEMLIMIT` already uses a

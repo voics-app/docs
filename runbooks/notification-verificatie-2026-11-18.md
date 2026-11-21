@@ -1,7 +1,7 @@
 # Verificatie van meldingsinstellingen en leestellers
 
 Op 18 november 2026 heeft de hoofdagent de wijzigingen voor
-[messages #23](https://github.com/discordy-voics/messages/issues/23) onafhankelijk
+[messages #23](https://github.com/voics-app/messages/issues/23) onafhankelijk
 gecontroleerd in de bestaande lokale testomgeving. De kaart kan naar **In review**
 voor de eigenaar. Deze controle is geen productie-uitrol of bewijs van bezorging
 door Apple of Google.

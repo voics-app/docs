@@ -4,7 +4,7 @@
 - Date: 2026-10-21
 - Deciders: @oussamaelhajoui
 - Supersedes: [ADR-0012](0012-search-deferred.md) and [ADR-0013](0013-search-index-topology.md)
-- Technical story: [messages#11](https://github.com/discordy-voics/messages/issues/11), [client#47](https://github.com/discordy-voics/client/issues/47)
+- Technical story: [messages#11](https://github.com/voics-app/messages/issues/11), [client#47](https://github.com/voics-app/client/issues/47)
 
 ## Context and Problem Statement
 
