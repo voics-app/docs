@@ -5,7 +5,7 @@
 | Status | Draft — awaiting owner review |
 | Date | 2026-10-16 |
 | Owner | @oussamaelhajoui |
-| GitHub org | `discordy-voics` (private repos) |
+| GitHub org | `voics-app` (private repos) |
 | Product name | **Voics** (lives at `discordy.voics.nl`; the earlier product on `voics.nl` / `app.voics.nl` is separate and untouched) |
 | Scope | Full Discord-equivalent platform, excluding payments (Nitro, boosts, shop) |
 
@@ -101,7 +101,7 @@ src/
 
 ## 5. Identity, auth and permissions
 
-- **Login**: email + password hashed with argon2id, plus optional 2FA. TOTP is implemented. WebAuthn passkeys are specified as an additional second factor in ADR-0015; runtime implementation and client acceptance remain open in [api#19](https://github.com/discordy-voics/api/issues/19). The accepted design requires password verification before every login MFA ceremony. Registration and assertion state must stay in Postgres, expire after five minutes and be consumed once; signature counters must be checked. Recovery codes must be hashed and single use. RP identity and allowed origin must come from deployment configuration, never from request headers.
+- **Login**: email + password hashed with argon2id, plus optional 2FA. TOTP is implemented. WebAuthn passkeys are specified as an additional second factor in ADR-0015; runtime implementation and client acceptance remain open in [api#19](https://github.com/voics-app/api/issues/19). The accepted design requires password verification before every login MFA ceremony. Registration and assertion state must stay in Postgres, expire after five minutes and be consumed once; signature counters must be checked. Recovery codes must be hashed and single use. RP identity and allowed origin must come from deployment configuration, never from request headers.
 - **Tokens**: 15-minute access JWTs signed with Ed25519, and rotating refresh tokens with reuse detection.
 - **Devices**: each device has an Ed25519 identity key and uploads MLS key packages. Users can compare safety numbers.
 - **Permissions**: Discord-compatible 64-bit permission bitfield, @everyone role, role hierarchy, and channel overwrites (role and member, allow/deny). Computed in `api`; cached and recomputed in guild processes.
@@ -167,12 +167,12 @@ Modelled on *How Discord Handles 2.5M Concurrent Voice Users Using WebRTC*. Each
 |---|---|
 | Voice server | One pod per node: `voice-signaling` (Elixir) controls a local `sfu` (Rust/str0m) over a Unix socket. Signaling issues stream IDs and keys and forwards speaking indicators. |
 | Allocation | **All voice channels of a guild share one voice server.** The first joiner triggers the gateway guild process to pick the **least-utilised healthy server in the guild's region** from etcd. Region is set per guild and overridable per channel. |
-| Discovery | Each voice server writes `/discordy/voice/nodes/<region>/<node_id>` to etcd with a 10 s TTL lease, carrying users, CPU and egress. A missed lease removes it from allocation. [ADR-0025](../adr/0025-active-voice-health-probes.md) prepares independent ICE/DTLS/RTP probing, lease-fenced health observations, hysteresis and persistent manual exclusions for [voice#7](https://github.com/discordy-voics/voice/issues/7). Required-health enforcement is opt-in and has not been activated by this design. |
+| Discovery | Each voice server writes `/discordy/voice/nodes/<region>/<node_id>` to etcd with a 10 s TTL lease, carrying users, CPU and egress. A missed lease removes it from allocation. [ADR-0025](../adr/0025-active-voice-health-probes.md) prepares independent ICE/DTLS/RTP probing, lease-fenced health observations, hysteresis and persistent manual exclusions for [voice#7](https://github.com/voics-app/voice/issues/7). Required-health enforcement is opt-in and has not been activated by this design. |
 | Handshake | `VOICE_STATE_UPDATE` (gateway) → `VOICE_SERVER_UPDATE {endpoint, token}` → client opens the **voice WebSocket** at `wss://discordy-rtc-<region>.voics.nl` → join payload of about 1 KB (SSRCs, codecs, crypto). The client synthesises SDP locally; the server is **ICE-lite**; there is no TURN for voice. Client IPs are never exposed to peers. |
 | Media | Opus with FEC and **DTX**: no packets in silence, and the SFU rewrites RTP sequence numbers and timestamps. Video uses VP9 SVC, AV1 or H.264 simulcast with per-subscriber layer selection driven by RTCP/REMB/TWCC bandwidth estimation. |
 | Failover | **SFU crash** → signaling restarts it and rebuilds state without client involvement (also used for zero-downtime upgrades). **Server loss or DDoS** → the lease expires or the node is drained → the client's voice WebSocket drops → the client asks the gateway → the guild process reassigns → the client reconnects. |
-| E2EE | DAVE-style: frame-level encryption with keys derived from the call's MLS group. Always on in Ephemeral and P2P chats, opt-in per channel in Standard. Account setting `e2ee_calls_default` ("Encrypt all my calls end-to-end", default off): when on, every call the user starts or joins is E2EE, in DMs, group DMs, voice channels and Go Live ([voice#8](https://github.com/discordy-voics/voice/issues/8), owner decision 2026-10-19). Mixed calls (proposed, pending owner confirmation in [docs#10](https://github.com/discordy-voics/docs/issues/10)): if any participant has the setting on, or the channel requires E2EE, or someone already in the call is encrypted, the call is E2EE for everyone; participants who were not yet encrypted receive a new voice token with E2EE on. The setting does not change a call in progress, and a call stays E2EE until it empties. P2P-mode DM calls are direct peer connections with no SFU. DAVE is implemented on the client and in the signaling node. |
-| E2EE when settings are unreadable | If the gateway cannot read the participants' `e2ee_calls_default` (Valkey unavailable), `E2EE_SETTINGS_UNAVAILABLE_POLICY` decides: `open` (default) joins unencrypted and logs a warning, `closed` encrypts the call, `wait` retries the read for about 2 s and then refuses the join with a `VOICE_JOIN_FAILED` error ([gateway#13](https://github.com/discordy-voics/gateway/issues/13)). |
+| E2EE | DAVE-style: frame-level encryption with keys derived from the call's MLS group. Always on in Ephemeral and P2P chats, opt-in per channel in Standard. Account setting `e2ee_calls_default` ("Encrypt all my calls end-to-end", default off): when on, every call the user starts or joins is E2EE, in DMs, group DMs, voice channels and Go Live ([voice#8](https://github.com/voics-app/voice/issues/8), owner decision 2026-10-19). Mixed calls (proposed, pending owner confirmation in [docs#10](https://github.com/voics-app/docs/issues/10)): if any participant has the setting on, or the channel requires E2EE, or someone already in the call is encrypted, the call is E2EE for everyone; participants who were not yet encrypted receive a new voice token with E2EE on. The setting does not change a call in progress, and a call stays E2EE until it empties. P2P-mode DM calls are direct peer connections with no SFU. DAVE is implemented on the client and in the signaling node. |
+| E2EE when settings are unreadable | If the gateway cannot read the participants' `e2ee_calls_default` (Valkey unavailable), `E2EE_SETTINGS_UNAVAILABLE_POLICY` decides: `open` (default) joins unencrypted and logs a warning, `closed` encrypts the call, `wait` retries the read for about 2 s and then refuses the join with a `VOICE_JOIN_FAILED` error ([gateway#13](https://github.com/voics-app/gateway/issues/13)). |
 | Screen share | Electron `desktopCapturer` (Windows Graphics Capture): screen, window or app, **with app/system audio** (Windows loopback). Presets 720p30, 1080p60, 1440p60 and Source. Hardware encode through Chromium. Several streams can be watched at once, with pop-out. DRM content renders black; **Watch Together** keeps play/pause/seek in sync while each participant plays from their own account. |
 | Audio processing | WebRTC AEC/AGC, RNNoise (WASM), adjustable VAD, global push-to-talk, per-user volume. |
 | Telemetry | Clients report jitter, loss, RTT and bitrate every 10 s → Redpanda → admin regions dashboard. |
@@ -205,8 +205,8 @@ Modelled on *How Discord Handles 2.5M Concurrent Voice Users Using WebRTC*. Each
 | 22 | P2P_SIGNAL |
 
 **Behaviour**
-- **Encoding**: JSON in v1. Per-connection zstd streaming is proposed as an opt-in, negotiated at connect time (ADR-0014, [gateway#11](https://github.com/discordy-voics/gateway/issues/11)). ETF comes later.
-- **Background clients**: passive sessions that receive deltas instead of the full dispatch stream are proposed in [gateway#12](https://github.com/discordy-voics/gateway/issues/12).
+- **Encoding**: JSON in v1. Per-connection zstd streaming is proposed as an opt-in, negotiated at connect time (ADR-0014, [gateway#11](https://github.com/voics-app/gateway/issues/11)). ETF comes later.
+- **Background clients**: passive sessions that receive deltas instead of the full dispatch stream are proposed in [gateway#12](https://github.com/voics-app/gateway/issues/12).
 - **Resume**: sessions are resumable for 2 minutes from a Valkey resume buffer.
 - **Intents**: follow the Discord model.
 
@@ -231,7 +231,7 @@ Modelled on *How Discord Handles 2.5M Concurrent Voice Users Using WebRTC*. Each
   - Token-based design system with dark, OLED and light themes and an accent picker.
   - Glass surfaces, Inter + JetBrains Mono, 8 px rhythm.
   - Spring motion that honours reduced-motion settings.
-  - Keyboard operation for every interactive element, with a visible focus indicator (at least 3:1 contrast) in every theme. Tracked in [client#23](https://github.com/discordy-voics/client/issues/23).
+  - Keyboard operation for every interactive element, with a visible focus indicator (at least 3:1 contrast) in every theme. Tracked in [client#23](https://github.com/voics-app/client/issues/23).
   - Command palette (Ctrl+K), animated speaking rings, a screen-share stage with PiP, and a delivery-mode badge.
   - Key screens are mocked and reviewed before being built.
 - **Packaging**: electron-builder producing an NSIS installer (Windows, primary), dmg (macOS) and AppImage/deb (Linux). Unsigned at first; signing is added later.
@@ -256,7 +256,7 @@ Modelled on *How Discord Handles 2.5M Concurrent Voice Users Using WebRTC*. Each
 ## 12. Infrastructure
 
 - **Cluster**: existing microk8s 1.35 on `gen-serv` (192.168.1.212). Namespaces `voics-apps`, `voics-data`, `voics-voice`, `voics-system`, `observability` and `flux-system`. Existing workloads are inventoried first and left untouched.
-- **Flux**: bootstrapped to `discordy-voics/gitops` with the layout `clusters/gen-serv/{infrastructure,apps,regions}.yaml`. Infrastructure is split into controllers and configs, and applied in dependency order. Image automation follows semver tags from GHCR and commits the bumps to git.
+- **Flux**: bootstrapped to `voics-app/gitops` with the layout `clusters/gen-serv/{infrastructure,apps,regions}.yaml`. Infrastructure is split into controllers and configs, and applied in dependency order. Image automation follows semver tags from GHCR and commits the bumps to git.
 - **Ingress**: `cloudflared` → ingress-nginx → services, with TLS at Cloudflare.
 - **Router forwards**: UDP **50000** (SFU) and UDP **3478** (coturn, P2P fallback only).
 - **Hostnames** live in the `cluster-config` ConfigMap and are substituted through Flux `postBuild`, so every hostname is configurable. Cloudflare's free Universal SSL only covers `*.voics.nl`, so **every hostname is exactly one level deep**. Defaults:
@@ -285,7 +285,7 @@ Modelled on *How Discord Handles 2.5M Concurrent Voice Users Using WebRTC*. Each
 ## 13. CI/CD and git-flow
 
 - **Branches**: `main` (released), `develop` (integration), `feature/*`, `release/*` and `hotfix/*`. Every commit follows Conventional Commits.
-- **Reusable workflows** in `discordy-voics/.github`, run in this order:
+- **Reusable workflows** in `voics-app/.github`, run in this order:
   1. lint
   2. test
   3. build
@@ -340,7 +340,7 @@ Modelled on *How Discord Handles 2.5M Concurrent Voice Users Using WebRTC*. Each
 
 ## 17. Owner prerequisites
 
-1. **Create the org** `discordy-voics` on GitHub Free.
+1. **Create the org** `voics-app` on GitHub Free.
 2. **Widen the token scopes**: `gh auth refresh -s admin:org,workflow,write:packages,delete:packages`.
 3. **On the VM**: `sudo usermod -aG microk8s karma && sudo chown -R karma ~/.kube`. Passwordless sudo is optional.
 4. **Cloudflare**: an API token (Zone:DNS:Edit + Account:Cloudflare Tunnel:Edit + Access:Edit) for the `voics.nl` zone, stored as the GitHub org secret `CLOUDFLARE_API_TOKEN`. Voics creates its own tunnel and DNS records.

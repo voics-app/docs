@@ -3,7 +3,7 @@
 - Status: superseded by [ADR-0018](0018-message-search-postgres-fts.md). Was: proposed, applies when ADR-0012 is revisited.
 - Date: 2026-10-18
 - Deciders: @oussamaelhajoui (pending)
-- Technical story: [docs#9](https://github.com/discordy-voics/docs/issues/9), [messages#10](https://github.com/discordy-voics/messages/issues/10)
+- Technical story: [docs#9](https://github.com/voics-app/docs/issues/9), [messages#10](https://github.com/voics-app/messages/issues/10)
 - Related: [research note, posts 1 and 2](../research/discord-engineering-comparison.md)
 
 ## Context and Problem Statement

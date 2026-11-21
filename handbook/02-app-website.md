@@ -4,7 +4,7 @@ Summary: the static marketing site at discordy.voics.nl, rendered from templates
 
 | | |
 |---|---|
-| Repository | `discordy-voics/website` |
+| Repository | `voics-app/website` |
 | URL | `https://discordy.voics.nl` (bucket `discordy-site` in cluster MinIO) |
 | Tech | Node scripts with no dependencies, HTML and CSS templates |
 

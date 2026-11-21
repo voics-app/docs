@@ -16,7 +16,7 @@ A tag is what turns code into a **release**. CI sees the tag and builds the stab
 
 | Repository | Trigger | Result | Live where, and when |
 |---|---|---|---|
-| api, messages, gateway, voice, admin | tag `vX.Y.Z` | Docker image `ghcr.io/discordy-voics/<image>` with tags `X.Y.Z`, `X.Y` and `latest`, with title, description and source on GHCR, cosign-signed, SBOM | Production: Flux image automation sees the stable tag within 5 min, commits the bump to gitops `main`, Flux rolls the pod (about 10 min total) |
+| api, messages, gateway, voice, admin | tag `vX.Y.Z` | Docker image `ghcr.io/voics-app/<image>` with tags `X.Y.Z`, `X.Y` and `latest`, with title, description and source on GHCR, cosign-signed, SBOM | Production: Flux image automation sees the stable tag within 5 min, commits the bump to gitops `main`, Flux rolls the pod (about 10 min total) |
 | client (desktop) | merge to `main` **or** tag `vX.Y.Z` (installer built on GitHub `windows-latest`) | Windows installer `Discordy-Setup-X.Y.Z.exe`, `latest.yml`, `Discordy-Setup-latest.exe` and a GitHub Release | Installed clients update themselves (electron-updater reads `latest.yml`); the website button serves the new installer within about 5 min (Cloudflare cache) |
 | website | merge to `main` or tag | Static site uploaded to the `discordy-site` bucket | <https://discordy.voics.nl> after about 2 min |
 | gitops | merge to `main` (the tag is a marker) | Flux applies the manifests | Cluster, within 1 to 2 min |
@@ -27,7 +27,7 @@ Develop builds never reach production: they get pre-release versions `X.Y.(Z+1)-
 
 ## When we release: feature-based, not dated
 
-Releases are planned by **content, not by date**. Every client version has a GitHub milestone (for example [client v0.4.2](https://github.com/discordy-voics/client/milestones)) listing the issues it contains.
+Releases are planned by **content, not by date**. Every client version has a GitHub milestone (for example [client v0.4.2](https://github.com/voics-app/client/milestones)) listing the issues it contains.
 
 - **A version ships as soon as all its issues are closed and CI is green.** There is no waiting for a date.
 - P0 fixes ship as soon as they are merged, in the next patch.
@@ -60,7 +60,7 @@ For a bigger release, stabilise on a `release/X.Y.Z` branch first (fixes only, `
 ## Check that the release worked
 
 ```bash
-gh run list -R discordy-voics/<repo> --branch v0.3.1        # the tag build must be green
+gh run list -R voics-app/<repo> --branch v0.3.1        # the tag build must be green
 flux get images policy -A                                    # production follows the new X.Y.Z
 kubectl -n voics-apps get deploy -o wide                     # running image tags
 curl -s https://discordy-updates.voics.nl/latest.yml | head -1   # client: version: X.Y.Z

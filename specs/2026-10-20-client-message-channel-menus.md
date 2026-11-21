@@ -1,6 +1,6 @@
 # Client UX: message toolbar, contextual menus and channel menus
 
-Status: implemented in [client#81](https://github.com/discordy-voics/client/issues/81) and [client#83](https://github.com/discordy-voics/client/issues/83) (PR client#102). Part of the Discord parity plan ([2026-10-20-discord-parity-gap](../plans/2026-10-20-discord-parity-gap.md), P0). Companion to the user context menu spec (client#80), which covers right-click on people.
+Status: implemented in [client#81](https://github.com/voics-app/client/issues/81) and [client#83](https://github.com/voics-app/client/issues/83) (PR client#102). Part of the Discord parity plan ([2026-10-20-discord-parity-gap](../plans/2026-10-20-discord-parity-gap.md), P0). Companion to the user context menu spec (client#80), which covers right-click on people.
 
 ## Design
 
