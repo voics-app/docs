@@ -30,6 +30,7 @@ Every secret on the Voics platform is listed here. The source is [`inventory.yam
 | [Voice token secret (HS256)](#voice-token-secret) | Authentication and service-to-service | gateway, voice-signaling | `SHARED_VOICE_TOKEN_SECRET` (env:production) | 90d |
 | [Voice probe token signing key (prepared, inactive)](#voice-probe-token-secret) | Authentication and service-to-service | voice-prober, voice-signaling | not in GitHub | 90d |
 | [Erlang distribution cookie](#release-cookie) | Runtime | gateway | `GATEWAY_RELEASE_COOKIE` (env:production) | 180d |
+| [GitHub OAuth app credentials](#github-oauth) | Authentication and service-to-service | api | not in GitHub | on-change |
 | [SMTP credentials](#smtp-credentials) | Runtime | api | `SMTP_USERNAME`, `SMTP_PASSWORD` (env:production) | on-change |
 | [Admin allowlist](#admin-allowed-emails) | Authentication and service-to-service | admin-bff | `ADMIN_ALLOWED_EMAILS` (env:production) | on-change |
 | [coturn static auth secret](#coturn-static-auth-secret) | Runtime | coturn, gateway | `COTURN_STATIC_AUTH_SECRET` (env:production) | 180d |
@@ -236,6 +237,23 @@ Every secret on the Voics platform is listed here. The source is [`inventory.yam
 | Generate | After rollout approval: openssl rand -base64 48. Never reuse VOICE_TOKEN_SECRET. |
 | Notes | Metadata only; no value, GitHub secret, OpenBao binding or Kubernetes Secret is created. Add the reviewed gitops binding before enabling the prepared prober. Missing key keeps probe admission disabled. |
 
+<a id="github-oauth"></a>
+
+### GitHub OAuth app credentials
+
+| Field | Value |
+|---|---|
+| Purpose | Allows the api to verify ownership of linked GitHub accounts. |
+| Consumers | api |
+| Env vars | `CONNECTION_GITHUB_CLIENT_ID`, `CONNECTION_GITHUB_CLIENT_SECRET` |
+| GitHub secret | not in GitHub |
+| OpenBao | not in OpenBao |
+| Kubernetes Secret | — |
+| Owner | @oussamaelhajoui |
+| Rotation | on-change — [secret-rotation.md#github-oauth](../runbooks/secret-rotation.md#github-oauth) |
+| Generate | Register a GitHub OAuth app with the exact public API callback, then obtain its client ID and secret. |
+| Notes | Prepared metadata only; no GitHub, OpenBao or Kubernetes binding exists until a reviewed environment overlay and matching inventory entries are added. Linking remains disabled. |
+
 <a id="admin-allowed-emails"></a>
 
 ### Admin allowlist
@@ -415,7 +433,7 @@ Every secret on the Voics platform is listed here. The source is [`inventory.yam
 
 | Field | Value |
 |---|---|
-| Purpose | SSH deploy key with write access to discordy-voics/gitops, used by Flux source and image automation. |
+| Purpose | SSH deploy key with write access to voics-app/gitops, used by Flux source and image automation. |
 | Consumers | Flux source-controller, image-automation-controller |
 | Env vars | — |
 | GitHub secret | not in GitHub |

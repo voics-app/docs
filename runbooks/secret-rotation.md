@@ -16,12 +16,12 @@ The GitHub secret names and OpenBao keys below match `gitops/secrets/inventory.y
 2. **Update GitHub**:
 
    ```bash
-   gh secret set <NAME> --org discordy-voics --visibility selected --repos gitops   # org scope
-   gh secret set <NAME> --repo discordy-voics/gitops --env production             # env scope
+   gh secret set <NAME> --org voics-app --visibility selected --repos gitops   # org scope
+   gh secret set <NAME> --repo voics-app/gitops --env production             # env scope
    ```
 
    Pipe the value from stdin, never as an argument: `openssl rand -base64 48 | gh secret set NAME ...`.
-3. **Sync**: `gh workflow run secrets-sync.yml --repo discordy-voics/gitops`, then `gh run watch`.
+3. **Sync**: `gh workflow run secrets-sync.yml --repo voics-app/gitops`, then `gh run watch`.
 4. **Refresh ESO**:
 
    ```bash
@@ -41,7 +41,7 @@ The GitHub secret names and OpenBao keys below match `gitops/secrets/inventory.y
 ## Cloudflare API token
 
 1. In Cloudflare, go to My Profile → API Tokens and **roll** the token. This keeps the permissions and issues a new value. Alternatively, create a new token with the same scopes listed in the [inventory](../secrets/README.md#cloudflare-api-token).
-2. Set `gh secret set CLOUDFLARE_API_TOKEN --org discordy-voics`, then run `secrets-sync`.
+2. Set `gh secret set CLOUDFLARE_API_TOKEN --org voics-app`, then run `secrets-sync`.
 3. **Verify**: run `curl -s -H "Authorization: Bearer <new>" https://api.cloudflare.com/client/v4/user/tokens/verify | jq .result.status`. It must print `active`.
 4. Delete the old token, if you created a new one rather than rolling.
 5. Update 1Password's copy, which `regionctl` users read.
@@ -57,7 +57,7 @@ curl -s -X PATCH -H "$AUTH" -H 'Content-Type: application/json' \
   "$CF/accounts/$ACCOUNT_ID/cfd_tunnel/$TUNNEL_ID" --data "{\"tunnel_secret\":\"$NEW_SECRET\"}" | jq .success
 jq -cn --arg a "$ACCOUNT_ID" --arg t "$TUNNEL_ID" --arg s "$NEW_SECRET" \
   '{AccountTag: $a, TunnelSecret: $s, TunnelID: $t}' \
-  | gh secret set CLOUDFLARED_CREDENTIALS_JSON --repo discordy-voics/gitops --env production
+  | gh secret set CLOUDFLARED_CREDENTIALS_JSON --repo voics-app/gitops --env production
 ```
 
 Then run `secrets-sync`, force-sync `voics-system/cloudflared-credentials`, and restart `cloudflared`:
@@ -84,8 +84,8 @@ The private key is `API_JWT_PRIVATE_KEY` (read by api only). The public key is `
    ```bash
    openssl genpkey -algorithm ed25519 -out jwt.pem
    openssl pkey -in jwt.pem -pubout -out jwt.pub.pem
-   gh secret set API_JWT_PRIVATE_KEY    --repo discordy-voics/gitops --env production < jwt.pem
-   gh secret set SHARED_JWT_PUBLIC_KEY  --repo discordy-voics/gitops --env production < jwt.pub.pem
+   gh secret set API_JWT_PRIVATE_KEY    --repo voics-app/gitops --env production < jwt.pem
+   gh secret set SHARED_JWT_PUBLIC_KEY  --repo voics-app/gitops --env production < jwt.pub.pem
    shred -u jwt.pem jwt.pub.pem
    ```
 
@@ -103,7 +103,7 @@ The private key is `API_JWT_PRIVATE_KEY` (read by api only). The public key is `
 
 There is one shared value, sent as `X-Internal-Token`. During the rollout, pods with different values reject each other's internal calls. Keep that window to seconds:
 
-1. Set the new value: `gh secret set SHARED_INTERNAL_SERVICE_TOKEN --repo discordy-voics/gitops --env production`, then run `secrets-sync`.
+1. Set the new value: `gh secret set SHARED_INTERNAL_SERVICE_TOKEN --repo voics-app/gitops --env production`, then run `secrets-sync`.
 2. Force-sync `admin-secrets`, `api-secrets`, `gateway-secrets` and `messages-secrets` in `voics-apps`, and `voice-secrets` in `voics-voice`.
 3. Restart **all consumers in one command** (the same command as for the JWT key).
 4. **Verify**: the gateway READY works (it calls api's internal `/ready`), and the admin Overview loads (admin-bff calls the internal stats endpoints).
@@ -112,7 +112,7 @@ There is one shared value, sent as `X-Internal-Token`. During the rollout, pods 
 
 Signs attachment download URLs. Links issued under the old key stop working at the restart; clients recover by refetching the message.
 
-1. Set the new value: `openssl rand -hex 32 | gh secret set MESSAGES_ATTACHMENT_SIGNING_KEY --repo discordy-voics/gitops --env production`, then run `secrets-sync`.
+1. Set the new value: `openssl rand -hex 32 | gh secret set MESSAGES_ATTACHMENT_SIGNING_KEY --repo voics-app/gitops --env production`, then run `secrets-sync`.
 2. Force-sync `messages-secrets` in `voics-apps`.
 3. Restart the messages deployment.
 4. **Verify**: open a channel with an attachment (the history call returns fresh links) and download it.
@@ -122,7 +122,7 @@ Signs attachment download URLs. Links issued under the old key stop working at t
 The Firebase service-account key the notifier signs its Android push requests with. Google lets a service account hold several keys, so rotate without a gap.
 
 1. In the Firebase console (project `voics-cf336`), Project settings, Service accounts, **Generate new private key**.
-2. `gh secret set NOTIFIER_FCM_SERVICE_ACCOUNT --repo discordy-voics/gitops --env production < key.json`, then run `secrets-sync` with `paths=discordy/notifier-fcm`.
+2. `gh secret set NOTIFIER_FCM_SERVICE_ACCOUNT --repo voics-app/gitops --env production < key.json`, then run `secrets-sync` with `paths=discordy/notifier-fcm`.
 3. Force-sync `notifier-fcm` in `voics-apps` and restart the notifier (it reads the key at startup).
 4. Check `notifier_pushes_total{provider="fcm",outcome="sent"}` moves, then delete the old key in the Google Cloud console (IAM, Service accounts, Keys).
 
@@ -131,7 +131,7 @@ The Firebase service-account key the notifier signs its Android push requests wi
 The .p8 key the notifier signs APNs requests with. Apple lets an account hold two active keys, so rotate without a gap.
 
 1. In the Apple Developer account create a second key with the APNs service enabled and download the .p8. Note its Key ID.
-2. Set the three values: `gh secret set NOTIFIER_APNS_KEY --repo discordy-voics/gitops --env production < AuthKey_XXXXXXXXXX.p8`, then `NOTIFIER_APNS_KEY_ID` and `NOTIFIER_APNS_TEAM_ID` the same way (pipe the value, never an argument). Then run `secrets-sync`.
+2. Set the three values: `gh secret set NOTIFIER_APNS_KEY --repo voics-app/gitops --env production < AuthKey_XXXXXXXXXX.p8`, then `NOTIFIER_APNS_KEY_ID` and `NOTIFIER_APNS_TEAM_ID` the same way (pipe the value, never an argument). Then run `secrets-sync`.
 3. Force-sync `notifier-secrets` in `voics-apps`.
 4. Restart the notifier: `kubectl -n voics-apps rollout restart deploy/notifier`. It reads the key at startup and refuses a file that is not a valid .p8.
 5. **Verify**: `kubectl -n voics-apps logs deploy/notifier` shows no `403` answers, and `notifier_apns_errors_total` stays flat while a test message pushes (runbooks/push-notifications.md).
@@ -203,27 +203,37 @@ The `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` pair is read by MinIO, api and messa
 ## GHCR pull token
 
 1. Create a new PAT with `read:packages` only.
-2. Run `gh secret set GHCR_TOKEN --org discordy-voics`, then `secrets-sync`. Use `GHCR_USERNAME` only if the account changes.
+2. Run `gh secret set GHCR_TOKEN -R voics-app/gitops --env production`, then `secrets-sync`. Use `GHCR_USERNAME` only if the account changes. (These are gitops `production` environment secrets, not org secrets.)
 3. Force-sync `ghcr-pull` in `voics-apps`, `voics-voice`, and `flux-system`.
 4. **Verify**: run `flux reconcile image repository api -n flux-system`, which must succeed. Then delete one app pod; its image must pull.
 5. Delete the old PAT.
 
 ## ARC GitHub credentials
 
-1. Create a new classic PAT with `admin:org` scope, the one ARC needs to register runners.
-2. Run `gh secret set ARC_GITHUB_TOKEN --org discordy-voics`, then run `secrets-sync`. That workflow runs **on ARC itself**, but the old token still works at this point, so this is fine.
+1. Create a new classic PAT with `admin:org` scope, the one ARC needs to register runners. Give it an expiry and put a reminder in the calendar: on 2026-11-21 the PAT expired unnoticed, the ARC listener crash-looped (`unauthorized` on `registration-token`) and Flux image scans failed with `DENIED`, because the same token served GHCR.
+2. Run `gh secret set ARC_GITHUB_TOKEN -R voics-app/gitops --env production`, then run `secrets-sync`. That workflow runs **on ARC itself**, but the old token still works at this point, so this is fine.
 3. Force-sync `voics-system/arc-github`, then restart the ARC controller and listener.
 4. **Verify**: the runner scale set `discordy` shows as online under Org → Settings → Actions → Runners.
 5. Revoke the old PAT.
 
-If ARC is broken and can't run `secrets-sync`, write the value straight into OpenBao, for example `bao kv put -mount=kv discordy/arc GITHUB_TOKEN="$ARC_GITHUB_TOKEN"`, from an admin shell with a valid OpenBao token. Keep the value in the shell only. See [OpenBao → first-time bootstrap](openbao-unseal.md#first-time-bootstrap).
+If ARC is broken and can't run `secrets-sync` (for example because the old token already expired), write the value straight into OpenBao from a machine with cluster access. Log in with the runner's service account, then patch the keys through stdin so the value never appears in a process list:
+
+```bash
+L=$(kubectl -n voics-system create token discordy-runner --duration=10m \
+  | kubectl -n voics-system exec -i openbao-0 -- bao write -field=token auth/kubernetes/login role=secrets-sync jwt=-)
+printf '%s' "$NEW_PAT" | kubectl -n voics-system exec -i openbao-0 -- env BAO_TOKEN="$L" bao kv patch -mount=kv discordy/arc GITHUB_TOKEN=-
+printf '%s' "$NEW_PAT" | kubectl -n voics-system exec -i openbao-0 -- env BAO_TOKEN="$L" bao kv patch -mount=kv discordy/ghcr TOKEN=-
+kubectl annotate externalsecret -n voics-system arc-github force-sync=$(date +%s) --overwrite   # and ghcr-pull in flux-system, voics-apps, voics-voice
+```
+
+Also set the GitHub environment secrets, or the next `secrets-sync` writes the old value back. Keep the value in the shell only. See [OpenBao → first-time bootstrap](openbao-unseal.md#first-time-bootstrap).
 
 ## Flux deploy key
 
 ```bash
-gh repo deploy-key list --repo discordy-voics/gitops
-gh repo deploy-key delete <id> --repo discordy-voics/gitops
-flux bootstrap github --owner discordy-voics --repository gitops --private --path clusters/gen-serv
+gh repo deploy-key list --repo voics-app/gitops
+gh repo deploy-key delete <id> --repo voics-app/gitops
+flux bootstrap github --owner voics-app --repository gitops --private --path clusters/gen-serv
 ```
 
 The bootstrap is idempotent and creates a new key. Then run `flux reconcile source git flux-system` to verify. Repeat with `--context` for each standalone region cluster.
@@ -231,5 +241,13 @@ The bootstrap is idempotent and creates a new key. Then run `flux reconcile sour
 ## Notion token
 
 1. Go to notion.so/my-integrations → Voics docs sync → **Refresh secret**.
-2. Run `gh secret set NOTION_TOKEN --org discordy-voics`.
+2. Run `gh secret set NOTION_TOKEN --org voics-app`.
 3. **Verify**: re-run the latest `notion-sync` workflow in `docs`.
+
+## GitHub OAuth
+
+1. Keep `CONNECTION_GITHUB_ENABLED=false` until the API and client have passed their integration checks. Register an OAuth app with callback `https://<PUBLIC_API_HOST>/api/v1/connections/github/callback`.
+2. In a reviewed future change, reference the prepared `apps/api/optional/github-oauth` component from the intended environment overlay and add `discordy/github-oauth` with `CLIENT_ID` and `CLIENT_SECRET` to the GitOps inventory and optional paths. Mirror those bindings in this inventory. Store the values in the appropriate GitHub environment as `CONNECTION_GITHUB_CLIENT_ID` and `CONNECTION_GITHUB_CLIENT_SECRET`, then run the existing `secrets-sync` flow. The proposed OpenBao path is `kv/discordy/github-oauth`, consumed by `api-github-oauth`. Never paste values into Git or logs.
+3. Check ExternalSecret readiness and the configured callback without printing secrets. After an approved rollout, enable the flag and test linking, default-private visibility, showing and hiding a profile, and disconnecting with a dedicated test account.
+4. For rotation, disable linking, create the replacement secret, sync it and restart API pods before re-enabling; invalidate the old secret at GitHub. Disabling linking preserves the ability to hide and remove existing links. Disconnecting removes the local record; revoke the OAuth app in GitHub settings separately.
+5. Before rollout, take and verify the normal database backup. To roll back, disable the flag and restore the previous image. Retain the connections tables until any rollback/data-retention decision is approved; do not drop them as part of rollback.

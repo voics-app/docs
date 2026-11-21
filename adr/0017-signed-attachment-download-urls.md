@@ -3,7 +3,7 @@
 - Status: proposed
 - Date: 2026-10-20
 - Deciders: @oussamaelhajoui (pending)
-- Technical story: [messages#17](https://github.com/discordy-voics/messages/issues/17), [docs#10](https://github.com/discordy-voics/docs/issues/10)
+- Technical story: [messages#17](https://github.com/voics-app/messages/issues/17), [docs#10](https://github.com/voics-app/docs/issues/10)
 - Related: [ADR 0003](0003-delivery-modes.md), [ADR 0006](0006-secrets-flow.md)
 
 ## Context and Problem Statement

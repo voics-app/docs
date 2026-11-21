@@ -6,7 +6,7 @@ The authoritative rules are in [CONTRIBUTING](../CONTRIBUTING.md) and the [relea
 
 ## Board and issues
 
-Work is tracked as GitHub issues on the org project board **<https://github.com/orgs/discordy-voics/projects/1>**.
+Work is tracked as GitHub issues on the org project board **<https://github.com/orgs/voics-app/projects/1>**.
 
 | Column | Meaning |
 |---|---|
@@ -16,7 +16,7 @@ Work is tracked as GitHub issues on the org project board **<https://github.com/
 | In review | A PR is open |
 | Done | Merged, verified, closed |
 
-Issues are created from the forms in the `.github` repository: **bug report**, **feature request** and **platform change**. Labels carry the priority (`priority:p0` to `p2`), the workstream (`ws:*`), the type and the owner (`agent:<name>`). Questions that wait for the owner carry `needs:owner` and are collected in [docs#10](https://github.com/discordy-voics/docs/issues/10).
+Issues are created from the forms in the `.github` repository: **bug report**, **feature request** and **platform change**. Labels carry the priority (`priority:p0` to `p2`), the workstream (`ws:*`), the type and the owner (`agent:<name>`). Questions that wait for the owner carry `needs:owner` and are collected in [docs#10](https://github.com/voics-app/docs/issues/10).
 
 ## git-flow
 
@@ -41,7 +41,7 @@ Issues are created from the forms in the `.github` repository: **bug report**, *
 | Repository | Merge to `develop` | Merge to `main` | Tag `vX.Y.Z` |
 |---|---|---|---|
 | api, messages, gateway, voice, admin | CI with integration tests; image `X.Y.(Z+1)-dev.N` on GHCR | CI | Stable image `X.Y.Z`, `X.Y`, `latest`; Flux image automation rolls it out to production in about 10 minutes |
-| client (desktop) | CI | **Publishes a new Windows installer**: the version is computed automatically, then `latest.yml` (auto-update for installed clients), `Discordy-Setup-X.Y.Z.exe` and `Discordy-Setup-latest.exe` (website button) | The same, with the tag's version |
+| client (desktop) | CI | **Publishes a new Windows installer**: the version is computed automatically, then `latest.yml` (auto-update for installed clients), `Voics-Setup-X.Y.Z.exe` and `Voics-Setup-latest.exe` (website button), published by gitops `publish-public` within 10 minutes | The same, with the tag's version |
 | website | CI (build and brand check) | **Deploys to <https://discordy.voics.nl>** | Deploys too |
 | gitops | CI (validate) | **Flux applies it to the cluster** within a minute or two; `secrets-sync` runs when `secrets/inventory.yaml` changes; the invite page is published when `site/**` changes | Release marker only |
 | docs | CI (markdownlint, links) | **Notion sync** (Home → Home Lab → Discordy) | Release marker only |

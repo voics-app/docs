@@ -2,7 +2,7 @@
 
 Summary: one page per repository, with the folder map, key files, configuration, local run, tests and release.
 
-The `discordy-voics` GitHub organisation has one repository per deployable unit ([ADR-0002](../adr/0002-repo-per-service.md)). Each repository has a `README.md` (run, test, configure) and an `ARCHITECTURE.md` (layers and diagram). Every page below follows the same outline.
+The `voics-app` GitHub organisation has one repository per deployable unit ([ADR-0002](../adr/0002-repo-per-service.md)). Each repository has a `README.md` (run, test, configure) and an `ARCHITECTURE.md` (layers and diagram). Every page below follows the same outline.
 
 | Repository | Page | One line |
 |---|---|---|

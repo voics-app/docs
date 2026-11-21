@@ -1,6 +1,6 @@
 # Server discovery (api#74)
 
-Status: existing search, categories, pagination and joining are implemented. The api#45 Community configuration and listing-report increment is in [API PR147](https://github.com/discordy-voics/api/pull/147), [client PR348](https://github.com/discordy-voics/client/pull/348), [admin PR34](https://github.com/discordy-voics/admin/pull/34) and [contracts PR46](https://github.com/discordy-voics/contracts/pull/46). Local API/client/admin tests pass; independent acceptance of the integrated versions remains pending. REST shapes are in `protocols/rest.md` (generated from contracts).
+Status: existing search, categories, pagination and joining are implemented. The api#45 Community configuration and listing-report increment is in [API PR147](https://github.com/voics-app/api/pull/147), [client PR348](https://github.com/voics-app/client/pull/348), [admin PR34](https://github.com/voics-app/admin/pull/34) and [contracts PR46](https://github.com/voics-app/contracts/pull/46). Local API/client/admin tests pass; independent acceptance of the integrated versions remains pending. REST shapes are in `protocols/rest.md` (generated from contracts).
 
 ## Model
 

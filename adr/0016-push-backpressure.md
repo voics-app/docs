@@ -3,7 +3,7 @@
 - Status: accepted
 - Date: 2026-10-18
 - Decision recorded: 2026-11-18, implementation and operator review through the linked feature PRs
-- Technical story: [docs#9](https://github.com/discordy-voics/docs/issues/9), [api#20](https://github.com/discordy-voics/api/issues/20)
+- Technical story: [docs#9](https://github.com/voics-app/docs/issues/9), [api#20](https://github.com/voics-app/api/issues/20)
 - Related: [research note, post 6](../research/discord-engineering-comparison.md)
 
 ## Context and Problem Statement

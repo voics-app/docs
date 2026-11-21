@@ -3,8 +3,8 @@
 - Status: proposed
 - Date: 2026-11-03
 - Deciders: @oussamaelhajoui
-- Technical story: [gitops#48](https://github.com/discordy-voics/gitops/issues/48)
-- Related: [ADR 0021](0021-openbao-auto-unseal.md), [ADR 0006](0006-secrets-flow.md), [ADR 0008](0008-microk8s-reuse.md), [OpenBao unseal runbook](../runbooks/openbao-unseal.md), [gitops#20](https://github.com/discordy-voics/gitops/issues/20), [gitops#21](https://github.com/discordy-voics/gitops/issues/21)
+- Technical story: [gitops#48](https://github.com/voics-app/gitops/issues/48)
+- Related: [ADR 0021](0021-openbao-auto-unseal.md), [ADR 0006](0006-secrets-flow.md), [ADR 0008](0008-microk8s-reuse.md), [OpenBao unseal runbook](../runbooks/openbao-unseal.md), [gitops#20](https://github.com/voics-app/gitops/issues/20), [gitops#21](https://github.com/voics-app/gitops/issues/21)
 
 ## Context and Problem Statement
 
@@ -189,7 +189,7 @@ Migrating back needs bao-seal, because the current wrapping is the transit one. 
 
 ## Interaction with the cluster plan
 
-[gitops#20](https://github.com/discordy-voics/gitops/issues/20) moved the datastore to etcd. [gitops#21](https://github.com/discordy-voics/gitops/issues/21) plans three nodes, with OpenBao as raft with 3 peers. Effects on this decision:
+[gitops#20](https://github.com/voics-app/gitops/issues/20) moved the datastore to etcd. [gitops#21](https://github.com/voics-app/gitops/issues/21) plans three nodes, with OpenBao as raft with 3 peers. Effects on this decision:
 
 - The 3-node cluster gives HA to the **main** OpenBao, so losing one node no longer seals it. It does not fix the "key next to the data" problem, because all peers share the same seal Secret.
 - With raft peers, every peer needs the seal. A transit seal then has one key and one token Secret for all peers, and bao-seal becomes a dependency of every peer's restart.
