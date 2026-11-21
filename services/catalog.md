@@ -77,6 +77,11 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 
 ## api
 
+The proposed [member screening and onboarding](../specs/2026-11-20-member-screening.md)
+uses the existing API, Postgres, messages and gateway services. Migration 0092
+adds configuration and completion state; it adds no service, port or secret.
+The feature is under review and requires coordinated release and QA.
+
 | | |
 |---|---|
 | Purpose | Auth (login, email verification, password recovery, TOTP two-factor with backup codes), account disable and delete, users, devices, push tokens (APNs and FCM, one per login session) and MLS key packages, relationships, per-guild notification settings and private user notes, reports of messages and users (`POST /api/v1/reports`, review through the internal admin routes), guilds, channels, roles and permissions, invites, applications and bots, slash commands, interactions, webhooks, admin endpoints. Transactional outbox to Redpanda. |
