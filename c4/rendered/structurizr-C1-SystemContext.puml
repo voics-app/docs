@@ -1,5 +1,5 @@
 @startuml
-title <size:24>System Context View: Discordy</size>\n<size:24>Who uses Discordy and which external systems it depends on.</size>
+title <size:24>System Context View: Voics</size>\n<size:24>Who uses Voics and which external systems it depends on.</size>
 
 set separator none
 left to right direction
@@ -15,7 +15,7 @@ left to right direction
 !include <C4/C4_Context>
 
 Person(User, "User", $descr="Chats, talks, streams and watches together using the desktop client.", $tags="", $link="")
-System(Discordy, "Discordy", $descr="Real-time chat, voice, video and screen share with three delivery modes.", $tags="", $link="")
+System(Voics, "Voics", $descr="Real-time chat, voice, video and screen share with three delivery modes.", $tags="", $link="")
 Person(Botdeveloper, "Bot developer", $descr="Builds bots with bots-sdk against the REST API and the gateway.", $tags="", $link="")
 Person(Platformadmin, "Platform admin", $descr="Operates the platform through the admin portal and Headlamp.", $tags="", $link="")
 System(Cloudflare, "Cloudflare", $descr="Tunnel, DNS for voics.nl, TLS (Universal SSL) and Access.", $tags="", $link="")
@@ -25,14 +25,14 @@ System(Ownersrouter, "Owner's router", $descr="Forwards UDP 50000 (SFU) and UDP 
 System(Thirdpartybot, "Third-party bot", $descr="A bot built on bots-sdk, run by a bot developer.", $tags="", $link="")
 System(1Password, "1Password", $descr="Holds the OpenBao unseal keys and root token.", $tags="", $link="")
 
-Rel(User, Discordy, "Chats, calls, streams", $techn="HTTPS, WSS, UDP", $tags="", $link="")
+Rel(User, Voics, "Chats, calls, streams", $techn="HTTPS, WSS, UDP", $tags="", $link="")
 Rel(Botdeveloper, Thirdpartybot, "Writes and runs", $techn="", $tags="", $link="")
-Rel(Thirdpartybot, Discordy, "Calls REST API, connects to gateway", $techn="HTTPS, WSS", $tags="", $link="")
-Rel(Platformadmin, Discordy, "Operates via admin portal and Headlamp", $techn="HTTPS", $tags="", $link="")
-Rel(Discordy, Cloudflare, "Exposed through tunnel; DNS records managed via API", $techn="HTTPS", $tags="", $link="")
-Rel(Ownersrouter, Discordy, "Forwards voice media and TURN", $techn="UDP 50000, UDP/TCP 3478", $tags="", $link="")
-Rel(GitHub, Discordy, "Builds images, syncs secrets, Flux source", $techn="HTTPS", $tags="", $link="")
-Rel(Discordy, Notion, "Docs mirrored on merge to main", $techn="HTTPS", $tags="", $link="")
+Rel(Thirdpartybot, Voics, "Calls REST API, connects to gateway", $techn="HTTPS, WSS", $tags="", $link="")
+Rel(Platformadmin, Voics, "Operates via admin portal and Headlamp", $techn="HTTPS", $tags="", $link="")
+Rel(Voics, Cloudflare, "Exposed through tunnel; DNS records managed via API", $techn="HTTPS", $tags="", $link="")
+Rel(Ownersrouter, Voics, "Forwards voice media and TURN", $techn="UDP 50000, UDP/TCP 3478", $tags="", $link="")
+Rel(GitHub, Voics, "Builds images, syncs secrets, Flux source", $techn="HTTPS", $tags="", $link="")
+Rel(Voics, Notion, "Docs mirrored on merge to main", $techn="HTTPS", $tags="", $link="")
 Rel(Platformadmin, 1Password, "Retrieves unseal keys", $techn="", $tags="", $link="")
 
 SHOW_LEGEND(true)
