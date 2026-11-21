@@ -59,7 +59,7 @@ export function dashboardBlocks({ rows, dbs, faqUrl, rowUrl, syncedDuplicate }) 
   const project = [
     bullet([...rt('🌐 '), ...link('Website voics.nl', 'https://voics.nl')]),
     bullet([...rt('🐙 '), ...link('GitHub organisation', GITHUB_ORG)]),
-    bullet([...rt('📋 '), ...link('Project board', 'https://github.com/orgs/discordy-voics/projects/1')]),
+    bullet([...rt('📋 '), ...link('Project board', 'https://github.com/orgs/voics-app/projects/1')]),
     bullet([...rt('📝 '), ...link('docs repository (source of this space)', `${GITHUB_ORG}/docs`)]),
     h3('Repositories'),
     ...REPOS.map((r) => bullet(link(r, `${GITHUB_ORG}/${r}`))),
@@ -81,10 +81,10 @@ export function dashboardBlocks({ rows, dbs, faqUrl, rowUrl, syncedDuplicate }) 
       code('flux reconcile image repository api -n flux-system\nflux reconcile image update discordy -n flux-system\nflux reconcile kustomization apps -n flux-system --with-source'),
       para([...rt('Full procedure: '), ...link('Release runbook', rowUrl('runbooks/release.md'))]),
     ]),
-    toggle('Switch CI runner', [
-      numbered('GitHub-hosted ubuntu-latest is the default. The repository variable CI_RUNNER redirects jobs to another runner.'),
-      code('cd .github && scripts/pc-runner.sh up      # runner on the owner PC, sets CI_RUNNER=karma-pc\nscripts/pc-runner.sh status\nscripts/pc-runner.sh down    # run before shutting the PC down'),
-      para([...rt('More: '), ...link('Release runbook, on-demand runner', rowUrl('runbooks/release.md'))]),
+    toggle('Public or private repos, and where CI runs', [
+      numbered('Every repository except gitops is public and runs CI on GitHub-hosted runners for free. gitops stays private and runs on the VM pool (CI_RUNNER=vm-runner).'),
+      code('cd .github && scripts/repo-visibility.sh status    # visibility and CI_RUNNER of every repo\nscripts/repo-visibility.sh private --dry-run          # what making them private would change\nscripts/repo-visibility.sh public                     # all repos except gitops public, CI on GitHub'),
+      para([...rt('More: '), ...link('CI runners and caching', rowUrl('handbook/12-ci-runners-and-caching.md'))]),
     ]),
     toggle('Rotate a secret', [
       numbered('Generate a new value with the command in the secrets inventory. Never reuse a value.'),

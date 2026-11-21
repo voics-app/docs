@@ -40,5 +40,5 @@ Reproduced locally with real etcd (v3.6.5): start the directory, kill the proces
 - Any code that calls `:eetcd.open/2` must be idempotent (look up first, accept `already_started` as a list or tuple).
 - Dependencies that only enable an optional feature must not gate `/readyz`.
 - Alerting (gitops#52) now pages on a deployment with 0 ready replicas.
-- Roll out gateway changes watching `kubectl -n voics-apps rollout status deploy/gateway`; roll back with `kubectl -n voics-apps set image deploy/gateway gateway=ghcr.io/discordy-voics/gateway:<previous>` and re-apply an image policy cap.
+- Roll out gateway changes watching `kubectl -n voics-apps rollout status deploy/gateway`; roll back with `kubectl -n voics-apps set image deploy/gateway gateway=ghcr.io/voics-app/gateway:<previous>` and re-apply an image policy cap.
 - CI note: `guild_flow_test` "a removed member is told GUILD_DELETE" is timing-sensitive and failed once on the release branch (green on rerun of the same code); worth hardening.
