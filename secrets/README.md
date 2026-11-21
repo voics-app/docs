@@ -38,8 +38,8 @@ Every secret on the Voics platform is listed here. The source is [`inventory.yam
 | [Postgres password for admin-bff (DB discordy_admin)](#postgres-admin) | Databases | admin-bff, CloudNativePG | `POSTGRES_ADMIN_PASSWORD` (env:production) | 90d |
 | [Valkey password](#valkey-password) | Databases | valkey, api, gateway | `VALKEY_PASSWORD` (env:production) | 180d |
 | [MinIO access keys](#minio-keys) | Object storage | minio, api, messages | `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY` (env:production) | 180d |
-| [GHCR pull credentials](#ghcr-pull) | CI/CD and GitHub | kubelet, Flux image-reflector-controller | `GHCR_USERNAME`, `GHCR_TOKEN` (gitops `production` environment) | 90d |
-| [ARC GitHub token](#arc-github-token) | CI/CD and GitHub | actions-runner-controller | `ARC_GITHUB_TOKEN` (gitops `production` environment) | 90d |
+| [GHCR pull credentials](#ghcr-pull) | CI/CD and GitHub | kubelet, Flux image-reflector-controller | `GHCR_USERNAME`, `GHCR_TOKEN` (org) | 90d |
+| [ARC GitHub token](#arc-github-token) | CI/CD and GitHub | actions-runner-controller | `ARC_GITHUB_TOKEN` (org) | 90d |
 | [Flux deploy key](#flux-deploy-key) | CI/CD and GitHub | Flux source-controller, image-automation-controller | not in GitHub | 365d |
 | [Notion integration token](#notion-token) | CI/CD and GitHub | docs notion-sync workflow | `NOTION_TOKEN` (org) | 365d |
 | [1Password service account token](#onepassword-service-account) | CI/CD and GitHub | platform admin workstation | not in GitHub | 90d |
@@ -403,7 +403,7 @@ Every secret on the Voics platform is listed here. The source is [`inventory.yam
 | Purpose | Lets the cluster (kubelet imagePullSecret, Flux ImageRepository) read private images from GHCR. |
 | Consumers | kubelet, Flux image-reflector-controller |
 | Env vars | — |
-| GitHub secret | `GHCR_USERNAME`, `GHCR_TOKEN` (gitops `production` environment) |
+| GitHub secret | `GHCR_USERNAME`, `GHCR_TOKEN` (org) |
 | OpenBao | `discordy/ghcr` → `USERNAME` (from `GHCR_USERNAME`); `discordy/ghcr` → `TOKEN` (from `GHCR_TOKEN`) |
 | Kubernetes Secret | `voics-apps/ghcr-pull`, `voics-voice/ghcr-pull`, `flux-system/ghcr-pull` |
 | Owner | @oussamaelhajoui |
@@ -419,7 +419,7 @@ Every secret on the Voics platform is listed here. The source is [`inventory.yam
 | Purpose | Lets Actions Runner Controller register the self-hosted runner scale set "discordy" with the org. Also used by secrets-sync, which runs on these runners. |
 | Consumers | actions-runner-controller |
 | Env vars | `github_token` |
-| GitHub secret | `ARC_GITHUB_TOKEN` (gitops `production` environment) |
+| GitHub secret | `ARC_GITHUB_TOKEN` (org) |
 | OpenBao | `discordy/arc` → `GITHUB_TOKEN` (from `ARC_GITHUB_TOKEN`) |
 | Kubernetes Secret | `voics-system/arc-github` |
 | Owner | @oussamaelhajoui |
