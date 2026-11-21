@@ -87,13 +87,20 @@ reconstructed. This partial API is not ready for release.
 
 Widgets default to disabled. Editing requires `MANAGE_GUILD`; the configured
 channel must belong to the guild and be a text, announcement, voice or stage
-channel. Removing that channel clears the setting. The initial public response
-contains only the guild ID, name and icon; the configured channel is retained in
-management settings but is not yet used to create or disclose an invite.
-The unauthenticated JSON must reveal only explicitly public data: do not expose
-private channels, member identities, presence, status text, invite tokens or
-other information merely because the widget is enabled. Disabling or deleting
-the configured channel must immediately make its public representation safe.
+channel. Removing that channel clears the setting.
+
+Update (api#182): the public response follows Discord's `widget.json`. It
+contains the guild ID, name and icon, `presence_count` (an aggregate; `null` when
+presence is unavailable), `channels` and `instant_invite`. `channels` lists only
+text, announcement, voice and stage channels the @everyone role can view,
+computed with the normal permission algorithm for an anonymous member with no
+roles; threads, categories and NSFW channels are never listed. `instant_invite`
+is the code of the newest usable, non-temporary invite that already exists for
+the widget channel (a manager created it); the widget never creates invites, and
+it is `null` when the widget channel is not visible to everyone or has no such
+invite. Member identities, status text and private channels are never exposed.
+Disabling the widget or deleting the channel makes the public representation
+safe at once: disabled is 404, a deleted channel clears the setting.
 Test disabled, enabled, invalid/cross-guild channel, permission changes and
 concurrent disable/read cases.
 

@@ -138,7 +138,7 @@ Open **Server settings** via de servernaam. De beschikbare pagina’s volgen jou
 
 Let op de balk met niet-opgeslagen wijzigingen. Sla op of herstel je wijzigingen voordat je naar een andere pagina gaat. **Delete server** is alleen voor de eigenaar en vraagt in de nieuwe navigatie om de exacte servernaam. Verwijderen is geen manier om een instelling terug te draaien.
 
-Onder **Server settings → Server profile** (voor elk lid) stel je alleen voor deze server je bijnaam, avatar, banner en About me in. Een leeg veld of een verwijderde afbeelding valt terug op je accountprofiel. De Widget-pagina verschijnt zodra de API ervoor bestaat.
+Onder **Server settings → Server profile** (voor elk lid) stel je alleen voor deze server je bijnaam, avatar, banner en About me in. Een leeg veld of een verwijderde afbeelding valt terug op je accountprofiel. Onder **Server settings → Widget** (met Server beheren) zet je de publieke serverwidget aan of uit, kies je het uitnodigingskanaal en kopieer je het adres van de widget-JSON. De JSON toont de servernaam, het aantal online leden, de kanalen die iedereen kan zien (geen NSFW) en de code van een actieve uitnodiging voor het gekozen kanaal. Leden worden nooit getoond. Staat de widget uit, dan geeft het adres 'niet gevonden'.
 
 Voor de nieuwe permanente uitnodiging en auditinstellingen staan de precieze rechten en gevolgen in [serverinstellingen](../protocols/community-settings.md). Een kortere auditbewaartermijn kan oudere gegevens verwijderen. Het uitzetten van het log is geen algemene privacyverwijdering en wist geen externe back-ups.
 
