@@ -1,5 +1,8 @@
 # Voics docs
 
+[Age-restricted channels](specs/2026-11-18-age-restricted-channels.md): account
+preference and desktop/mobile confirmation boundaries under review for client#76.
+
 Architecture, decisions, references and runbooks for **Voics**, a Discord-equivalent platform (without payments) built in the `discordy-voics` GitHub org. Git is the source of truth; the content is mirrored to Notion on every merge to `main`.
 
 > Voics is live at `voics.nl`, with production on gen-serv (`192.168.1.212`). The approved hostname takeover is complete; compatibility aliases remain. The unrelated VM `.204` and the old product’s other records remain protected. See [public hostnames](runbooks/hostnames.md).
@@ -22,6 +25,11 @@ de openbare voorvertoning, synchronisatie en de nog te bevestigen UI/livecontrol
 voornaamwoorden, profielkleuren en een eigen avatar, banner en bio per server (api#43).
 
 ## Start here
+
+The [scheduled messages specification](specs/2026-11-18-scheduled-messages.md)
+defines author-private drafts, send-time checks and visible delivery uncertainty
+for messages#61. Backend and client implementations are under review; scheduling
+remains disabled until coupled acceptance and rollout review are complete.
 
 The [persistent poll specification](specs/2026-11-18-polls.md) and
 [ADR0029](adr/0029-persistent-polls.md) define message polls, voting, finalization

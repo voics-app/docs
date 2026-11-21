@@ -66,6 +66,14 @@ pnpm test:e2e        # Playwright against the real Electron app and a fake backe
 
 Releases and the auto-updater are explained in [Desktop client release and auto-update](09-desktop-client-release.md). Renaming the app is a `brand.json` edit. The mobile app skeleton in the same repository is described in [Mobile client](13-mobile-client.md).
 
+## Renderer boot budget
+
+Desktop settings (including server administration), the emoji picker and the slash-command panel load on demand. Transient import failures retry after 250, 500 and 1000 ms; the user can retry, close the feature or reload the app. A reload may discard unsaved work and can be necessary when the browser has cached a failed module request.
+
+The client CI builds the renderer and reports the uncompressed JavaScript entry and its transitive static imports from the Vite manifest. The limit is 2,800,000 bytes; asynchronous chunks, CSS and workers are excluded. Run `pnpm --filter @discordy/desktop exec electron-vite build` followed by `node apps/desktop/scripts/check-renderer-budget.mjs` locally. Record the build revision, measured sizes and justification when changing the budget. The same check also runs in the container build.
+
+Cold-start comparisons must identify the reference machine, operating system, build type, network and account state. Launch with a fresh isolated user-data directory and record several process-to-visible-auth timings and the median. The catalog names a reference Windows laptop without identifying it or defining a fresh profile. The client #24 Linux runner/container measurements use new processes and fresh user-data directories without flushing OS caches, so they are an additional reference, not a Windows SLO measurement. The client repository's renderer-performance guide contains the acceptance procedure; a fake-backend run is useful for repeatability but is not a production-network latency measurement.
+
 ## Appearance and accessibility
 
 Settings, Appearance holds theme (Dark, OLED, Light, or sync with the computer), accent, message density and group spacing, channel list density, text size and window zoom (Ctrl plus, Ctrl minus, Ctrl 0, through `webFrame`). Settings, Accessibility holds reduced motion (also synced with the OS), GIF, emoji and sticker animation, saturation, role colour display, high contrast, link underlines and text to speech (`/tts`, read-aloud, speech rate). Everything is applied by `interface/app/appearance.ts` as data attributes and custom properties on the root element, styled in `theme/access.css`; Windows forced-colors mode uses the system palette. Zoom, the two sync-with-computer switches and channel list density stay on the device; the rest follows the account. Details: [Appearance and accessibility](../specs/2026-10-23-appearance-and-accessibility.md).
