@@ -35,15 +35,17 @@ export class Notion {
       if (!form) headers['Content-Type'] = 'application/json';
       let res;
       try {
-        res = await fetch(`${API}${path}`, { method, headers, body: form ?? (body ? JSON.stringify(body) : undefined) });
+        // A hung connection otherwise waits for undici's 5-minute timeouts on every attempt (8 attempts = the 40-minute job limit).
+        res = await fetch(`${API}${path}`, { method, headers, body: form ?? (body ? JSON.stringify(body) : undefined), signal: AbortSignal.timeout(60_000) });
       } catch (err) {
+        console.error(`  ${method} ${path} failed (attempt ${attempt + 1}/8): ${err.name}: ${err.message}${err.cause ? ` (${err.cause.code ?? err.cause.message ?? err.cause})` : ''}`);
         if (attempt === 7) throw err;
         await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
         continue;
       }
       if (res.status === 429 || res.status >= 500) {
         const retry = Number(res.headers.get('retry-after')) || 1 + attempt * 2;
-        this.log(`  ${res.status} on ${method} ${path}, retrying in ${retry}s`);
+        console.error(`  ${res.status} on ${method} ${path}, retrying in ${retry}s`);
         await new Promise((r) => setTimeout(r, retry * 1000));
         continue;
       }
