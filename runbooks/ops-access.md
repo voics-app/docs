@@ -36,7 +36,7 @@ The admin BFF must validate the audience for the **requested host**:
 | `discordy-admin.voics.nl` | `f90db405248de81f32bfc0432b8aea3743d40e2a83b2bfb7575a3c544b7f0a72` |
 
 The intended `CF_ACCESS_HOST_AUDIENCES` setting maps these exact hostnames to their respective audiences in the
-[GitOps production admin overlay](https://github.com/discordy-voics/gitops/blob/main/apps/admin/production/kustomization.yaml).
+[GitOps production admin overlay](https://github.com/voics-app/gitops/blob/main/apps/admin/production/kustomization.yaml).
 `CF_ACCESS_TEAM_DOMAIN` identifies the issuer; `CF_ACCESS_AUD` remains the legacy
 single-audience setting. The audience identifies the Access application, whereas
 `ADMIN_ALLOWED_EMAILS` is the BFF's separate allowlist of people allowed to administer.
@@ -45,7 +45,7 @@ Passing Access alone does not grant admin access.
 **Status, 20 November 2026:** production admin 0.5.0 opens Overview and Audit log on
 the fallback host, while the primary host's API reports `InvalidAudience`. The 0.5.1
 host-mapping fix is available only after its image and production configuration are rolled out;
-do not assume it is live. Track [admin#36](https://github.com/discordy-voics/admin/issues/36).
+do not assume it is live. Track [admin#36](https://github.com/voics-app/admin/issues/36).
 Until rollout is verified, use the fallback host.
 
 After rollout, sign in through Cloudflare Access separately on **each** hostname and open
