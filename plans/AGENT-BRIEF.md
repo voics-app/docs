@@ -33,7 +33,7 @@ You are one of several autonomous agents building **Voics**, a Discord-equivalen
   - Ship a `.env.example` containing dev-only values.
   - `.gitignore` must cover `.env`.
 - **Required files**: `README.md` (purpose, run locally, test, configuration table), `ARCHITECTURE.md` (with a C4 component diagram in Mermaid), `Makefile` (`dev`, `test`, `lint`, `build`, `docker`), a multi-stage non-root `Dockerfile` with OCI labels, `.github/workflows/ci.yml`, `CHANGELOG.md`, `release-please-config.json` and `.release-please-manifest.json` (version `0.1.0`).
-  - `ci.yml` calls the reusable workflows: `uses: discordy-voics/.github/.github/workflows/<rust|elixir|node|docker>.yml@main`, with inputs `image-name` and `description`.
+  - `ci.yml` calls the reusable workflows: `uses: voics-app/.github/.github/workflows/<rust|elixir|node|docker>.yml@main`, with inputs `image-name` and `description`.
 - **Contracts**:
   - The `contracts` repo is being generated in parallel.
   - Until it's published, define your DTOs and constants locally in your `interface` or `infrastructure` layer, exactly matching the pinned shapes in the plan.
@@ -53,7 +53,7 @@ Keep it under 300 words:
 - Anything still pending.
 
 ## Kanban board (mandatory)
-The board is the org project "Voics": https://github.com/orgs/discordy-voics/projects/1. Every issue is assigned to @oussamaelhajoui, and each one carries the label `agent:<your-agent-name>`. Use the helper `bash /c/Users/Karma/.discordy/board.sh`:
+The board is the org project "Voics": https://github.com/orgs/voics-app/projects/1. Every issue is assigned to @oussamaelhajoui, and each one carries the label `agent:<your-agent-name>`. Use the helper `bash /c/Users/Karma/.discordy/board.sh`:
 - `board.sh list <repo>` shows your repo's issues and their status.
 - `board.sh claim <issue-url> <agent-name>` runs **before** you start an issue. It adds the label, assigns the owner and moves the card to In progress.
 - Keep only **one** issue In progress at a time. Move the issue you'll do next to Ready with `board.sh move <url> ready`.

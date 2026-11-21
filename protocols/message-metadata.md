@@ -1,6 +1,6 @@
 # Berichten: TTS en bijlagemetadata
 
-Gecontroleerd op 18 november 2026. Eerste implementatie-increment voor messages#37 en messages#60: [contracts PR 38](https://github.com/discordy-voics/contracts/pull/38) en de bijbehorende messages-/clientwerkstroom. De beschrijving is geen claim dat de wijziging is uitgebracht. De [opleverstatus](../handbook/16-status-en-beheerkeuzes.md) scheidt tests, release en praktijkcontrole.
+Gecontroleerd op 18 november 2026. Eerste implementatie-increment voor messages#37 en messages#60: [contracts PR 38](https://github.com/voics-app/contracts/pull/38) en de bijbehorende messages-/clientwerkstroom. De beschrijving is geen claim dat de wijziging is uitgebracht. De [opleverstatus](../handbook/16-status-en-beheerkeuzes.md) scheidt tests, release en praktijkcontrole.
 
 ## TTS behouden
 

@@ -10,7 +10,7 @@ Gecontroleerd op 18 november 2026. De publieke mobiele versie is 1.0.0. Onderaan
 |---|---|
 | iPhone, gewone versie | Open [Voics in de App Store](https://apps.apple.com/nl/app/voics/id6831532158) en kies Download. Updates verschijnen in de App Store. |
 | iPhone, testversie | Installeer TestFlight uit de App Store, open de [openbare uitnodiging](https://testflight.apple.com/join/2zQRFhHH) en kies Accept en Install. Gebruik deze route als je bewust een testversie wilt. |
-| Android | Open [de downloadpagina](https://voics.nl), kies Download for Android en open de APK. De rechtstreekse download is [Voics-latest.apk](https://updates.voics.nl/Voics-latest.apk). Android kan vragen of deze browser een app mag installeren. Geef dat alleen voor deze downloadbron toestemming. |
+| Android | Open [de downloadpagina](https://voics.nl), kies Download for Android en open de APK. De rechtstreekse download is [Voics-latest.apk](https://updates.voics.nl/Voics-latest.apk). Android kan vragen of deze browser een app mag installeren. Geef dat alleen voor deze downloadbron toestemming. Google Play Protect kan de installatie blokkeren ("App geblokkeerd om je apparaat te beschermen"), omdat de app buiten de Play Store komt en rechten voor het belscherm vraagt. Kies dan **Meer details** en **Toch installeren**. De structurele oplossing is publicatie via Google Play; die staat nog open. |
 
 Op 18 november waren iPhone-builds 6 en 7 beschikbaar voor externe TestFlight-testers, met een einddatum van 4 februari 2027 en een limiet van 100 deelnemers. Een verlopen testversie moet door een nieuwe build worden vervangen. De Android-basisversie is 1.0.0, versiecode 7. Een nieuwe APK installeer je over de bestaande app; verwijder de app niet om een normale update te doen.
 

@@ -1,6 +1,6 @@
 # Age-restricted channels
 
-Status: implemented in review for [client#76](https://github.com/discordy-voics/client/issues/76);
+Status: implemented in review for [client#76](https://github.com/voics-app/client/issues/76);
 native and paired API acceptance remain release requirements.
 This extends the existing `Channel.nsfw` flag. It introduces no date of birth,
 verified-age state, age-verification service or server permission.

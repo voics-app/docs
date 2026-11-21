@@ -356,7 +356,7 @@ What the build needs from the owner:
 - The website domain served over HTTPS for the AASA file, and a privacy policy URL, support URL and a way to report and block users before any public App Store release.
 - Usage descriptions are ours to write (microphone, camera, photos); no owner action.
 
-Open owner decisions that still apply are tracked in [docs#10](https://github.com/discordy-voics/docs/issues/10).
+Open owner decisions that still apply are tracked in [docs#10](https://github.com/voics-app/docs/issues/10).
 
 ## 8. Top gaps in order
 

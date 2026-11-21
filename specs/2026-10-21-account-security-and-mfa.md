@@ -1,7 +1,7 @@
 # Account security: recovery, email verification and TOTP two-factor
 
 - Status: implemented in api (migration `0009_account_security.sql`), contracts and client
-- Issues: [api#30](https://github.com/discordy-voics/api/issues/30), [api#31](https://github.com/discordy-voics/api/issues/31), [client#53](https://github.com/discordy-voics/client/issues/53)
+- Issues: [api#30](https://github.com/voics-app/api/issues/30), [api#31](https://github.com/voics-app/api/issues/31), [client#53](https://github.com/voics-app/client/issues/53)
 - Related: [ADR 0015](../adr/0015-webauthn-second-factor.md) (WebAuthn, proposed), [REST reference](../protocols/rest.md)
 
 ## Scope
