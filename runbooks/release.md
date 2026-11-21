@@ -18,7 +18,7 @@ Every repository follows the same git-flow and versioning ([spec §13](../specs/
 
 | Component | Repository | What triggers a deploy | Pipeline | Where it lands |
 |---|---|---|---|---|
-| api, messages, gateway, admin, voice (signaling + SFU) | service repo | tag `vX.Y.Z` on `main` | `ci.yml`: tests, then `docker.yml` builds, scans, signs and pushes `ghcr.io/discordy-voics/<image>:X.Y.Z` | Flux image automation bumps the tag in gitops `main`, and Flux applies it (see [timings](#timings)) |
+| api, messages, gateway, admin, voice (signaling + SFU) | service repo | tag `vX.Y.Z` on `main` | `ci.yml`: tests, then `docker.yml` builds, scans, signs and pushes `ghcr.io/voics-app/<image>:X.Y.Z` | Flux image automation bumps the tag in gitops `main`, and Flux applies it (see [timings](#timings)) |
 | Platform config (manifests, ingress, data layer, observability) | `gitops` | merge to `main` | Flux `GitRepository` polls `main` every minute | the matching Flux Kustomization applies it on the next source revision |
 | Desktop client installer (Windows) | `client` | merge to `main` or tag `vX.Y.Z` | `release.yml`: Windows build on a GitHub-hosted runner, GitHub Release assets, then `minio-publish` | `https://discordy-updates.voics.nl/Discordy-Setup-X.Y.Z.exe`, `latest.yml` (installed clients auto-update) and `Discordy-Setup-latest.exe` (the website's Download button) |
 | Marketing website | `website` | merge to `main` **or** tag `v*` | `ci.yml`: build + brand check, then `minio-publish` into bucket `discordy-site` | `https://discordy.voics.nl` |
@@ -74,15 +74,15 @@ kubectl -n voics-apps rollout status deploy/api
 flux get images policy -A                               # which version each image follows
 ```
 
-Re-publish the website or the invite page by re-running its workflow (`gh workflow run ci.yml -R discordy-voics/website --ref main`, or `publish-site.yml` in gitops). Publish a new installer build with `gh workflow run release.yml -R discordy-voics/client --ref main` (it publishes the next patch version; an already published version is never overwritten).
+Re-publish the website or the invite page by re-running its workflow (`gh workflow run ci.yml -R voics-app/website --ref main`, or `publish-site.yml` in gitops). Publish a new installer build with `gh workflow run release.yml -R voics-app/client --ref main` (it publishes the next patch version; an already published version is never overwritten).
 
 ### How the publish jobs get access
 
-`minio-publish` (in `discordy-voics/.github`) runs on the in-cluster ARC runner (`runs-on: discordy`). The runner's service account `voics-system/discordy-runner` may `get` exactly one Secret, `voics-data/minio`, through the Role `discordy-runner-publish` (`gitops/infrastructure/controllers/actions-runner-controller/runner-scale-set/publish-rbac.yaml`). The workflow reads the key from the Kubernetes API and uploads over the cluster network, so there is no MinIO key in GitHub. Objects are mirrored with `--overwrite` and never removed, so the website and the invite page can share one bucket.
+`minio-publish` (in `voics-app/.github`) runs on the in-cluster ARC runner (`runs-on: discordy`). The runner's service account `voics-system/discordy-runner` may `get` exactly one Secret, `voics-data/minio`, through the Role `discordy-runner-publish` (`gitops/infrastructure/controllers/actions-runner-controller/runner-scale-set/publish-rbac.yaml`). The workflow reads the key from the Kubernetes API and uploads over the cluster network, so there is no MinIO key in GitHub. Objects are mirrored with `--overwrite` and never removed, so the website and the invite page can share one bucket.
 
 ### CI runners: GitHub-hosted, owner PC or a VM
 
-GitHub-hosted `ubuntu-latest` is the default. When the GitHub Free minutes run low, switch all repositories to self-hosted runners and back. The full reference (resources, how a runner is built) is in the [`.github` README → CI runners](https://github.com/discordy-voics/.github#ci-runners). Run the commands from the `.github` repository:
+GitHub-hosted `ubuntu-latest` is the default. When the GitHub Free minutes run low, switch all repositories to self-hosted runners and back. The full reference (resources, how a runner is built) is in the [`.github` README → CI runners](https://github.com/voics-app/.github#ci-runners). Run the commands from the `.github` repository:
 
 ```bash
 scripts/runner.sh up                                   # 3 runners on this PC (label karma-pc) and switch to them
@@ -95,7 +95,7 @@ scripts/runner.sh down [--host user@vm]                # remove runners (switche
 ```
 
 - **Switching**: the shared workflows' default `runs-on` follows the repository variable `CI_RUNNER`. Jobs that name a runner explicitly keep it: `discordy` (in-cluster ARC) and `windows-latest` (the installer).
-- **CI cache on self-hosted runners** ([ADR 0022](../adr/0022-ci-cache-safety-rules.md)): a persistent `/cache` volume and the toolchains in the runner image speed up PR and develop builds. **Releases are always clean**: pushes to `main`, tags, `release/*`, `hotfix/*` and PRs into `main` compile Rust from an empty `target/`, and image builds compile inside the Dockerfile (no persistent `target/`). SBOM and cosign signing run only for `main`, tags and release versions. A weekly scheduled run on `develop` builds everything cold. If a release build is red but the same commit was green on develop, suspect the cache: set the variable `CI_CACHE=off` (`gh variable set CI_CACHE --body off -R discordy-voics/<repo>`; delete it afterwards), or label the PR `ci-no-cache` and push, then re-run; clear the volume with `scripts/runner.sh cache-clear --host user@vm` when the runners are idle.
+- **CI cache on self-hosted runners** ([ADR 0022](../adr/0022-ci-cache-safety-rules.md)): a persistent `/cache` volume and the toolchains in the runner image speed up PR and develop builds. **Releases are always clean**: pushes to `main`, tags, `release/*`, `hotfix/*` and PRs into `main` compile Rust from an empty `target/`, and image builds compile inside the Dockerfile (no persistent `target/`). SBOM and cosign signing run only for `main`, tags and release versions. A weekly scheduled run on `develop` builds everything cold. If a release build is red but the same commit was green on develop, suspect the cache: set the variable `CI_CACHE=off` (`gh variable set CI_CACHE --body off -R voics-app/<repo>`; delete it afterwards), or label the PR `ci-no-cache` and push, then re-run; clear the volume with `scripts/runner.sh cache-clear --host user@vm` when the runners are idle.
 - **Resources per runner** (one job at a time): 2 vCPU, 6–8 GB RAM and about 40 GB disk. A VM for 3 runners needs 6–8 vCPU, 16–24 GB RAM and 150 GB disk.
 - **No restart policy**: run `down` or `use github` before turning the PC or VM off. Otherwise jobs wait for the missing runner.
 
@@ -103,7 +103,7 @@ scripts/runner.sh down [--host user@vm]                # remove runners (switche
 
 | Symptom | Check |
 |---|---|
-| New tag, but no new image | Did CI on the tag pass? `gh run list -R discordy-voics/<repo> --branch vX.Y.Z` |
+| New tag, but no new image | Did CI on the tag pass? `gh run list -R voics-app/<repo> --branch vX.Y.Z` |
 | Image exists, but the policy still shows the old version | `flux get images repository -A`: scan errors, GHCR pull secret `ghcr-pull` |
 | Policy updated, but gitops not bumped | `flux get images update -A`: push errors; image automation is suspended (`flux resume image update discordy`) |
 | gitops bumped, but the pod is old | `flux get kustomizations -A`: a failing dependency (for example `infra-data`) blocks `apps`; `kubectl -n voics-apps describe pod` |
@@ -161,7 +161,7 @@ git switch -c release/0.2.0
 git push -u origin release/0.2.0
 ```
 
-CI builds and pushes `ghcr.io/discordy-voics/api:0.2.0-rc.1`.
+CI builds and pushes `ghcr.io/voics-app/api:0.2.0-rc.1`.
 
 ### 2. Stabilise
 

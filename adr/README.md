@@ -5,7 +5,7 @@ This directory holds Voics's architecture decisions. The records use the [MADR](
 | # | Decision | Status |
 |---|---|---|
 | [0001](0001-technology-stack.md) | Elixir gateway, Rust data services, Electron client | accepted |
-| [0002](0002-repo-per-service.md) | One repository per service in the `discordy-voics` org | accepted |
+| [0002](0002-repo-per-service.md) | One repository per service in the `voics-app` org | accepted |
 | [0003](0003-delivery-modes.md) | Three message delivery modes: Standard, Ephemeral (MLS) and P2P | accepted |
 | [0004](0004-custom-sfu.md) | Home-grown SFU (Rust/str0m) with Elixir voice signaling | accepted |
 | [0005](0005-cloudflare-tunnel.md) | Cloudflare Tunnel ingress with one-level hostnames under `voics.nl` | accepted |

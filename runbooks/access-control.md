@@ -1,6 +1,6 @@
 # Kubernetes access control (RBAC): who has what, requesting and changing access
 
-RBAC is enforced on the production cluster (`gen-serv`) since 2026-11-03 ([gitops#32](https://github.com/discordy-voics/gitops/issues/32)). Before that, microk8s ran without its `rbac` addon. The apiserver then allowed every request (AlwaysAllow), so every pod, every CI job and every token could do anything, including reading every Secret.
+RBAC is enforced on the production cluster (`gen-serv`) since 2026-11-03 ([gitops#32](https://github.com/voics-app/gitops/issues/32)). Before that, microk8s ran without its `rbac` addon. The apiserver then allowed every request (AlwaysAllow), so every pod, every CI job and every token could do anything, including reading every Secret.
 
 Now a request is allowed only when a Role or ClusterRole, bound to the caller, permits it. **Everything that is not granted is denied.**
 

@@ -1,6 +1,6 @@
 # Client: Apps submenu and developer page
 
-Status: implemented in [client#77](https://github.com/discordy-voics/client/issues/77) (part of the Discord parity plan, P2). The app directory is a follow-up and out of scope.
+Status: implemented in [client#77](https://github.com/voics-app/client/issues/77) (part of the Discord parity plan, P2). The app directory is a follow-up and out of scope.
 
 ## Apps submenu
 

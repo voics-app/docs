@@ -5,7 +5,7 @@
 One script sets up everything on a new machine and starts the stack every day after. It is idempotent: run it as often as you like.
 
 ```bash
-git clone --branch develop git@github.com:discordy-voics/gitops.git   # next to the api, messages, gateway, admin, voice, client repos
+git clone --branch develop git@github.com:voics-app/gitops.git   # next to the api, messages, gateway, admin, voice, client repos
 cd gitops/local
 ./dev.sh            # Windows PowerShell: .\dev.ps1
 ```
@@ -47,7 +47,7 @@ This guide runs the whole platform on one workstation. The dependencies run in D
 ```bash
 mkdir -p ~/Projects/discordy/voics && cd ~/Projects/discordy/voics
 for r in api gateway messages voice admin client bots-sdk contracts gitops docs .github; do
-  gh repo clone discordy-voics/$r -- --branch develop
+  gh repo clone voics-app/$r -- --branch develop
 done
 ```
 

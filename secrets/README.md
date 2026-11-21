@@ -415,7 +415,7 @@ Every secret on the Voics platform is listed here. The source is [`inventory.yam
 
 | Field | Value |
 |---|---|
-| Purpose | SSH deploy key with write access to discordy-voics/gitops, used by Flux source and image automation. |
+| Purpose | SSH deploy key with write access to voics-app/gitops, used by Flux source and image automation. |
 | Consumers | Flux source-controller, image-automation-controller |
 | Env vars | — |
 | GitHub secret | not in GitHub |
