@@ -49,11 +49,25 @@ The product was renamed from Discordy to Voics with a new V app icon. The new `a
 
 To pull a bad release, restore the previous `latest.yml` in the `discordy-updates` bucket. Because clients only update forward, ship a fixed version quickly. Verify by installing the previous version, starting it and confirming that the update prompt arrives and installs.
 
+## macOS dmg
+
+The `macos` job of `release.yml` calls `.github/workflows/macos-dmg.yml` on a GitHub-hosted `macos-14` runner (the client repo is public, so no self-hosted runner is involved). Hosted macOS minutes cost 10x, so it only runs for releases, by hand (`gh workflow run macos-dmg.yml --ref <branch>`) and on pull requests that touch the Mac packaging files. The job is `continue-on-error`: a broken Mac build shows red but never blocks the Windows release.
+
+- **Build**: `pnpm dist:mac` runs `scripts/build-native-mac-universal.sh` (the Rust crypto module for `aarch64-apple-darwin` and `x86_64-apple-darwin`, merged with `lipo` into one universal `.node`), then electron-builder with `--mac dmg --universal`. One `Voics-X.Y.Z.dmg` runs on Apple Silicon and Intel.
+- **Signing**: without a Developer ID the app is ad-hoc signed by the `afterSign` hook (`apps/desktop/build/after-sign.cjs`), because Apple Silicon refuses to start a completely unsigned binary. Hooks for real signing are in place: set the repository secrets `MAC_CSC_LINK` (base64 .p12 of the Developer ID Application certificate) and `MAC_CSC_KEY_PASSWORD` and the same build signs with the hardened runtime and `build/entitlements.mac.plist`; add `APPLE_API_KEY`, `APPLE_API_KEY_ID` and `APPLE_API_ISSUER` to the build environment of `macos-dmg.yml` to notarize.
+- **Publishing**: the artifact `installer-macos` holds `Voics-X.Y.Z.dmg` and a copy `Voics-latest.dmg`. gitops `publish-public` (source `client-macos`) syncs both to the `discordy-updates` bucket with a 5-minute cache on `Voics-latest.dmg`; the website's macOS buttons point to `https://updates.voics.nl/Voics-latest.dmg` (`downloads.macos` in the website `brand.json`).
+- **No auto-update yet**: macOS updates (Squirrel.Mac) need a signed app and a `zip` target, so there is no `latest-mac.yml`. Mac users download a new dmg manually until signing exists; adding the `zip` target and publishing `latest-mac.yml` is the follow-up once a Developer ID is available.
+
+### Opening an unsigned build
+
+macOS Gatekeeper blocks an app that is not notarized. After dragging Voics to Applications, either right-click the app, choose **Open** and confirm **Open** in the dialog (once), or on macOS 15 and later open **System Settings > Privacy & Security** and choose **Open Anyway** after the first blocked start. From a terminal: `xattr -dr com.apple.quarantine /Applications/Voics.app`. Microphone and camera permission prompts appear on first use of voice or video.
+
 ## Platform status
 
 | Platform | Status |
 |---|---|
 | Windows (NSIS, x64) | Built and published by CI |
-| macOS (dmg) and Linux (AppImage, deb) | Scripts exist (`pnpm dist:mac`, `pnpm dist:linux`), CI does not run them yet; the website says "coming soon" |
+| macOS (universal dmg, arm64 + x64) | Built by CI (`macos-dmg.yml`, called by `release.yml`), unsigned (ad-hoc), published by gitops `publish-public` (source `client-macos`) as `Voics-X.Y.Z.dmg` and `Voics-latest.dmg`; no auto-update yet. See "macOS dmg" below |
+| Linux (AppImage, deb) | Script exists (`pnpm dist:linux`), CI does not run it yet; the website says "coming soon" |
 | Code signing | Installers are unsigned, so Windows SmartScreen shows "unknown publisher" (spec section 10) |
 | RC or beta channel | Not built (develop does not publish); a dev updates host exists for a future dev installer channel |
