@@ -371,6 +371,8 @@ outcomes; it must not retry the current non-idempotent create-message use case.
 | Webhooks | `POST /channels/{id}/webhooks` · `GET /guilds/{id}/webhooks` · `POST /webhooks/{id}/{token}` (execute) · `PATCH/DELETE /webhooks/{id}` |
 | Voice | `GET /voice/regions` → `[{id, name, optimal}]` · `PATCH /guilds/{id}` with `{voice_region}` |
 
+**Draft P9 extension, api#103:** authenticated personal friend favourites and expiring friend-invite routes are specified in [Friend favourites and invitations](../specs/2026-11-20-friend-favourites-and-invites.md) and the companion contracts PR. They are independent of guild invites and remain pending review, integration and deployment.
+
 **Delivery-mode rules (enforced server-side)**
 - `POST /channels/{id}/messages` returns **409** `{code: 50160, message: "Channel uses <mode> delivery"}` when the effective mode is not `standard`. Private messages go over gateway op 20 or op 22.
 - The `messages` service resolves the effective mode via the access endpoint (P4).

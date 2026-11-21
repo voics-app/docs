@@ -127,6 +127,12 @@ Onder **Privacy and delivery** vind je bezorginstellingen, gespreksversleuteling
 
 Bij ongewenst gedrag kun je vanuit het profiel blokkeren of een bericht/gebruiker melden. Lees welke tekst en bewijsmaterialen de melding meestuurt, vooral bij privéberichten. De melding is een bewuste verstrekking aan moderators. Een melding verzenden verwijdert het oorspronkelijke bericht niet automatisch.
 
+## Beroep tegen een ban
+
+Deze functie is in ontwikkeling en nog niet als uitgebrachte functie bevestigd. Een verbannen gebruiker opent een geldige serveruitnodiging, kiest **Accept invite** en kan op **You are banned** de ingestelde vraag beantwoorden en **Submit appeal** kiezen. Er kan maximaal een beroep tegelijk openstaan. Een verlopen uitnodiging biedt geen ingang naar het formulier.
+
+Een moderator met **Manage Ban Appeals** kan onder **Server Settings > Bans** een vraag instellen en beroepen accepteren of weigeren. Accepteren heft de ban op; de gebruiker heeft daarna een geldige uitnodiging nodig om terug te keren. De beroepslijst toont maximaal 100 zaken met hun status en reviewer, ook als het serverauditlog uitstaat. Bij ingeschakelde auditregistratie verschijnt de beslissing ook in het auditlog. Definitieve anonimisering van je account verwijdert je beroepsteksten.
+
 ## 10. Problemen oplossen
 
 | Probleem | Eerste stappen |
