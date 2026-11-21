@@ -6,7 +6,7 @@ The authoritative rules are in [CONTRIBUTING](../CONTRIBUTING.md) and the [relea
 
 ## Board and issues
 
-Work is tracked as GitHub issues on the org project board **<https://github.com/orgs/discordy-voics/projects/1>**.
+Work is tracked as GitHub issues on the org project board **<https://github.com/orgs/voics-app/projects/1>**.
 
 | Column | Meaning |
 |---|---|
@@ -16,7 +16,7 @@ Work is tracked as GitHub issues on the org project board **<https://github.com/
 | In review | A PR is open |
 | Done | Merged, verified, closed |
 
-Issues are created from the forms in the `.github` repository: **bug report**, **feature request** and **platform change**. Labels carry the priority (`priority:p0` to `p2`), the workstream (`ws:*`), the type and the owner (`agent:<name>`). Questions that wait for the owner carry `needs:owner` and are collected in [docs#10](https://github.com/discordy-voics/docs/issues/10).
+Issues are created from the forms in the `.github` repository: **bug report**, **feature request** and **platform change**. Labels carry the priority (`priority:p0` to `p2`), the workstream (`ws:*`), the type and the owner (`agent:<name>`). Questions that wait for the owner carry `needs:owner` and are collected in [docs#10](https://github.com/voics-app/docs/issues/10).
 
 ## git-flow
 

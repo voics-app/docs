@@ -4,8 +4,8 @@ Summary: message history, reactions, pins, read states and attachments on Scylla
 
 | | |
 |---|---|
-| Repository | `discordy-voics/messages` |
-| Image | `ghcr.io/discordy-voics/messages` (namespace `voics-apps`, port 8082) |
+| Repository | `voics-app/messages` |
+| Image | `ghcr.io/voics-app/messages` (namespace `voics-apps`, port 8082) |
 | Tech | Rust 1.99, axum 0.8, scylla driver |
 | Owns | ScyllaDB keyspace `discordy` (messages, reactions, pins, read_states, channel_last_message), MinIO bucket `discordy-attachments` |
 | Publishes | `discordy.message.v1`, keyed by `channel_id` |

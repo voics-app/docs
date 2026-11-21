@@ -3,7 +3,7 @@
 - Status: proposed
 - Date: 2026-11-18
 - Deciders: Voics maintainer review
-- Technical story: [messages#14](https://github.com/discordy-voics/messages/issues/14)
+- Technical story: [messages#14](https://github.com/voics-app/messages/issues/14)
 
 ## Context and Problem Statement
 

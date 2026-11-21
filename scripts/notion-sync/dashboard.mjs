@@ -59,7 +59,7 @@ export function dashboardBlocks({ rows, dbs, faqUrl, rowUrl, syncedDuplicate }) 
   const project = [
     bullet([...rt('🌐 '), ...link('Website voics.nl', 'https://voics.nl')]),
     bullet([...rt('🐙 '), ...link('GitHub organisation', GITHUB_ORG)]),
-    bullet([...rt('📋 '), ...link('Project board', 'https://github.com/orgs/discordy-voics/projects/1')]),
+    bullet([...rt('📋 '), ...link('Project board', 'https://github.com/orgs/voics-app/projects/1')]),
     bullet([...rt('📝 '), ...link('docs repository (source of this space)', `${GITHUB_ORG}/docs`)]),
     h3('Repositories'),
     ...REPOS.map((r) => bullet(link(r, `${GITHUB_ORG}/${r}`))),

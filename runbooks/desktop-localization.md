@@ -1,6 +1,6 @@
 # Desktop language acceptance
 
-Client [#64](https://github.com/discordy-voics/client/issues/64) adds English and
+Client [#64](https://github.com/voics-app/client/issues/64) adds English and
 Nederlands to Settings → Language. The client change is prepared on
 `feature/desktop-localization-20261118`; this runbook records its behavior and the
 independent acceptance still required before release. It does not mark the issue
@@ -29,7 +29,7 @@ The extraction covers account/security/preferences, profiles, server/channel
 administration, template creation, discovery, application consent/webhooks,
 authentication, chat/friends/members/moderation, search, media, voice/calls and
 native tray/editing menus. See the client
-[coverage inventory](https://github.com/discordy-voics/client/blob/feature/desktop-localization-20261118/docs/localization.md)
+[coverage inventory](https://github.com/voics-app/client/blob/feature/desktop-localization-20261118/docs/localization.md)
 for exact boundaries and adding messages.
 
 Messages, names, notes, credentials, URLs, command names and user template metadata

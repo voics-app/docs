@@ -4,7 +4,7 @@ Summary: org defaults, the reusable CI workflows and the self-hosted runner scri
 
 | | |
 |---|---|
-| Repository | `discordy-voics/.github` (the name must be exactly `.github`) |
+| Repository | `voics-app/.github` (the name must be exactly `.github`) |
 | Tech | GitHub Actions reusable workflows, bash |
 
 ## Folder map
@@ -22,4 +22,4 @@ Summary: org defaults, the reusable CI workflows and the self-hosted runner scri
 | `scripts/pc-runner.sh` | Older entry point for the PC runner. |
 | `tests/` | Unit tests that execute the embedded scripts (`make test`); `make lint` runs actionlint. |
 
-Callers reference `discordy-voics/.github/.github/workflows/<name>.yml@main`. How the pipelines and runners work: [CI/CD and runners](05-ci-cd-and-runners.md).
+Callers reference `voics-app/.github/.github/workflows/<name>.yml@main`. How the pipelines and runners work: [CI/CD and runners](05-ci-cd-and-runners.md).

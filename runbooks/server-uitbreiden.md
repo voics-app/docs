@@ -8,7 +8,7 @@ Summary: van een lokale inventaris naar een gecontroleerde worker, met uitleg ov
 
 Bij controle op 19 november 2026 had productie één Ready Kubernetes-node, één Messages-pod en één voice-pod voor nl-home. De voorbereiding voor een tweede worker stond op `gitops/develop`. Controleer de actuele clusterstatus en de Git-revisie die `infra/workers` bevat voordat je een plan maakt.
 
-[Gitops PR 135](https://github.com/discordy-voics/gitops/pull/135) stelt een gebonden planreceipt en gedeelde lock voor; die bescherming is pas beschikbaar wanneer de betreffende versie is opgenomen en gebruikt. Een geslaagd offline plan of een PR is geen productie-uitrol. [Messages 80](https://github.com/discordy-voics/messages/pull/80), [gateway 60](https://github.com/discordy-voics/gateway/pull/60) en [voice 33](https://github.com/discordy-voics/voice/pull/33) zijn naar develop gemerged; controleer releases en werkelijk draaiende versies afzonderlijk. [Messages 86](https://github.com/discordy-voics/messages/pull/86), [voice 38](https://github.com/discordy-voics/voice/pull/38) en [voice 39](https://github.com/discordy-voics/voice/pull/39) zijn voorstellen.
+[Gitops PR 135](https://github.com/voics-app/gitops/pull/135) stelt een gebonden planreceipt en gedeelde lock voor; die bescherming is pas beschikbaar wanneer de betreffende versie is opgenomen en gebruikt. Een geslaagd offline plan of een PR is geen productie-uitrol. [Messages 80](https://github.com/voics-app/messages/pull/80), [gateway 60](https://github.com/voics-app/gateway/pull/60) en [voice 33](https://github.com/voics-app/voice/pull/33) zijn naar develop gemerged; controleer releases en werkelijk draaiende versies afzonderlijk. [Messages 86](https://github.com/voics-app/messages/pull/86), [voice 38](https://github.com/voics-app/voice/pull/38) en [voice 39](https://github.com/voics-app/voice/pull/39) zijn voorstellen.
 
 ## Wat een tweede server oplevert
 
@@ -166,7 +166,7 @@ Het **niet-geactiveerde** profiel `worker-capacity` bereidt twee cloudflared- en
 | Scylla | Nu één developer-mode-node met vast broadcastadres `scylla-0`; eerst seeds, identiteit, replicatie en herstelproef |
 | Postgres, MinIO, OpenBao, Redpanda, Valkey | Eigen replicatie-/migratieplan; hostpath-PVC’s blijven op de oorspronkelijke node |
 
-Elke Messages-replica leest momenteel alle zoekpartities. PR 86 verwerkt wijzigingen aan het checkpoint per partitie op volgorde. Schaal pas op wanneer alle pods dezelfde beoordeelde versie draaien en de verdeling van zoekwerk en het herstel van bestaande zoekgegevens zijn getest. Replicatie van de database en objectopslag vergt eigen controles. [Messages PR 86](https://github.com/discordy-voics/messages/pull/86)
+Elke Messages-replica leest momenteel alle zoekpartities. PR 86 verwerkt wijzigingen aan het checkpoint per partitie op volgorde. Schaal pas op wanneer alle pods dezelfde beoordeelde versie draaien en de verdeling van zoekwerk en het herstel van bestaande zoekgegevens zijn getest. Replicatie van de database en objectopslag vergt eigen controles. [Messages PR 86](https://github.com/voics-app/messages/pull/86)
 
 De nieuwe gatewaycontroles beoordelen verbindingen vóór eventverwerking. Een netwerkbreuk midden tijdens fan-out wordt daardoor niet transactioneel of precies-eenmaal. Een geldige voice-registratie bewijst evenmin dat elk geadverteerd endpoint bereikbaar is.
 
@@ -206,6 +206,6 @@ Voor definitieve verwijdering: bewijs de drain, voer alleen op de bedoelde worke
 
 ## Bewijs en resterende voorwaarden
 
-[Gitops PR 132](https://github.com/discordy-voics/gitops/pull/132) is naar develop gemerged. De coördinator herhaalde vijftien offline veiligheidstests; vijf Terraform-roots zijn gevalideerd. JSON-velden en opdrachten in deze handleiding zijn tegen die implementatie gecontroleerd.
+[Gitops PR 132](https://github.com/voics-app/gitops/pull/132) is naar develop gemerged. De coördinator herhaalde vijftien offline veiligheidstests; vijf Terraform-roots zijn gevalideerd. JSON-velden en opdrachten in deze handleiding zijn tegen die implementatie gecontroleerd.
 
-Dit bewijst nog geen cloud-init, snap-installatie, join, echt netwerkverkeer, drain of herstel. Zie de [technische workerhandleiding](https://github.com/discordy-voics/gitops/blob/develop/infra/workers/README.md) en [acceptatie-inventaris](https://github.com/discordy-voics/gitops/blob/develop/infra/workers/backlog-readiness.md). Bestaande registry-/ARC-credentialproblemen vereisen de aangewezen secretflow; gebruik nooit een brede GitHub-CLI-login als clustercredential.
+Dit bewijst nog geen cloud-init, snap-installatie, join, echt netwerkverkeer, drain of herstel. Zie de [technische workerhandleiding](https://github.com/voics-app/gitops/blob/develop/infra/workers/README.md) en [acceptatie-inventaris](https://github.com/voics-app/gitops/blob/develop/infra/workers/backlog-readiness.md). Bestaande registry-/ARC-credentialproblemen vereisen de aangewezen secretflow; gebruik nooit een brede GitHub-CLI-login als clustercredential.

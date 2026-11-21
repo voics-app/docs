@@ -3,7 +3,7 @@
 - Status: proposed
 - Date: 2026-10-18
 - Deciders: @oussamaelhajoui (pending)
-- Technical story: [docs#9](https://github.com/discordy-voics/docs/issues/9), [gateway#11](https://github.com/discordy-voics/gateway/issues/11)
+- Technical story: [docs#9](https://github.com/voics-app/docs/issues/9), [gateway#11](https://github.com/voics-app/gateway/issues/11)
 - Related: [research note, post 8](../research/discord-engineering-comparison.md), spec section 8
 
 ## Context and Problem Statement
