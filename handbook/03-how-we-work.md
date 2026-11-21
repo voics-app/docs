@@ -41,7 +41,7 @@ Issues are created from the forms in the `.github` repository: **bug report**, *
 | Repository | Merge to `develop` | Merge to `main` | Tag `vX.Y.Z` |
 |---|---|---|---|
 | api, messages, gateway, voice, admin | CI with integration tests; image `X.Y.(Z+1)-dev.N` on GHCR | CI | Stable image `X.Y.Z`, `X.Y`, `latest`; Flux image automation rolls it out to production in about 10 minutes |
-| client (desktop) | CI | **Publishes a new Windows installer**: the version is computed automatically, then `latest.yml` (auto-update for installed clients), `Discordy-Setup-X.Y.Z.exe` and `Discordy-Setup-latest.exe` (website button) | The same, with the tag's version |
+| client (desktop) | CI | **Publishes a new Windows installer**: the version is computed automatically, then `latest.yml` (auto-update for installed clients), `Voics-Setup-X.Y.Z.exe` and `Voics-Setup-latest.exe` (website button), published by gitops `publish-public` within 10 minutes | The same, with the tag's version |
 | website | CI (build and brand check) | **Deploys to <https://discordy.voics.nl>** | Deploys too |
 | gitops | CI (validate) | **Flux applies it to the cluster** within a minute or two; `secrets-sync` runs when `secrets/inventory.yaml` changes; the invite page is published when `site/**` changes | Release marker only |
 | docs | CI (markdownlint, links) | **Notion sync** (Home → Home Lab → Discordy) | Release marker only |

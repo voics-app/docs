@@ -215,7 +215,7 @@ This service is defined by [ADR-0025](../adr/0025-active-voice-health-probes.md)
 | | |
 |---|---|
 | Purpose | End-user Electron app: chat, voice, video, screen share, Watch Together, the three delivery modes. |
-| Repo / artefact | `voics-app/client` / NSIS installer (Windows), dmg (macOS), AppImage/deb (Linux), published to the MinIO `updates` bucket at `discordy-updates.voics.nl` |
+| Repo / artefact | `voics-app/client` / NSIS installer (Windows), dmg (macOS), AppImage/deb (Linux), published by gitops `publish-public` to the MinIO `discordy-updates` bucket at `updates.voics.nl` |
 | Tech | Electron 38, React 19, TypeScript 5.9, Vite 7, Zustand, TanStack Query, napi-rs (OpenMLS, Ed25519, SQLCipher) |
 | Ports | 5173 (renderer dev server) |
 | Depends on | api, messages, gateway, voice-signaling, sfu, coturn, CDN, update feed |

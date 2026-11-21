@@ -203,20 +203,30 @@ The `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` pair is read by MinIO, api and messa
 ## GHCR pull token
 
 1. Create a new PAT with `read:packages` only.
-2. Run `gh secret set GHCR_TOKEN --org voics-app`, then `secrets-sync`. Use `GHCR_USERNAME` only if the account changes.
+2. Run `gh secret set GHCR_TOKEN -R voics-app/gitops --env production`, then `secrets-sync`. Use `GHCR_USERNAME` only if the account changes. (These are gitops `production` environment secrets, not org secrets.)
 3. Force-sync `ghcr-pull` in `voics-apps`, `voics-voice`, and `flux-system`.
 4. **Verify**: run `flux reconcile image repository api -n flux-system`, which must succeed. Then delete one app pod; its image must pull.
 5. Delete the old PAT.
 
 ## ARC GitHub credentials
 
-1. Create a new classic PAT with `admin:org` scope, the one ARC needs to register runners.
-2. Run `gh secret set ARC_GITHUB_TOKEN --org voics-app`, then run `secrets-sync`. That workflow runs **on ARC itself**, but the old token still works at this point, so this is fine.
+1. Create a new classic PAT with `admin:org` scope, the one ARC needs to register runners. Give it an expiry and put a reminder in the calendar: on 2026-11-21 the PAT expired unnoticed, the ARC listener crash-looped (`unauthorized` on `registration-token`) and Flux image scans failed with `DENIED`, because the same token served GHCR.
+2. Run `gh secret set ARC_GITHUB_TOKEN -R voics-app/gitops --env production`, then run `secrets-sync`. That workflow runs **on ARC itself**, but the old token still works at this point, so this is fine.
 3. Force-sync `voics-system/arc-github`, then restart the ARC controller and listener.
 4. **Verify**: the runner scale set `discordy` shows as online under Org → Settings → Actions → Runners.
 5. Revoke the old PAT.
 
-If ARC is broken and can't run `secrets-sync`, write the value straight into OpenBao, for example `bao kv put -mount=kv discordy/arc GITHUB_TOKEN="$ARC_GITHUB_TOKEN"`, from an admin shell with a valid OpenBao token. Keep the value in the shell only. See [OpenBao → first-time bootstrap](openbao-unseal.md#first-time-bootstrap).
+If ARC is broken and can't run `secrets-sync` (for example because the old token already expired), write the value straight into OpenBao from a machine with cluster access. Log in with the runner's service account, then patch the keys through stdin so the value never appears in a process list:
+
+```bash
+L=$(kubectl -n voics-system create token discordy-runner --duration=10m \
+  | kubectl -n voics-system exec -i openbao-0 -- bao write -field=token auth/kubernetes/login role=secrets-sync jwt=-)
+printf '%s' "$NEW_PAT" | kubectl -n voics-system exec -i openbao-0 -- env BAO_TOKEN="$L" bao kv patch -mount=kv discordy/arc GITHUB_TOKEN=-
+printf '%s' "$NEW_PAT" | kubectl -n voics-system exec -i openbao-0 -- env BAO_TOKEN="$L" bao kv patch -mount=kv discordy/ghcr TOKEN=-
+kubectl annotate externalsecret -n voics-system arc-github force-sync=$(date +%s) --overwrite   # and ghcr-pull in flux-system, voics-apps, voics-voice
+```
+
+Also set the GitHub environment secrets, or the next `secrets-sync` writes the old value back. Keep the value in the shell only. See [OpenBao → first-time bootstrap](openbao-unseal.md#first-time-bootstrap).
 
 ## Flux deploy key
 

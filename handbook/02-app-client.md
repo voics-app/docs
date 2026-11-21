@@ -5,7 +5,7 @@ Summary: the Electron and React desktop app, with a Rust native crypto module.
 | | |
 |---|---|
 | Repository | `voics-app/client` |
-| Output | Windows NSIS installer on the update feed `https://discordy-updates.voics.nl`; macOS and Linux build from the same sources but CI does not publish them yet |
+| Output | Windows NSIS installer on the update feed `https://updates.voics.nl` (published by gitops `publish-public`); macOS and Linux build from the same sources but CI does not publish them yet |
 | Tech | Electron, React, Zustand, WebRTC, Rust (napi-rs, OpenMLS) |
 | Catalog entry | [Service catalog: Desktop client](../services/catalog.md#desktop-client) |
 

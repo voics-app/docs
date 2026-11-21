@@ -7,7 +7,9 @@
 
 ## Context and Problem Statement
 
-The `voics-app` org is on GitHub Free and every repository is private. Free gives 2,000 Actions minutes a month (macOS minutes count 10×) and 500 MB of package storage. Rulesets and branch protection are not available for private repositories. How do we still get full CI/CD with semver images and an enforced git-flow?
+> **Update 2026-11-21:** every repository except `gitops` is now public. Public repositories get free, unlimited GitHub-hosted runners (Linux, Windows, macOS), so their CI left the self-hosted runners; `gitops` stays private on the VM pool and the in-cluster runner. Publishing to MinIO moved to gitops `publish-public`, because the runner group that holds the in-cluster runner refuses public repositories. Rulesets and branch protection are now available for the public repositories. The text below describes the original, all-private situation.
+
+The `voics-app` org is on GitHub Free and every repository was private. Free gives 2,000 Actions minutes a month (macOS minutes count 10×) and 500 MB of package storage. Rulesets and branch protection are not available for private repositories. How do we still get full CI/CD with semver images and an enforced git-flow?
 
 ## Decision Drivers
 

@@ -20,9 +20,9 @@ Every repository follows the same git-flow and versioning ([spec §13](../specs/
 |---|---|---|---|---|
 | api, messages, gateway, admin, voice (signaling + SFU) | service repo | tag `vX.Y.Z` on `main` | `ci.yml`: tests, then `docker.yml` builds, scans, signs and pushes `ghcr.io/voics-app/<image>:X.Y.Z` | Flux image automation bumps the tag in gitops `main`, and Flux applies it (see [timings](#timings)) |
 | Platform config (manifests, ingress, data layer, observability) | `gitops` | merge to `main` | Flux `GitRepository` polls `main` every minute | the matching Flux Kustomization applies it on the next source revision |
-| Desktop client installer (Windows) | `client` | merge to `main` or tag `vX.Y.Z` | `release.yml`: Windows build on a GitHub-hosted runner, GitHub Release assets, then `minio-publish` | `https://discordy-updates.voics.nl/Discordy-Setup-X.Y.Z.exe`, `latest.yml` (installed clients auto-update) and `Discordy-Setup-latest.exe` (the website's Download button) |
-| Marketing website | `website` | merge to `main` **or** tag `v*` | `ci.yml`: build + brand check, then `minio-publish` into bucket `discordy-site` | `https://discordy.voics.nl` |
-| Invite landing page (`/invite/<code>`) | `gitops` (`site/`) | merge to `main` touching `site/**` | `publish-site.yml`: `minio-publish` into `discordy-site` | `https://discordy.voics.nl/invite/<code>` |
+| Desktop client installer (Windows) | `client` | merge to `main` or tag `vX.Y.Z` | `release.yml`: Windows build on a GitHub-hosted runner, GitHub Release assets and the `installer-windows` artifact; gitops `publish-public` uploads it within 10 minutes | `https://updates.voics.nl/Voics-Setup-X.Y.Z.exe`, `latest.yml` (installed clients auto-update) and `Voics-Setup-latest.exe` (the website's Download button) |
+| Marketing website | `website` | merge to `main` **or** tag `v*` | `ci.yml`: build + brand check + `site-dist` artifact; gitops `publish-public` uploads it into bucket `discordy-site` within 10 minutes | `https://voics.nl` |
+| Invite landing page (`/invite/<code>`) | `gitops` (`site/`) | merge to `main` touching `site/**` | `publish-site.yml`: `minio-publish` into `discordy-site` | `https://voics.nl/invite/<code>` |
 | Docs | `docs` | merge to `main` | release-please and the Notion mirror | GitHub (and Notion) |
 
 What the other branches produce:
@@ -55,7 +55,7 @@ The figures below cover the time from the moment the release image exists in GHC
 | Infra layers (foundation, controllers, configs, data) | Kustomizations | on a new revision; re-sync every 30 min | `gitops/clusters/gen-serv/infrastructure.yaml`, `configs.yaml` |
 | Pod rollout | Deployment rolling update | about 1 to 2 min (readiness probes) | the service manifests |
 
-End to end, a service release goes live within about **10 minutes of its image being pushed**, plus the CI build itself (about 5 to 15 minutes for Rust and Elixir). Worst case is about 5 + 5 + 1 minutes before the apply starts. Website and invite page deploys take about 2 minutes after the merge (build plus upload). Cloudflare caches assets, but the build adds content hashes to asset URLs and `index.html`, `latest.yml` and `Discordy-Setup-latest.exe` are served with a 5-minute cache.
+End to end, a service release goes live within about **10 minutes of its image being pushed**, plus the CI build itself (about 5 to 15 minutes for Rust and Elixir). Worst case is about 5 + 5 + 1 minutes before the apply starts. The invite page deploys about 2 minutes after the merge; the website and the desktop installer go live within 10 minutes of their build finishing (gitops `publish-public` runs every 10 minutes; run it by hand to publish at once). Cloudflare caches assets, but the build adds content hashes to asset URLs and `index.html`, `latest.yml` and `Voics-Setup-latest.exe` are served with a 5-minute cache.
 
 ### Changing the intervals
 
@@ -82,7 +82,7 @@ Re-publish the website or the invite page by re-running its workflow (`gh workfl
 
 ### CI runners: GitHub-hosted, owner PC or a VM
 
-GitHub-hosted `ubuntu-latest` is the default. When the GitHub Free minutes run low, switch all repositories to self-hosted runners and back. The full reference (resources, how a runner is built) is in the [`.github` README → CI runners](https://github.com/voics-app/.github#ci-runners). Run the commands from the `.github` repository:
+Since 2026-11-21 every repository except `gitops` is public and runs on GitHub-hosted runners for free; `gitops` runs on the VM pool (`vm-runner`). `scripts/repo-visibility.sh status|public|private` in `.github` switches visibility and runner together. The commands below manage the self-hosted runners themselves. The full reference (resources, how a runner is built) is in the [`.github` README → CI runners](https://github.com/voics-app/.github#ci-runners). Run the commands from the `.github` repository:
 
 ```bash
 scripts/runner.sh up                                   # 3 runners on this PC (label karma-pc) and switch to them
@@ -272,9 +272,9 @@ The client follows the same git-flow. `client/.github/workflows/release.yml` run
 
 0. The version is decided by `scripts/release-version.mjs` against the version the feed serves now (`latest.yml`): on `main`, `apps/desktop/package.json` when it is higher (the release branch bumped it), otherwise the published patch + 1; on a tag, exactly the tag, and the run **fails** if the tag is not higher than what is published (electron-updater needs a strictly increasing semver). A run that cannot read the feed fails rather than guess. The release `vX.Y.Z` is tagged by the workflow itself.
 
-1. A **Windows (NSIS)** build runs on a GitHub-hosted `windows-latest` runner, including the native crypto module (Rust). It uses about 2× Linux minutes on the GitHub Free quota, roughly 15 to 30 billed minutes per release.
-2. `Discordy-Setup-X.Y.Z.exe`, its `.blockmap` and `latest.yml` are attached to the GitHub Release.
-3. `minio-publish` uploads them to the `discordy-updates` bucket, served at `https://discordy-updates.voics.nl`, and copies the installer to `Discordy-Setup-latest.exe`. That stable name is the target of the website's Download button. `latest.yml` and the stable name get a 5-minute cache.
+1. A **Windows (NSIS)** build runs on a GitHub-hosted `windows-latest` runner, including the native crypto module (Rust). It is free since the client repository is public.
+2. `Voics-Setup-X.Y.Z.exe`, its `.blockmap` and `latest.yml` are attached to the GitHub Release and uploaded as the `installer-windows` artifact.
+3. Within 10 minutes gitops `publish-public` uploads them to the `discordy-updates` bucket, served at `https://updates.voics.nl`, and copies the installer to `Voics-Setup-latest.exe`. That stable name is the target of the website's Download button. `latest.yml` and the stable name get a 5-minute cache.
 4. Installed clients read `latest.yml` (electron-updater, generic provider `brand.updateFeedHost`), so publishing it rolls the update out.
 
 Not built yet:
@@ -283,7 +283,7 @@ Not built yet:
 - **RC/beta channel**: RC builds don't produce installers. The dev/test environment has a dev updates host (`discordy-dev-updates.voics.nl`) for an optional dev installer channel; the client workflow that publishes to it is not built yet.
 - **Code signing**: installers are unsigned (spec §10), so Windows SmartScreen shows "unknown publisher".
 
-A manual build (when CI is unavailable) runs `pnpm dist:win` on Windows and uploads `apps/desktop/release/{Discordy-Setup-X.Y.Z.exe,.blockmap,latest.yml}` to the bucket. 0.2.0 was published this way.
+A manual build (when CI is unavailable) runs `pnpm dist:win` on Windows and uploads `apps/desktop/release/{Voics-Setup-X.Y.Z.exe,.blockmap,latest.yml}` to the bucket. 0.2.0 was published this way.
 
 - **Verify**: install the previous version, start it, and confirm the update prompt arrives and the update installs.
 - **To pull a bad client release**, restore the previous `latest.yml` in the bucket. Clients only update forward, so ship a fixed version quickly.

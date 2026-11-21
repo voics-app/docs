@@ -17,7 +17,7 @@ A tag is what turns code into a **release**. CI sees the tag and builds the stab
 | Repository | Trigger | Result | Live where, and when |
 |---|---|---|---|
 | api, messages, gateway, voice, admin | tag `vX.Y.Z` | Docker image `ghcr.io/voics-app/<image>` with tags `X.Y.Z`, `X.Y` and `latest`, with title, description and source on GHCR, cosign-signed, SBOM | Production: Flux image automation sees the stable tag within 5 min, commits the bump to gitops `main`, Flux rolls the pod (about 10 min total) |
-| client (desktop) | merge to `main` **or** tag `vX.Y.Z` (installer built on GitHub `windows-latest`) | Windows installer `Discordy-Setup-X.Y.Z.exe`, `latest.yml`, `Discordy-Setup-latest.exe` and a GitHub Release | Installed clients update themselves (electron-updater reads `latest.yml`); the website button serves the new installer within about 5 min (Cloudflare cache) |
+| client (desktop) | merge to `main` **or** tag `vX.Y.Z` (installer built on GitHub `windows-latest`) | Windows installer `Voics-Setup-X.Y.Z.exe`, `latest.yml`, `Voics-Setup-latest.exe` (published by gitops `publish-public` within 10 minutes) and a GitHub Release | Installed clients update themselves (electron-updater reads `latest.yml`); the website button serves the new installer within about 5 min (Cloudflare cache) |
 | website | merge to `main` or tag | Static site uploaded to the `discordy-site` bucket | <https://discordy.voics.nl> after about 2 min |
 | gitops | merge to `main` (the tag is a marker) | Flux applies the manifests | Cluster, within 1 to 2 min |
 | docs | merge to `main` (the tag is a marker) | Notion sync | Notion → Home → Home Lab → Discordy |
@@ -63,7 +63,7 @@ For a bigger release, stabilise on a `release/X.Y.Z` branch first (fixes only, `
 gh run list -R voics-app/<repo> --branch v0.3.1        # the tag build must be green
 flux get images policy -A                                    # production follows the new X.Y.Z
 kubectl -n voics-apps get deploy -o wide                     # running image tags
-curl -s https://discordy-updates.voics.nl/latest.yml | head -1   # client: version: X.Y.Z
+curl -s https://updates.voics.nl/latest.yml | head -1   # client: version: X.Y.Z
 ```
 
 ## When a release is bad
