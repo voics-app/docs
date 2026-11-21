@@ -37,7 +37,7 @@ done
 kubectl get externalsecret -A    # all READY=True, STATUS=SecretSynced
 ```
 
-In GitHub, `discordy-voics/gitops` -> Actions -> secrets-sync -> Re-run.
+In GitHub, `voics-app/gitops` -> Actions -> secrets-sync -> Re-run.
 
 ### Webhook alert (optional, one-time)
 

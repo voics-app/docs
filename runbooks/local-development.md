@@ -5,7 +5,7 @@
 One script sets up everything on a new machine and starts the stack every day after. It is idempotent: run it as often as you like.
 
 ```bash
-git clone --branch develop git@github.com:discordy-voics/gitops.git   # next to the api, messages, gateway, admin, voice, client repos
+git clone --branch develop git@github.com:voics-app/gitops.git   # next to the api, messages, gateway, admin, voice, client repos
 cd gitops/local
 ./dev.sh            # Windows PowerShell: .\dev.ps1
 ```
@@ -20,7 +20,7 @@ cd gitops/local
 | `./dev.sh down` | Stop the stack, keep the data |
 | `./dev.sh reset` | Stop and delete every volume, after you type `reset` to confirm |
 
-Missing sibling repos are cloned (it asks first; `--yes` skips the question). Images are tagged `e2e/<service>:develop` and carry the source commit in the `io.discordy.source-commit` label, so a service is rebuilt only when its repo's `develop` moved. Dev accounts: `alice@discordy.local` and `bob@discordy.local`, password `Discordy-dev-2026!`; plus the owner's test accounts `karmamocro@gmail.com` and `karmamocro1@gmail.com`, password `password`. Those two also exist on production for now, created through the normal sign-up API on 2026-11-03 at the owner's request. Remove them, or give them strong passwords, before real users arrive (docs#10). The numbered sections below are the manual route, for running services natively.
+Missing sibling repos are cloned (it asks first; `--yes` skips the question). Images are tagged `e2e/<service>:develop` and carry the source commit in the `io.discordy.source-commit` label, so a service is rebuilt only when its repo's `develop` moved. Dev accounts: `alice@discordy.local` and `bob@discordy.local`, password `Discordy-dev-2026!`; plus the owner's own test accounts (not listed here), password `password`. Those two also exist on production for now, created through the normal sign-up API on 2026-11-03 at the owner's request. Remove them, or give them strong passwords, before real users arrive (docs#10). The numbered sections below are the manual route, for running services natively.
 
 This guide runs the whole platform on one workstation. The dependencies run in Docker through `gitops/local/compose.yaml`. Each service runs either natively with `make dev`, for fast iteration, or as a container under the `full` profile.
 
@@ -47,7 +47,7 @@ This guide runs the whole platform on one workstation. The dependencies run in D
 ```bash
 mkdir -p ~/Projects/discordy/voics && cd ~/Projects/discordy/voics
 for r in api gateway messages voice admin client bots-sdk contracts gitops docs .github; do
-  gh repo clone discordy-voics/$r -- --branch develop
+  gh repo clone voics-app/$r -- --branch develop
 done
 ```
 

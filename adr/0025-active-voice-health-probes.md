@@ -3,7 +3,7 @@
 - Status: proposed
 - Date: 2026-11-18
 - Deciders: project owner
-- Technical story: [voice#7](https://github.com/discordy-voics/voice/issues/7)
+- Technical story: [voice#7](https://github.com/voics-app/voice/issues/7)
 
 ## Context and Problem Statement
 

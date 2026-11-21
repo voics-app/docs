@@ -46,7 +46,7 @@ This is an owner action (spec §17.4):
 5. Store the token:
 
    ```bash
-   gh secret set CLOUDFLARE_API_TOKEN --org discordy-voics      # paste on stdin
+   gh secret set CLOUDFLARE_API_TOKEN --org voics-app      # paste on stdin
    op item create --vault Discordy --category "API Credential" --title "Cloudflare API token" credential=-
    ```
 
@@ -73,7 +73,7 @@ echo "$TUNNEL_ID"
 # Credentials JSON for cloudflared, stored as a GitHub environment secret.
 # The API returns it once, in result.credentials_file. Never write it to disk.
 echo "$TUNNEL" | jq -c .result.credentials_file \
-  | gh secret set CLOUDFLARED_CREDENTIALS_JSON --repo discordy-voics/gitops --env production
+  | gh secret set CLOUDFLARED_CREDENTIALS_JSON --repo voics-app/gitops --env production
 ```
 
 Record `TUNNEL_ID` in `gitops/infrastructure/configs/cluster-config.yaml` as `CLOUDFLARE_TUNNEL_ID`. It is an identifier, not a secret.

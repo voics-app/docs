@@ -179,7 +179,7 @@ Why this order:
 
 ## Live status
 
-Updated by the lead after every hand-back. GitHub board: <https://github.com/orgs/discordy-voics/projects/1>.
+Updated by the lead after every hand-back. GitHub board: <https://github.com/orgs/voics-app/projects/1>.
 
 | Ticket | Lane | Status | PRs | Notes |
 |---|---|---|---|---|

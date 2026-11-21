@@ -36,11 +36,11 @@ The product is named **Voics** (`brand.json` `name`); the site domain stays `dis
 
 ## Download buttons
 
-Every Download button links to `downloads.windows` in `brand.json`, the stable URL of the latest installer (`https://discordy-updates.voics.nl/Voics-Setup-latest.exe`). macOS and Linux show "coming soon".
+Every Download button links to `downloads.windows` in `brand.json`, the stable URL of the latest installer (`https://updates.voics.nl/Voics-Setup-latest.exe`); the Android buttons link to `downloads.android` (`https://updates.voics.nl/Voics-latest.apk`). macOS and Linux show "coming soon".
 
 ## Deploy
 
-The site goes live on every merge to `main` and on every `v*` tag: CI builds and checks, then `minio-publish` (the shared workflow, on the in-cluster runner) uploads into `discordy-site`. No MinIO key is stored in GitHub; the job reads the Kubernetes Secret `voics-data/minio` over the cluster network. Manual deploy:
+The site goes live on every merge to `main` and on every `v*` tag: CI builds, checks and uploads the `site-dist` artifact, and within 10 minutes the private gitops workflow `publish-public` (on the in-cluster runner; the website repo is public and may not use it) uploads it into `discordy-site`. Run `publish-public` by hand in gitops to go live right away. No MinIO key is stored in GitHub; the job reads the Kubernetes Secret `voics-data/minio` over the cluster network. Manual deploy:
 
 ```bash
 npm run build
