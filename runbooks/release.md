@@ -133,7 +133,7 @@ Consumers depend on what they consume, so release in dependency order:
 
 1. `contracts`: consumers pin `vX.Y.Z`.
 2. `.github`: reusable workflows.
-3. `api`, `messages`, `gateway` and `voice`, in parallel.
+3. `api`, `messages`, `gateway` and `voice`, in parallel, **unless one calls a new endpoint of another**. Flux rolls every service out on its own, so the provider must be live first. On 2026-11-21 messages 0.16.0 reached the cluster before api 0.19.0 and crash-looped on startup (`ID reservation API refused the request`) until api 0.19.0 was live; the old pod kept serving, so users saw nothing. Release `api` first when messages, gateway or voice depend on a new api route, and check `kubectl get pods -n voics-apps` after the rollout; delete a crash-looping pod once its provider is live.
 4. `admin`, `bots-sdk` and `client`.
 5. `gitops`: the version bumps land automatically through Flux image automation. Manual changes go in their own release PR.
 6. `docs`: tag it to match the platform release.
