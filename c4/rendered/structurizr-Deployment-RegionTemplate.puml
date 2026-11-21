@@ -1,5 +1,5 @@
 @startuml
-title <size:24>Deployment View: Discordy - region-template</size>\n<size:24>A voice region rendered from gitops/regions/_template by regionctl.</size>
+title <size:24>Deployment View: Voics - region-template</size>\n<size:24>A voice region rendered from gitops/regions/_template by regionctl.</size>
 
 set separator none
 left to right direction

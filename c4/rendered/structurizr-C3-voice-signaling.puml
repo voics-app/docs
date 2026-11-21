@@ -1,5 +1,5 @@
 @startuml
-title <size:24>Component View: Discordy - voice-signaling</size>\n<size:24>voice-signaling components.</size>
+title <size:24>Component View: Voics - voice-signaling</size>\n<size:24>voice-signaling components.</size>
 
 set separator none
 left to right direction
@@ -16,36 +16,36 @@ left to right direction
 !include <C4/C4_Container>
 !include <C4/C4_Component>
 
-System_Boundary("Discordy_boundary", "Discordy", $tags="") {
-  Container_Boundary("Discordy.voicesignaling_boundary", "voice-signaling", $tags="") {
-    Component(Discordy.voicesignaling.Voicesocket, "Voice socket", $techn="Phoenix socket", $descr="/voice transport, P8 opcodes.", $tags="", $link="")
-    Component(Discordy.voicesignaling.Voicecodec, "Voice codec", $techn="Elixir", $descr="Encodes/decodes {op, d} frames.", $tags="", $link="")
-    Component(Discordy.voicesignaling.Tokenverifier, "Token verifier", $techn="Elixir", $descr="Verifies HS256 voice tokens (node, srv, chn, expiry).", $tags="", $link="")
-    Component(Discordy.voicesignaling.Roomregistry, "Room registry", $techn="Registry", $descr="Rooms per server/channel, CLIENTS_CONNECT/DISCONNECT, SPEAKING relay.", $tags="", $link="")
-    Component(Discordy.voicesignaling.Voicesession, "Voice session", $techn="GenServer", $descr="Process per client: IDENTIFY, SELECT_PROTOCOL, SESSION_DESCRIPTION, MEDIA_SINK_WANTS.", $tags="", $link="")
-    Component(Discordy.voicesignaling.DAVErelay, "DAVE relay", $techn="Elixir", $descr="MLS external sender; relays proposals, commits and welcomes; never sees keys.", $tags="", $link="")
-    Component(Discordy.voicesignaling.Draincontroller, "Drain controller", $techn="Elixir", $descr="Stops new sessions while keeping existing ones.", $tags="", $link="")
-    Component(Discordy.voicesignaling.SFUcontrolclient, "SFU control client", $techn="gen_tcp", $descr="NDJSON over TCP 127.0.0.1:4101.", $tags="", $link="")
-    Component(Discordy.voicesignaling.SFUsupervisor, "SFU supervisor", $techn="Supervisor", $descr="Restarts the SFU and replays create_session for every live session.", $tags="", $link="")
-    Component(Discordy.voicesignaling.etcdregistrar, "etcd registrar", $techn="eetcd", $descr="Lease (10 s TTL, 3 s refresh) at /discordy/voice/nodes/<region>/<node_id> with load.", $tags="", $link="")
+System_Boundary("Voics_boundary", "Voics", $tags="") {
+  Container_Boundary("Voics.voicesignaling_boundary", "voice-signaling", $tags="") {
+    Component(Voics.voicesignaling.Voicesocket, "Voice socket", $techn="Phoenix socket", $descr="/voice transport, P8 opcodes.", $tags="", $link="")
+    Component(Voics.voicesignaling.Voicecodec, "Voice codec", $techn="Elixir", $descr="Encodes/decodes {op, d} frames.", $tags="", $link="")
+    Component(Voics.voicesignaling.Tokenverifier, "Token verifier", $techn="Elixir", $descr="Verifies HS256 voice tokens (node, srv, chn, expiry).", $tags="", $link="")
+    Component(Voics.voicesignaling.Roomregistry, "Room registry", $techn="Registry", $descr="Rooms per server/channel, CLIENTS_CONNECT/DISCONNECT, SPEAKING relay.", $tags="", $link="")
+    Component(Voics.voicesignaling.Voicesession, "Voice session", $techn="GenServer", $descr="Process per client: IDENTIFY, SELECT_PROTOCOL, SESSION_DESCRIPTION, MEDIA_SINK_WANTS.", $tags="", $link="")
+    Component(Voics.voicesignaling.DAVErelay, "DAVE relay", $techn="Elixir", $descr="MLS external sender; relays proposals, commits and welcomes; never sees keys.", $tags="", $link="")
+    Component(Voics.voicesignaling.Draincontroller, "Drain controller", $techn="Elixir", $descr="Stops new sessions while keeping existing ones.", $tags="", $link="")
+    Component(Voics.voicesignaling.SFUcontrolclient, "SFU control client", $techn="gen_tcp", $descr="NDJSON over TCP 127.0.0.1:4101.", $tags="", $link="")
+    Component(Voics.voicesignaling.SFUsupervisor, "SFU supervisor", $techn="Supervisor", $descr="Restarts the SFU and replays create_session for every live session.", $tags="", $link="")
+    Component(Voics.voicesignaling.etcdregistrar, "etcd registrar", $techn="eetcd", $descr="Lease (10 s TTL, 3 s refresh) at /discordy/voice/nodes/<region>/<node_id> with load.", $tags="", $link="")
   }
 
-  Container(Discordy.sfu, "sfu", $techn="Rust, str0m", $descr="Home-grown selective forwarding unit: ICE-lite, DTLS-SRTP, simulcast/SVC layer selection, RTP rewrite, RTCP/BWE.", $tags="", $link="")
-  ContainerDb(Discordy.etcd, "etcd", $techn="etcd 3.6", $descr="Voice-server discovery under leased keys.", $tags="", $link="")
+  Container(Voics.sfu, "sfu", $techn="Rust, str0m", $descr="Home-grown selective forwarding unit: ICE-lite, DTLS-SRTP, simulcast/SVC layer selection, RTP rewrite, RTCP/BWE.", $tags="", $link="")
+  ContainerDb(Voics.etcd, "etcd", $techn="etcd 3.6", $descr="Voice-server discovery under leased keys.", $tags="", $link="")
 }
 
-Rel(Discordy.voicesignaling.Voicesocket, Discordy.voicesignaling.Voicecodec, "Decodes/encodes frames with", $techn="", $tags="", $link="")
-Rel(Discordy.voicesignaling.Voicesocket, Discordy.voicesignaling.Voicesession, "Starts one per client", $techn="", $tags="", $link="")
-Rel(Discordy.voicesignaling.Voicesession, Discordy.voicesignaling.Tokenverifier, "Verifies IDENTIFY token with", $techn="", $tags="", $link="")
-Rel(Discordy.voicesignaling.Voicesession, Discordy.voicesignaling.Roomregistry, "Joins room in", $techn="", $tags="", $link="")
-Rel(Discordy.voicesignaling.Voicesession, Discordy.voicesignaling.DAVErelay, "Relays op 21-31 via", $techn="", $tags="", $link="")
-Rel(Discordy.voicesignaling.Voicesession, Discordy.voicesignaling.SFUcontrolclient, "create_session, set_sink_wants", $techn="", $tags="", $link="")
-Rel(Discordy.voicesignaling.Voicesession, Discordy.voicesignaling.Draincontroller, "Checks admission with", $techn="", $tags="", $link="")
-Rel(Discordy.voicesignaling.SFUsupervisor, Discordy.voicesignaling.SFUcontrolclient, "Reconnects and replays sessions via", $techn="", $tags="", $link="")
-Rel(Discordy.voicesignaling.etcdregistrar, Discordy.voicesignaling.Roomregistry, "Reports user count from", $techn="", $tags="", $link="")
-Rel(Discordy.voicesignaling.Draincontroller, Discordy.voicesignaling.etcdregistrar, "Publishes draining flag via", $techn="", $tags="", $link="")
-Rel(Discordy.voicesignaling.SFUcontrolclient, Discordy.sfu, "NDJSON commands", $techn="TCP 127.0.0.1:4101", $tags="", $link="")
-Rel(Discordy.voicesignaling.etcdregistrar, Discordy.etcd, "Lease + key", $techn="gRPC", $tags="", $link="")
+Rel(Voics.voicesignaling.Voicesocket, Voics.voicesignaling.Voicecodec, "Decodes/encodes frames with", $techn="", $tags="", $link="")
+Rel(Voics.voicesignaling.Voicesocket, Voics.voicesignaling.Voicesession, "Starts one per client", $techn="", $tags="", $link="")
+Rel(Voics.voicesignaling.Voicesession, Voics.voicesignaling.Tokenverifier, "Verifies IDENTIFY token with", $techn="", $tags="", $link="")
+Rel(Voics.voicesignaling.Voicesession, Voics.voicesignaling.Roomregistry, "Joins room in", $techn="", $tags="", $link="")
+Rel(Voics.voicesignaling.Voicesession, Voics.voicesignaling.DAVErelay, "Relays op 21-31 via", $techn="", $tags="", $link="")
+Rel(Voics.voicesignaling.Voicesession, Voics.voicesignaling.SFUcontrolclient, "create_session, set_sink_wants", $techn="", $tags="", $link="")
+Rel(Voics.voicesignaling.Voicesession, Voics.voicesignaling.Draincontroller, "Checks admission with", $techn="", $tags="", $link="")
+Rel(Voics.voicesignaling.SFUsupervisor, Voics.voicesignaling.SFUcontrolclient, "Reconnects and replays sessions via", $techn="", $tags="", $link="")
+Rel(Voics.voicesignaling.etcdregistrar, Voics.voicesignaling.Roomregistry, "Reports user count from", $techn="", $tags="", $link="")
+Rel(Voics.voicesignaling.Draincontroller, Voics.voicesignaling.etcdregistrar, "Publishes draining flag via", $techn="", $tags="", $link="")
+Rel(Voics.voicesignaling.SFUcontrolclient, Voics.sfu, "NDJSON commands", $techn="TCP 127.0.0.1:4101", $tags="", $link="")
+Rel(Voics.voicesignaling.etcdregistrar, Voics.etcd, "Lease + key", $techn="gRPC", $tags="", $link="")
 
 SHOW_LEGEND(true)
 hide stereotypes
