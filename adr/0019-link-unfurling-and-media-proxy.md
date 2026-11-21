@@ -3,7 +3,7 @@
 - Status: proposed
 - Date: 2026-10-21
 - Deciders: @oussamaelhajoui (pending)
-- Technical story: [messages#12](https://github.com/discordy-voics/messages/issues/12), [client#54](https://github.com/discordy-voics/client/issues/54)
+- Technical story: [messages#12](https://github.com/voics-app/messages/issues/12), [client#54](https://github.com/voics-app/client/issues/54)
 - Related: [ADR 0003](0003-delivery-modes.md), [ADR 0017](0017-signed-attachment-download-urls.md)
 
 ## Context and Problem Statement

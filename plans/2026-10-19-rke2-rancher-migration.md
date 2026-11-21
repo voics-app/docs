@@ -2,7 +2,7 @@
 
 Status: historisch voorstel, herzien op 18 november 2026; niet goedgekeurd voor uitvoering en niet uitgevoerd.
 
-Gerelateerd: [gitops#22](https://github.com/discordy-voics/gitops/issues/22), [gitops#21](https://github.com/discordy-voics/gitops/issues/21), [beheerkeuzes](../handbook/16-status-en-beheerkeuzes.md).
+Gerelateerd: [gitops#22](https://github.com/voics-app/gitops/issues/22), [gitops#21](https://github.com/voics-app/gitops/issues/21), [beheerkeuzes](../handbook/16-status-en-beheerkeuzes.md).
 
 ## De uitgangssituatie is veranderd
 

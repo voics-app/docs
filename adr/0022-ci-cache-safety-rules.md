@@ -3,8 +3,8 @@
 - Status: accepted
 - Date: 2026-10-23
 - Deciders: @oussamaelhajoui
-- Technical story: [gitops#59](https://github.com/discordy-voics/gitops/issues/59)
-- Related: [CI/CD and runners](../handbook/05-ci-cd-and-runners.md), [`.github` README, CI cache](https://github.com/discordy-voics/.github#ci-cache)
+- Technical story: [gitops#59](https://github.com/voics-app/gitops/issues/59)
+- Related: [CI/CD and runners](../handbook/05-ci-cd-and-runners.md), [`.github` README, CI cache](https://github.com/voics-app/.github#ci-cache)
 
 ## Context and Problem Statement
 
@@ -27,7 +27,7 @@ CI ran on the two self-hosted VM runners as if they were fresh GitHub-hosted mac
 
 ## Decision Outcome
 
-Chosen option: **1**, with these rules. They are enforced in `rust.yml`, `node.yml`, `elixir.yml` and `docker.yml` of `discordy-voics/.github`; a step named "CI cache policy" in each job computes the switches and writes the decision to the job summary.
+Chosen option: **1**, with these rules. They are enforced in `rust.yml`, `node.yml`, `elixir.yml` and `docker.yml` of `voics-app/.github`; a step named "CI cache policy" in each job computes the switches and writes the decision to the job summary.
 
 ### What is cached, and where
 

@@ -43,7 +43,7 @@ Pinned versions: Rust 1.99, Elixir 1.20 / OTP 29, Node 24, TypeScript 5.9, React
 
 ### Confirmation
 
-CI uses the reusable `rust.yml`, `elixir.yml` and `node.yml` workflows from `discordy-voics/.github`. A service in any other language needs a superseding ADR.
+CI uses the reusable `rust.yml`, `elixir.yml` and `node.yml` workflows from `voics-app/.github`. A service in any other language needs a superseding ADR.
 
 ## Pros and Cons of the Options
 

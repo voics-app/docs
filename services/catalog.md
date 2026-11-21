@@ -63,24 +63,24 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 
 | Service | Repo | Image | Ports | Namespace | Availability SLO |
 |---|---|---|---|---|---|
-| [api](#api) | `api` | `ghcr.io/discordy-voics/api` | 8080 | `voics-apps` | 99.5 % |
-| [messages](#messages) | `messages` | `ghcr.io/discordy-voics/messages` | 8082 | `voics-apps` | 99.5 % |
-| [notifier](#notifier) | `messages` | `ghcr.io/discordy-voics/messages-notifier` | 8085 | `voics-apps` | 99.0 % while enabled |
-| [gateway](#gateway) | `gateway` | `ghcr.io/discordy-voics/gateway` | 4000 | `voics-apps` | 99.5 % |
-| [voice-signaling](#voice-signaling) | `voice` | `ghcr.io/discordy-voics/voice-signaling` | 4100 | `voics-voice` | 99.0 % per region |
-| [sfu](#sfu) | `voice` | `ghcr.io/discordy-voics/voice-sfu` | UDP 50000, TCP 127.0.0.1:4101 | `voics-voice` | 99.0 % per region |
-| [admin-bff](#admin-bff--admin-web) | `admin` | `ghcr.io/discordy-voics/admin-bff` | 8090 | `voics-apps` | 99.0 % |
+| [api](#api) | `api` | `ghcr.io/voics-app/api` | 8080 | `voics-apps` | 99.5 % |
+| [messages](#messages) | `messages` | `ghcr.io/voics-app/messages` | 8082 | `voics-apps` | 99.5 % |
+| [notifier](#notifier) | `messages` | `ghcr.io/voics-app/messages-notifier` | 8085 | `voics-apps` | 99.0 % while enabled |
+| [gateway](#gateway) | `gateway` | `ghcr.io/voics-app/gateway` | 4000 | `voics-apps` | 99.5 % |
+| [voice-signaling](#voice-signaling) | `voice` | `ghcr.io/voics-app/voice-signaling` | 4100 | `voics-voice` | 99.0 % per region |
+| [sfu](#sfu) | `voice` | `ghcr.io/voics-app/voice-sfu` | UDP 50000, TCP 127.0.0.1:4101 | `voics-voice` | 99.0 % per region |
+| [admin-bff](#admin-bff--admin-web) | `admin` | `ghcr.io/voics-app/admin-bff` | 8090 | `voics-apps` | 99.0 % |
 | [admin-web](#admin-bff--admin-web) | `admin` | served by admin-bff | 5174 (dev only) | — | — |
 | [client](#desktop-client) | `client` | installers on the update feed | 5173 (dev renderer) | user devices | — |
-| [bots-sdk](#bots-sdk) | `bots-sdk` | npm `@discordy-voics/bots` | — | — | — |
-| [contracts](#contracts) | `contracts` | npm `@discordy-voics/contracts`, crate `discordy-contracts` | — | — | — |
+| [bots-sdk](#bots-sdk) | `bots-sdk` | npm `@voics-app/bots` | — | — | — |
+| [contracts](#contracts) | `contracts` | npm `@voics-app/contracts`, crate `discordy-contracts` | — | — | — |
 
 ## api
 
 | | |
 |---|---|
 | Purpose | Auth (login, email verification, password recovery, TOTP two-factor with backup codes), account disable and delete, users, devices, push tokens (APNs and FCM, one per login session) and MLS key packages, relationships, per-guild notification settings and private user notes, reports of messages and users (`POST /api/v1/reports`, review through the internal admin routes), guilds, channels, roles and permissions, invites, applications and bots, slash commands, interactions, webhooks, admin endpoints. Transactional outbox to Redpanda. |
-| Repo / image | `discordy-voics/api` / `ghcr.io/discordy-voics/api` |
+| Repo / image | `voics-app/api` / `ghcr.io/voics-app/api` |
 | Tech | Rust, axum 0.8, sqlx, Postgres 17 |
 | Ports | 8080: public `/api/v1/*` (via `discordy-api.voics.nl`) and internal `/internal/v1/*` (cluster only) |
 | Owns data | Postgres DB `discordy` (migrations in `api/migrations`; includes `reports`, [spec](../specs/2026-10-22-moderation-tools-and-ban-purge.md#reporting-a-message-or-a-user-api126)); Valkey `rl:*` and `cache:*`; MinIO bucket `discordy-assets` |
@@ -97,7 +97,7 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 | | |
 |---|---|
 | Purpose | Standard messages: CRUD, history, reactions, pins, read states, attachments (alt text, spoiler flag), full-text search ([ADR-0018](../adr/0018-message-search-postgres-fts.md)), link unfurling (OpenGraph/oEmbed, SSRF-guarded, [ADR 0019](../adr/0019-link-unfurling-and-media-proxy.md)) and the embed media proxy. Needs outbound internet on 80/443. Internal `GET /internal/v1/channels/{id}/messages/{mid}` serves one stored message to api for reports. Request coalescing; consistent-hash routing on `channel_id`. |
-| Repo / image | `discordy-voics/messages` / `ghcr.io/discordy-voics/messages` |
+| Repo / image | `voics-app/messages` / `ghcr.io/voics-app/messages` |
 | Tech | Rust, axum 0.8, scylla driver |
 | Ports | 8082: public (ingress routes `/api/v1/channels/*/messages*`, `/api/v1/guilds/*/messages/search` and the CDN host's `/attachments/*` signed downloads and `/external/*` signed media proxy here) and internal |
 | Owns data | ScyllaDB keyspace `discordy` (messages, reactions, pins, read_states discovery, channel_last_message) plus the proposed companion vnode keyspace `<SCYLLA_KEYSPACE>_reads` (atomic read metadata/ledger/contributions, same replication; paired backups required); MinIO bucket `discordy-attachments`; Postgres database `discordy_search` (`search_messages` index, `search_offsets`, `search_state`; rebuildable, text not stored) |
@@ -117,7 +117,7 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 | | |
 |---|---|
 | Purpose | APNs/FCM message push and native call notifications. Applies mute, level, mention and device preferences; a live gateway socket alone does not suppress push because mobile background sockets can linger. Private/unknown modes carry no message text. Bounded queue, in-flight cap, retries and counted drops ([push runbook](../runbooks/push-notifications.md)) |
-| Repo / image | `discordy-voics/messages` (second binary `bin/notifier`) / `ghcr.io/discordy-voics/messages-notifier` |
+| Repo / image | `voics-app/messages` (second binary `bin/notifier`) / `ghcr.io/voics-app/messages-notifier` |
 | Tech | Rust, reqwest (HTTP/2), jsonwebtoken (ES256), rskafka |
 | Ports | 8085: `/healthz`, `/readyz` (Redpanda), `/metrics` |
 | Owns data | None. Device tokens live in the api's Postgres (`push_tokens`). |
@@ -133,7 +133,7 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 | | |
 |---|---|
 | Purpose | Client WebSocket protocol (P7), sessions, guild processes, presence, typing, fan-out, E2EE inbox relay, P2P signaling relay, voice-server allocation, Watch Together relay, telemetry. |
-| Repo / image | `discordy-voics/gateway` / `ghcr.io/discordy-voics/gateway` |
+| Repo / image | `voics-app/gateway` / `ghcr.io/voics-app/gateway` |
 | Tech | Elixir 1.20 / OTP 29, Phoenix 1.8, brod, Redix, eetcd, libcluster |
 | Ports | 4000: WS `/gateway` (via `gateway.voics.nl`, old alias retained) and internal HTTP `/internal/v1/*`; Erlang distribution inside the cluster through a headless service |
 | Owns data | Valkey `gw:*`, `e2ee:*`, `voice:*`, `presence:*` |
@@ -152,7 +152,7 @@ Rows marked 🔒 are secrets. See the [secrets inventory](../secrets/README.md).
 | | |
 |---|---|
 | Purpose | Voice WebSocket (P8), room registry, speaking relay, DAVE MLS relay (external sender), etcd lease registration and load reporting, drain mode, SFU supervision with session replay. |
-| Repo / image | `discordy-voics/voice` (`signaling/`) / `ghcr.io/discordy-voics/voice-signaling` |
+| Repo / image | `voics-app/voice` (`signaling/`) / `ghcr.io/voics-app/voice-signaling` |
 | Tech | Elixir, Phoenix (no Ecto), eetcd |
 | Ports | 4100: WS `/voice` (via `rtc-<region>.voics.nl`, old alias retained). Runs with `hostNetwork` in the same pod as the SFU |
 | Owns data | etcd `/discordy/voice/nodes/<region>/<node_id>` (10 s lease, refreshed every 3 s) |
@@ -171,7 +171,7 @@ This service is defined by [ADR-0025](../adr/0025-active-voice-health-probes.md)
 | | |
 |---|---|
 | Purpose | Two isolated synthetic voice peers per node test advertised WebSocket, ICE/DTLS and bidirectional RTP; publish loss/RTT and hysteresis state for allocation |
-| Planned repo / image | `discordy-voics/voice` (`prober/`) / `ghcr.io/discordy-voics/voice-prober` |
+| Planned repo / image | `voics-app/voice` (`prober/`) / `ghcr.io/voics-app/voice-prober` |
 | Tech | Rust, str0m, Tokio |
 | Ports | HTTP `127.0.0.1:4103` by default for readiness and Prometheus; no public ingress |
 | Owns data | Leased `/discordy/voice/probers/<node_id>` ownership and `/discordy/voice/health/<node_id>` observations; writes atomically compare observer ownership and node registration lease |
@@ -186,7 +186,7 @@ This service is defined by [ADR-0025](../adr/0025-active-voice-health-probes.md)
 | | |
 |---|---|
 | Purpose | Selective forwarding unit: UDP mux on one port, ICE-lite, DTLS-SRTP, audio forwarding, simulcast/SVC layer selection, RTP rewriting, RTCP and bandwidth estimation, speaking detection. |
-| Repo / image | `discordy-voics/voice` (`sfu/`) / `ghcr.io/discordy-voics/voice-sfu` |
+| Repo / image | `voics-app/voice` (`sfu/`) / `ghcr.io/voics-app/voice-sfu` |
 | Tech | Rust, str0m, tokio |
 | Ports | UDP 50000 (public, port-forwarded); control on TCP `127.0.0.1:4101` (NDJSON, loopback only) |
 | Depends on | nothing external; controlled by voice-signaling |
@@ -199,7 +199,7 @@ This service is defined by [ADR-0025](../adr/0025-active-voice-health-probes.md)
 | | |
 |---|---|
 | Purpose | **admin-bff:** admin backend with Cloudflare Access JWT verification plus an email allowlist, a usage aggregator (counters only, never content), proxying of P4 admin stats, VictoriaMetrics queries, the voice-node view, drain/undrain, user suspension, the Reports queue (review, resolve and dismiss reports held by api), feature flags and an admin audit log. **admin-web:** the SPA, served by the BFF. |
-| Repo / image | `discordy-voics/admin` / `ghcr.io/discordy-voics/admin-bff` (bundles the built admin-web) |
+| Repo / image | `voics-app/admin` / `ghcr.io/voics-app/admin-bff` (bundles the built admin-web) |
 | Tech | Rust, axum, sqlx (BFF); React, TypeScript, Vite, Recharts (web) |
 | Ports | 8090 (`/admin-api/*` and the SPA, via `discordy-admin.voics.nl` behind Cloudflare Access); 5174 for the web dev server |
 | Owns data | Postgres DB `discordy_admin` (usage rollups, feature_flags, admin_audit) |
@@ -215,7 +215,7 @@ This service is defined by [ADR-0025](../adr/0025-active-voice-health-probes.md)
 | | |
 |---|---|
 | Purpose | End-user Electron app: chat, voice, video, screen share, Watch Together, the three delivery modes. |
-| Repo / artefact | `discordy-voics/client` / NSIS installer (Windows), dmg (macOS), AppImage/deb (Linux), published to the MinIO `updates` bucket at `discordy-updates.voics.nl` |
+| Repo / artefact | `voics-app/client` / NSIS installer (Windows), dmg (macOS), AppImage/deb (Linux), published to the MinIO `updates` bucket at `discordy-updates.voics.nl` |
 | Tech | Electron 38, React 19, TypeScript 5.9, Vite 7, Zustand, TanStack Query, napi-rs (OpenMLS, Ed25519, SQLCipher) |
 | Ports | 5173 (renderer dev server) |
 | Depends on | api, messages, gateway, voice-signaling, sfu, coturn, CDN, update feed |
@@ -228,7 +228,7 @@ This service is defined by [ADR-0025](../adr/0025-active-voice-health-probes.md)
 | | |
 |---|---|
 | Purpose | TypeScript bot library: gateway client with intents and auto-resume, REST client with rate-limit buckets, slash-command builder, interactions, webhooks. Includes the example `moderation-bot`. |
-| Repo / artefact | `discordy-voics/bots-sdk` / npm `@discordy-voics/bots` (GitHub Packages) |
+| Repo / artefact | `voics-app/bots-sdk` / npm `@voics-app/bots` (GitHub Packages) |
 | Depends on | contracts, public api and gateway |
 | Runbooks | [release](../runbooks/release.md) |
 
@@ -237,7 +237,7 @@ This service is defined by [ADR-0025](../adr/0025-active-voice-health-probes.md)
 | | |
 |---|---|
 | Purpose | Source of truth for REST (OpenAPI 3.1), gateway, voice and event JSON Schemas, permission and intent constants. Generates the TS, Rust and Elixir packages. |
-| Repo / artefact | `discordy-voics/contracts` / npm `@discordy-voics/contracts`, Rust crate `discordy-contracts` (git tag), Elixir `Discordy.Contracts` |
+| Repo / artefact | `voics-app/contracts` / npm `@voics-app/contracts`, Rust crate `discordy-contracts` (git tag), Elixir `Discordy.Contracts` |
 | Runbooks | [release](../runbooks/release.md); human-readable copies in [protocols](../protocols/README.md) |
 
 ## Infrastructure components

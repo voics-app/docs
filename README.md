@@ -3,7 +3,7 @@
 [Age-restricted channels](specs/2026-11-18-age-restricted-channels.md): account
 preference and desktop/mobile confirmation boundaries under review for client#76.
 
-Architecture, decisions, references and runbooks for **Voics**, a Discord-equivalent platform (without payments) built in the `discordy-voics` GitHub org. Git is the source of truth; the content is mirrored to Notion on every merge to `main`.
+Architecture, decisions, references and runbooks for **Voics**, a Discord-equivalent platform (without payments) built in the `voics-app` GitHub org. Git is the source of truth; the content is mirrored to Notion on every merge to `main`.
 
 > Voics is live at `voics.nl`, with production on gen-serv (`192.168.1.212`). The approved hostname takeover is complete; compatibility aliases remain. The unrelated VM `.204` and the old product’s other records remain protected. See [public hostnames](runbooks/hostnames.md).
 

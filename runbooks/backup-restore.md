@@ -2,7 +2,7 @@
 
 Summary: wat Voics moet kunnen herstellen, benodigde kopieën, voorgestelde bewaartermijnen en de latere herstelproef.
 
-**Status op 18 november 2026: plan, niet geactiveerd.** Er is geen offsite-bestemming ingericht, geen job of schema geactiveerd en geen herstelproef uitgevoerd. Er is nog geen bewezen RPO of RTO. [gitops#117](https://github.com/discordy-voics/gitops/issues/117) blijft open.
+**Status op 18 november 2026: plan, niet geactiveerd.** Er is geen offsite-bestemming ingericht, geen job of schema geactiveerd en geen herstelproef uitgevoerd. Er is nog geen bewezen RPO of RTO. [gitops#117](https://github.com/voics-app/gitops/issues/117) blijft open.
 
 Productie is live en bevat gebruikersdata. De ene VM, hostpath-volumes en lokale MinIO delen een storingsrisico. Een extra [worker](server-uitbreiden.md), lokale snapshot of kopie in dezelfde MinIO neemt dat niet weg.
 

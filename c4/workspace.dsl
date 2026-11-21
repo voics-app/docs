@@ -519,7 +519,7 @@ workspace "Discordy" "Discord-equivalent chat, voice, video and screen-share pla
                     deploymentNode "gen-serv" "192.168.1.212, 7.6 GB RAM (16 GB recommended)" "Ubuntu VM, microk8s 1.35" {
 
                         deploymentNode "flux-system" "" "Kubernetes namespace" {
-                            flux = infrastructureNode "Flux" "Reconciles discordy-voics/gitops; image automation on semver tags." "Flux v2"
+                            flux = infrastructureNode "Flux" "Reconciles voics-app/gitops; image automation on semver tags." "Flux v2"
                         }
 
                         deploymentNode "voics-system" "" "Kubernetes namespace" {

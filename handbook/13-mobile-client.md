@@ -2,7 +2,7 @@
 
 Summary: engineering reference for the mobile client. For current installation and everyday use, read the Dutch mobile guide; historical slice notes below do not establish current release acceptance. The plan is [Mobile app plan](../plans/2026-11-03-mobile-app.md); the stack choice is [ADR 0024](../adr/0024-mobile-client-stack.md).
 
-Last reviewed: 2026-11-05 (settings, server administration, forums and offline messages: [client#279](https://github.com/discordy-voics/client/issues/279); find and navigate, notifications and DMs: [client#278](https://github.com/discordy-voics/client/issues/278); servers: [client#274](https://github.com/discordy-voics/client/issues/274); [client#206](https://github.com/discordy-voics/client/issues/206), PRs client#256, client#257 and client#258; skeleton: client#205, PR client#232).
+Last reviewed: 2026-11-05 (settings, server administration, forums and offline messages: [client#279](https://github.com/voics-app/client/issues/279); find and navigate, notifications and DMs: [client#278](https://github.com/voics-app/client/issues/278); servers: [client#274](https://github.com/voics-app/client/issues/274); [client#206](https://github.com/voics-app/client/issues/206), PRs client#256, client#257 and client#258; skeleton: client#205, PR client#232).
 
 ## Status
 
@@ -229,7 +229,7 @@ Not verified on a device: nothing in wave 4 has run on an iPhone or iPad yet; th
 
 ## Voice and calls
 
-Status: written and tested with fakes, not yet run on a device ([client#275](https://github.com/discordy-voics/client/issues/275), PR client#284). Voice needs a development or preview build, because react-native-webrtc is native and Expo Go does not contain it. The app checks for Expo Go at startup and never loads the native modules there, so Expo Go still works and shows the usual notices.
+Status: written and tested with fakes, not yet run on a device ([client#275](https://github.com/voics-app/client/issues/275), PR client#284). Voice needs a development or preview build, because react-native-webrtc is native and Expo Go does not contain it. The app checks for Expo Go at startup and never loads the native modules there, so Expo Go still works and shows the usual notices.
 
 | Topic | Behaviour |
 |---|---|
@@ -277,7 +277,7 @@ The same JavaScript (`src/voice/callkit`) runs on Android; the local module has 
 
 ## Ephemeral and peer-to-peer chats (native build)
 
-Status: written and tested with fakes, the Rust and unit tests run on Windows; **not yet built or run on macOS or a device** ([client#275](https://github.com/discordy-voics/client/issues/275), PR client#292). In a development or preview build that contains the `VoicsCrypto` module, Ephemeral and P2P channels and DMs open as normal chats. Expo Go has neither the crypto module nor react-native-webrtc, so there the notices stay.
+Status: written and tested with fakes, the Rust and unit tests run on Windows; **not yet built or run on macOS or a device** ([client#275](https://github.com/voics-app/client/issues/275), PR client#292). In a development or preview build that contains the `VoicsCrypto` module, Ephemeral and P2P channels and DMs open as normal chats. Expo Go has neither the crypto module nor react-native-webrtc, so there the notices stay.
 
 | Topic | Behaviour |
 |---|---|

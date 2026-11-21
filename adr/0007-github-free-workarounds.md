@@ -7,7 +7,7 @@
 
 ## Context and Problem Statement
 
-The `discordy-voics` org is on GitHub Free and every repository is private. Free gives 2,000 Actions minutes a month (macOS minutes count 10×) and 500 MB of package storage. Rulesets and branch protection are not available for private repositories. How do we still get full CI/CD with semver images and an enforced git-flow?
+The `voics-app` org is on GitHub Free and every repository is private. Free gives 2,000 Actions minutes a month (macOS minutes count 10×) and 500 MB of package storage. Rulesets and branch protection are not available for private repositories. How do we still get full CI/CD with semver images and an enforced git-flow?
 
 ## Decision Drivers
 

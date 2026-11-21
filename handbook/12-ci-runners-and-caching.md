@@ -2,7 +2,7 @@
 
 Summary: everything you need to run, change and debug CI on its own: where jobs run, what is preinstalled, what is cached and how it is keyed, how to switch caching on and off, what to do when you change a cached thing, the quirks we hit, and the measured speeds.
 
-Last reviewed: 2026-11-18 (capacity preflight on `.github` develop; original toolchain inventory from v0.6.3). Story: [gitops#59](https://github.com/discordy-voics/gitops/issues/59) (persistent cache), [gitops#63](https://github.com/discordy-voics/gitops/issues/63) (speed and inefficiency review). Safety rules: [ADR 0022](../adr/0022-ci-cache-safety-rules.md). Runner setup commands: [CI/CD and runners](05-ci-cd-and-runners.md).
+Last reviewed: 2026-11-18 (capacity preflight on `.github` develop; original toolchain inventory from v0.6.3). Story: [gitops#59](https://github.com/voics-app/gitops/issues/59) (persistent cache), [gitops#63](https://github.com/voics-app/gitops/issues/63) (speed and inefficiency review). Safety rules: [ADR 0022](../adr/0022-ci-cache-safety-rules.md). Runner setup commands: [CI/CD and runners](05-ci-cd-and-runners.md).
 
 ## The big picture in five sentences
 
@@ -12,7 +12,7 @@ script checkout. It counts all host runners before builds/tokens, rejects excess
 CPU/RAM demand and never automatically drains a pool. Historical timing figures
 below remain observations of their stated runs, not current capacity guidance.
 
-The preflight is merged in [.github PR44](https://github.com/discordy-voics/.github/pull/44)
+The preflight is merged in [.github PR44](https://github.com/voics-app/.github/pull/44)
 at develop commit `1f7cbf132856130c75256929e991bd67eda98c5d`. Its release to `main`
 is separate. Fetch and check out that reviewed revision when using these commands;
 do not assume an older downloaded script implements `preflight` or `--dry-run`.
@@ -45,10 +45,10 @@ runs-on = (CI_RUNNER set and != "github") ? CI_RUNNER : "ubuntu-latest"
 ### Where `CI_RUNNER` is declared
 
 - It is a **GitHub Actions repository variable**, set separately in **each of the 12 repositories**. There is **no** organization-level `CI_RUNNER`, because on GitHub Free private repositories cannot rely on organization settings.
-- **To see it:** GitHub → the repository → **Settings → Secrets and variables → Actions → Variables** tab. On the CLI: `gh variable list -R discordy-voics/<repo>`. All repos at once: `for r in api messages gateway voice admin client website gitops docs contracts .github bots-sdk; do echo "$r=$(gh variable get CI_RUNNER -R discordy-voics/$r)"; done`.
+- **To see it:** GitHub → the repository → **Settings → Secrets and variables → Actions → Variables** tab. On the CLI: `gh variable list -R voics-app/<repo>`. All repos at once: `for r in api messages gateway voice admin client website gitops docs contracts .github bots-sdk; do echo "$r=$(gh variable get CI_RUNNER -R voics-app/$r)"; done`.
 - **Who writes it:** `scripts/runner.sh` in `.github` (function `set_runner_var`). `use <label>` and a local `up` that actually starts runners route the selected heavy repositories. An unchanged `up` and every preflight leave routing untouched. `use github` deletes the variable everywhere.
 - **Who reads it:** the `runs-on:` line of every reusable workflow in `.github/.github/workflows/*.yml`, plus `notion-sync.yml` and `runner-maintenance.yml`. The expression is shown above.
-- **Moving one repo to hosted runners:** `gh variable set CI_RUNNER -R discordy-voics/<repo> -b ubuntu-latest`. Read back the value and check every direct/reusable job in that repository. Hosted runs consume GitHub minutes under the existing $15/month budget.
+- **Moving one repo to hosted runners:** `gh variable set CI_RUNNER -R voics-app/<repo> -b ubuntu-latest`. Read back the value and check every direct/reusable job in that repository. Hosted runs consume GitHub minutes under the existing $15/month budget.
 - **Moving it back:** set it to `vm-runner` again. **Do not `delete` it**: there is no organization fallback, so deleting it also sends the repo to GitHub-hosted runners. On 2026-11-03 a measurement script deleted it on four repos after a hosted test, and their CI quietly ran on paid runners until it was restored.
 
 ## What is preinstalled where
@@ -91,7 +91,7 @@ Why the pnpm store is not on `/cache`: pnpm hardlinks files from the store into 
 
 ### On GitHub-hosted runners
 
-Nothing persists between jobs, so the GitHub Actions cache (10 GB per repository) is used: `Swatinem/rust-cache` for Rust, the `setup-node` pnpm cache, `actions/cache` for Elixir `deps`/`_build`, and the GHCR registry cache (`ghcr.io/discordy-voics/<image>:buildcache`, `mode=max`) for Docker layers. The weekly `cache-cleanup.yml` trims the Actions cache. Rust runs as parallel `fmt`, `clippy`, `test` and `audit` jobs there; on the VM it is one `fmt → clippy → test` job so the workspace compiles once.
+Nothing persists between jobs, so the GitHub Actions cache (10 GB per repository) is used: `Swatinem/rust-cache` for Rust, the `setup-node` pnpm cache, `actions/cache` for Elixir `deps`/`_build`, and the GHCR registry cache (`ghcr.io/voics-app/<image>:buildcache`, `mode=max`) for Docker layers. The weekly `cache-cleanup.yml` trims the Actions cache. Rust runs as parallel `fmt`, `clippy`, `test` and `audit` jobs there; on the VM it is one `fmt → clippy → test` job so the workspace compiles once.
 
 ### Inside every Dockerfile (both runner types)
 
@@ -136,8 +136,8 @@ Without it, the run fails at startup with no jobs ("startup_failure").
 | You want | Do this | Scope | Undo |
 |---|---|---|---|
 | One PR built cold | add the label `ci-no-cache`, then **push a commit** (a re-run keeps the old labels) | that PR | remove the label, push |
-| One repository cold | `gh variable set CI_CACHE -R discordy-voics/<repo> -b off` | every run of that repo | `gh variable delete CI_CACHE -R discordy-voics/<repo>` |
-| Everything cold | `for r in api messages gateway voice admin client website gitops docs contracts .github bots-sdk; do gh variable set CI_CACHE -R discordy-voics/$r -b off; done` (per repository: on GitHub Free, private repositories cannot rely on organization-level settings, which is also why `runner.sh` sets `CI_RUNNER` per repository) | every repo | the same loop with `gh variable delete CI_CACHE -R discordy-voics/$r` |
+| One repository cold | `gh variable set CI_CACHE -R voics-app/<repo> -b off` | every run of that repo | `gh variable delete CI_CACHE -R voics-app/<repo>` |
+| Everything cold | `for r in api messages gateway voice admin client website gitops docs contracts .github bots-sdk; do gh variable set CI_CACHE -R voics-app/$r -b off; done` (per repository: on GitHub Free, private repositories cannot rely on organization-level settings, which is also why `runner.sh` sets `CI_RUNNER` per repository) | every repo | the same loop with `gh variable delete CI_CACHE -R voics-app/$r` |
 | Wipe the cache | on the VM: `cd ~/.github && scripts/runner.sh cache-clear --what all\|cargo\|target\|sccache\|pnpm\|trivy\|mix [--layers]` | VM volume (+ Docker layers with `--layers`) | it refills on the next runs |
 | Everything on GitHub runners | `scripts/runner.sh use github` | every repo | `scripts/runner.sh use vm-runner` |
 
@@ -206,7 +206,7 @@ The runner VM has one 146 GB disk (Proxmox VM 108, disk on the `tb` pool). Every
 | Trivy DB | volume, `/cache/trivy` | 1.6 GB | Trivy (replaces it) |
 | pnpm stores | `/srv/discordy-runner/<container>/_work/.pnpm-store` (one per runner) | 1 GB each | **daily maintenance** wipes one over 3 GB |
 | Docker build cache | Docker's own storage (`/var/lib/docker`) | 17 GB before the first prune | **daily maintenance** keeps at most 15 GB and drops records unused for 14 days |
-| Locally built images (`ghcr.io/discordy-voics/*`) | `/var/lib/docker` | 82 old tags, about 5 GB | **daily maintenance** removes those older than 24 h (they are already pushed to GHCR) |
+| Locally built images (`ghcr.io/voics-app/*`) | `/var/lib/docker` | 82 old tags, about 5 GB | **daily maintenance** removes those older than 24 h (they are already pushed to GHCR) |
 | Leftover test containers | `/var/lib/docker` | small | **daily maintenance** (stopped for over 24 h) |
 | Runner container logs | `/var/lib/docker/containers` | small | Docker (`max-size 20m`, 3 files per container) |
 | Checkouts and job temp | `/srv/discordy-runner/<container>/_work` | 1 to 3 GB | the runner (`_temp` is emptied after every job) |
@@ -251,7 +251,7 @@ What each one costs:
 1. On the VM, run `df -h /` and `docker system df`, plus `docker run --rm -v discordy-ci-cache-vm-runner:/cache alpine du -sh /cache/*` to see what is big.
 2. Run `scripts/runner-prune.sh`. If that is not enough, run `scripts/runner-prune.sh --deep`. Both are safe while jobs run.
 3. Still full: `scripts/runner.sh cache-clear --what all --layers --force` (when the runners are stuck busy), then `docker system prune -af` as the last step. It also removes the pre-pulled images; `runner.sh up` pulls them again.
-4. Re-run the failed jobs: `gh run rerun <id> --failed -R discordy-voics/<repo>`.
+4. Re-run the failed jobs: `gh run rerun <id> --failed -R voics-app/<repo>`.
 5. If it keeps happening, grow the disk:
    - In Proxmox (`https://192.168.1.88:8006`), VM 108 → Hardware → the `tb` disk → Disk Action → Resize. Never use the thin pool `local-lvm`.
    - Then on the VM: `sudo growpart /dev/sda 3 && sudo pvresize /dev/sda3 && sudo lvextend -r -l +100%FREE /dev/ubuntu-vg/ubuntu-lv`.
@@ -262,11 +262,11 @@ What each one costs:
 - The first step of each job prints `CI cache: on=<true|false> reuse-target=<true|false> (<why>)`. The why is one of: persistent cache on, GitHub-hosted runner, no writable /cache volume, CI_CACHE=off, PR label ci-no-cache, scheduled cold build.
 - The Rust step prints `target: persistent target <key>`, `target: clean target, in $RUNNER_TEMP`, `clean target (low disk)` or `private clean target (key locked by another job)`, and the sccache stats at the end.
 - The Elixir step prints `using baked otp-29.1.2 and elixir-1.20.5-otp-29`, or `no baked Erlang/Elixir for otp=… elixir=…: setup-beam installs them`.
-- Job and step durations: `gh api repos/discordy-voics/<repo>/actions/runs/<id>/jobs`.
+- Job and step durations: `gh api repos/voics-app/<repo>/actions/runs/<id>/jobs`.
 
 ## Measured speeds
 
-Reference numbers, so a later change can be compared against them. All are job durations in seconds (`gh api repos/discordy-voics/<repo>/actions/runs/<id>/jobs`). Measured 2026-11-03 on `.github` v0.6.3 with the round-2 optimizations, on the same commits (PRs api#88, messages#50, gateway#34, client#175). Runs: VM with cache, VM with the `ci-no-cache` label, and GitHub-hosted (repo `CI_RUNNER=github`).
+Reference numbers, so a later change can be compared against them. All are job durations in seconds (`gh api repos/voics-app/<repo>/actions/runs/<id>/jobs`). Measured 2026-11-03 on `.github` v0.6.3 with the round-2 optimizations, on the same commits (PRs api#88, messages#50, gateway#34, client#175). Runs: VM with cache, VM with the `ci-no-cache` label, and GitHub-hosted (repo `CI_RUNNER=github`).
 
 ### PR checks: VM warm vs VM cold vs GitHub-hosted
 
@@ -320,7 +320,7 @@ Variance: a warm run can take twice as long when both runners compile at the sam
 
 ## Who to ask, where to look
 
-- Code: `discordy-voics/.github`, `.github/workflows/*.yml` and `scripts/runner.sh`; the README there has a short "CI cache" section.
+- Code: `voics-app/.github`, `.github/workflows/*.yml` and `scripts/runner.sh`; the README there has a short "CI cache" section.
 - Decisions: [ADR 0022](../adr/0022-ci-cache-safety-rules.md).
 - Runner setup and VM operations: [CI/CD and runners](05-ci-cd-and-runners.md).
 - Incident history: [runbooks](../runbooks/).

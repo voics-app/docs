@@ -4,8 +4,8 @@ Summary: voice signaling (Elixir), the SFU (Rust, str0m) and the regionctl CLI.
 
 | | |
 |---|---|
-| Repository | `discordy-voics/voice` |
-| Images | `ghcr.io/discordy-voics/voice-signaling` and `ghcr.io/discordy-voics/voice-sfu` (namespace `voics-voice`) |
+| Repository | `voics-app/voice` |
+| Images | `ghcr.io/voics-app/voice-signaling` and `ghcr.io/voics-app/voice-sfu` (namespace `voics-voice`) |
 | Owns | etcd keys `/discordy/voice/nodes/<region>/<node_id>` (10-second lease) |
 | Catalog entries | [voice-signaling and sfu](../services/catalog.md#voice-signaling) |
 

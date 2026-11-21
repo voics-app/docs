@@ -39,7 +39,7 @@ Production recovery is a separate data-preserving project, not a routine `env.sh
 ## Local stack
 
 ```bash
-git clone --branch develop git@github.com:discordy-voics/gitops.git
+git clone --branch develop git@github.com:voics-app/gitops.git
 cd gitops/local && ./dev.sh          # PowerShell: .\dev.ps1
 ```
 
@@ -47,4 +47,4 @@ cd gitops/local && ./dev.sh          # PowerShell: .\dev.ps1
 
 ## Status
 
-The runbook was written with the code and is **not yet run against a real Proxmox, Hetzner or AWS account**; timings are marked "not measured yet" ([gitops#28](https://github.com/discordy-voics/gitops/issues/28)).
+The runbook was written with the code and is **not yet run against a real Proxmox, Hetzner or AWS account**; timings are marked "not measured yet" ([gitops#28](https://github.com/voics-app/gitops/issues/28)).

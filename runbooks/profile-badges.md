@@ -1,6 +1,6 @@
 # Profile badge visibility
 
-Status: proposed in [API pull request 158](https://github.com/discordy-voics/api/pull/158) and [desktop pull request 368](https://github.com/discordy-voics/client/pull/368). These changes are not a production rollout.
+Status: proposed in [API pull request 158](https://github.com/voics-app/api/pull/158) and [desktop pull request 368](https://github.com/voics-app/client/pull/368). These changes are not a production rollout.
 
 Profile badges are explicit grants stored separately from user flags. A grant is initially visible; its owner can switch visibility in **User settings → Profile**. The owner sees every grant and its current setting. Public profile requests return only visible grants. Visibility changes do not add or remove grants, and users cannot grant themselves badges through this API. Account anonymization removes badge grants in the same transaction. Desktop presents the badge ID as readable words until a product catalog supplies names. The catalog, grant policy and award process have not been defined.
 
