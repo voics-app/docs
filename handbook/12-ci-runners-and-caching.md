@@ -57,6 +57,14 @@ runs-on = (CI_RUNNER set and != "github") ? CI_RUNNER : "ubuntu-latest"
 - **Moving one repo to hosted runners:** `gh variable set CI_RUNNER -R voics-app/<repo> -b ubuntu-latest`. Read back the value and check every direct/reusable job in that repository. Hosted runs are free for public repositories; for the private gitops they consume billed minutes.
 - **Moving it back:** set it to `vm-runner` again. Deleting it sends the repo to GitHub-hosted runners: intended for the public repositories, billed for gitops. (On 2026-11-03, when every repo was private, a measurement script deleted it on four repos and their CI quietly ran on paid runners until it was restored.) Never point a public repository at `vm-runner`: the runner group refuses public repositories, so its jobs would queue forever.
 
+### Automatic fallback when GitHub-hosted minutes run out
+
+- gitops workflow **`ci-runner-fallback`** (hourly and on demand, runs on the in-cluster `discordy` runner so it costs no minutes) calls `scripts/ci-runner-fallback.sh`. The script reads `GET /orgs/voics-app/settings/billing/usage/summary?product=Actions`; if any minutes-based SKU (Linux, Windows, macOS) has a net quantity above zero, the included minutes are used up.
+- Then every **private** repository gets `CI_RUNNER=vm-runner` and the marker `CI_RUNNER_AUTO=1`. When the next month starts and the minutes are included again, the script removes both. A `CI_RUNNER` without the marker (for example gitops, set by hand) is never removed. Public repositories are never touched: their hosted minutes are free, and the runner group refuses them.
+- Today the only private repository is gitops, which already has `vm-runner`, so the script is a no-op until the repositories are made private again with `repo-visibility.sh private` (which sets the variable itself too).
+- Dry run: `GH_TOKEN=<pat> scripts/ci-runner-fallback.sh --dry-run` prints the usage and what it would change. Workflow input `dry-run` does the same in Actions.
+- Secret: gitops `production` environment secret **`CI_BILLING_TOKEN`**, a PAT with `admin:org` (billing read) and `repo` (variables write). Owner action: store the PAT that is already `ARC_GITHUB_TOKEN` there if it has those scopes. Without the secret or the scope the job prints SKIP and changes nothing (routing then stays manual via `runner.sh use`).
+
 ## What is preinstalled where
 
 | Tool | VM runner image (`discordy-actions-runner:2.338.0`, built by `runner.sh up`) | GitHub-hosted `ubuntu-latest` |
