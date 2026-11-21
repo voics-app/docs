@@ -279,7 +279,7 @@ The client follows the same git-flow. `client/.github/workflows/release.yml` run
 
 Not built yet:
 
-- **macOS (dmg) and Linux (AppImage/deb)**: the scripts exist (`pnpm dist:mac`, `pnpm dist:linux`), but CI does not run them yet. The website shows them as "coming soon".
+- **macOS (dmg)**: the script exists (`pnpm dist:mac`), but CI does not run it yet. The website shows it as "coming soon". Linux (AppImage and deb) is built by the `linux` job of the client `release` workflow and published by gitops `publish-public` (source `client-linux`), see [Desktop client release](../handbook/09-desktop-client-release.md).
 - **RC/beta channel**: RC builds don't produce installers. The dev/test environment has a dev updates host (`discordy-dev-updates.voics.nl`) for an optional dev installer channel; the client workflow that publishes to it is not built yet.
 - **Code signing**: installers are unsigned (spec §10), so Windows SmartScreen shows "unknown publisher".
 
