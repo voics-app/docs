@@ -24,7 +24,7 @@ The platform has eleven deliverables: `api`, `gateway`, `messages`, `voice`, `ad
 
 ## Decision Outcome
 
-Chosen option: **1**, a private repository per service in the `voics-app` org.
+Chosen option: **1**, a repository per service in the `voics-app` org (private at first; public except `gitops` since 2026-11-21, see [ADR-0007](0007-github-free-workarounds.md)).
 
 - Repositories are coupled only through two published artifacts:
   - `contracts`, a semver-tagged package published for TS, Rust and Elixir.

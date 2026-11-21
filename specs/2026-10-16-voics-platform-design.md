@@ -5,7 +5,7 @@
 | Status | Draft — awaiting owner review |
 | Date | 2026-10-16 |
 | Owner | @oussamaelhajoui |
-| GitHub org | `voics-app` (private repos) |
+| GitHub org | `voics-app` (public repos since 2026-11-21, except `gitops`) |
 | Product name | **Voics** (lives at `discordy.voics.nl`; the earlier product on `voics.nl` / `app.voics.nl` is separate and untouched) |
 | Scope | Full Discord-equivalent platform, excluding payments (Nitro, boosts, shop) |
 

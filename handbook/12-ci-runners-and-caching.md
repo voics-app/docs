@@ -39,7 +39,7 @@ runs-on = (CI_RUNNER set and != "github") ? CI_RUNNER : "ubuntu-latest"
 
 - `CI_RUNNER` is declared per repository; see the next section.
 - `.github/scripts/runner.sh use github` or `use vm-runner` switches every repository at once.
-- Jobs that name a runner explicitly ignore `CI_RUNNER`: `windows-latest` for the desktop installer, the in-cluster `discordy` runners for secrets-sync and minio-publish.
+- Jobs that name a runner explicitly ignore `CI_RUNNER`: `windows-latest` for the desktop installer, the in-cluster `discordy` runners for gitops secrets-sync, publish-site and publish-public.
 - If `CI_RUNNER` names a label with no online runner, jobs queue forever without failing. That is the first thing to check when CI "hangs".
 
 ### Public repositories and publishing
@@ -50,12 +50,12 @@ runs-on = (CI_RUNNER set and != "github") ? CI_RUNNER : "ubuntu-latest"
 
 ### Where `CI_RUNNER` is declared
 
-- It is a **GitHub Actions repository variable**, set separately in **each of the 12 repositories**. There is **no** organization-level `CI_RUNNER`, because on GitHub Free private repositories cannot rely on organization settings.
+- It is a **GitHub Actions repository variable**, set per repository. Since 2026-11-21 only the private `gitops` has it (`vm-runner`); the public repositories have none and run on GitHub-hosted runners.
 - **To see it:** GitHub → the repository → **Settings → Secrets and variables → Actions → Variables** tab. On the CLI: `gh variable list -R voics-app/<repo>`. All repos at once: `for r in api messages gateway voice admin client website gitops docs contracts .github bots-sdk; do echo "$r=$(gh variable get CI_RUNNER -R voics-app/$r)"; done`.
 - **Who writes it:** `scripts/runner.sh` in `.github` (function `set_runner_var`). `use <label>` and a local `up` that actually starts runners route the selected heavy repositories. An unchanged `up` and every preflight leave routing untouched. `use github` deletes the variable everywhere.
 - **Who reads it:** the `runs-on:` line of every reusable workflow in `.github/.github/workflows/*.yml`, plus `notion-sync.yml` and `runner-maintenance.yml`. The expression is shown above.
-- **Moving one repo to hosted runners:** `gh variable set CI_RUNNER -R voics-app/<repo> -b ubuntu-latest`. Read back the value and check every direct/reusable job in that repository. Hosted runs consume GitHub minutes under the existing $15/month budget.
-- **Moving it back:** set it to `vm-runner` again. **Do not `delete` it**: there is no organization fallback, so deleting it also sends the repo to GitHub-hosted runners. On 2026-11-03 a measurement script deleted it on four repos after a hosted test, and their CI quietly ran on paid runners until it was restored.
+- **Moving one repo to hosted runners:** `gh variable set CI_RUNNER -R voics-app/<repo> -b ubuntu-latest`. Read back the value and check every direct/reusable job in that repository. Hosted runs are free for public repositories; for the private gitops they consume billed minutes.
+- **Moving it back:** set it to `vm-runner` again. Deleting it sends the repo to GitHub-hosted runners: intended for the public repositories, billed for gitops. (On 2026-11-03, when every repo was private, a measurement script deleted it on four repos and their CI quietly ran on paid runners until it was restored.) Never point a public repository at `vm-runner`: the runner group refuses public repositories, so its jobs would queue forever.
 
 ## What is preinstalled where
 
@@ -145,7 +145,7 @@ Without it, the run fails at startup with no jobs ("startup_failure").
 | One repository cold | `gh variable set CI_CACHE -R voics-app/<repo> -b off` | every run of that repo | `gh variable delete CI_CACHE -R voics-app/<repo>` |
 | Everything cold | `for r in api messages gateway voice admin client website gitops docs contracts .github bots-sdk; do gh variable set CI_CACHE -R voics-app/$r -b off; done` (per repository: on GitHub Free, private repositories cannot rely on organization-level settings, which is also why `runner.sh` sets `CI_RUNNER` per repository) | every repo | the same loop with `gh variable delete CI_CACHE -R voics-app/$r` |
 | Wipe the cache | on the VM: `cd ~/.github && scripts/runner.sh cache-clear --what all\|cargo\|target\|sccache\|pnpm\|trivy\|mix [--layers]` | VM volume (+ Docker layers with `--layers`) | it refills on the next runs |
-| Everything on GitHub runners | `scripts/runner.sh use github` | every repo | `scripts/runner.sh use vm-runner` |
+| Everything on GitHub runners | `scripts/runner.sh use github` | every repo | `scripts/runner.sh use vm-runner` (only valid while the repositories are private; see `repo-visibility.sh`) |
 
 What "off" does: no `/cache`, no baked toolchain (Rust is installed fresh into `$RUNNER_TEMP`, Erlang/Elixir and Node through their setup actions), no Actions cache, a `no-cache` Docker build and a temporary Trivy DB. That is the same as a fresh GitHub-hosted machine.
 

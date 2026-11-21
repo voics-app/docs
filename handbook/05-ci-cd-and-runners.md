@@ -88,13 +88,13 @@ Docker builds win when source changes but dependencies do not (api halves, clien
 
 ## Where jobs run
 
-GitHub-hosted `ubuntu-latest` is the default. When the GitHub Free minutes run low you can send every repository to your own machines and back with one command.
+Since 2026-11-21 every repository except `gitops` is **public**, so its CI runs on GitHub-hosted runners for free (`CI_RUNNER` is unset there). Only the private `gitops` uses the self-hosted VM pool (`CI_RUNNER=vm-runner`, VM `192.168.1.219`) and the in-cluster `discordy` runner. The runner group *Default* refuses public repositories, so our own runners never run a public repository's job, and workflows of outside contributors need an approval first. `scripts/repo-visibility.sh` in `.github` switches the repositories between public and private together with their runner. The PC runners (Docker Desktop) are retired.
 
 | Where | Label | How |
 |---|---|---|
-| GitHub-hosted (default) | `ubuntu-latest` | `scripts/runner.sh use github` |
-| Owner PC (Docker Desktop) | `karma-pc` | `scripts/runner.sh up` starts the runners and switches |
-| A VM | `vm-<host>` | bootstrap once, `up --host`, then `use vm-<host>` |
+| GitHub-hosted (default, all public repos) | `ubuntu-latest` | `CI_RUNNER` unset |
+| The VM pool (private gitops only) | `vm-runner` | bootstrap once, `up --host`, then set `CI_RUNNER` on gitops |
+| Owner PC (Docker Desktop), retired | `karma-pc` | only if ever needed again: `scripts/runner.sh up` |
 | In-cluster ARC | `discordy` | named explicitly by jobs that need the cluster network, in the private gitops only: secrets-sync, publish-site, publish-public (public repositories cannot use it) |
 | GitHub-hosted Windows | `windows-latest` | the desktop installer build |
 
@@ -172,11 +172,13 @@ On a Linux VM the runners use host networking, so integration tests (testcontain
 
 ### Which repos run where (split)
 
+The table below is the state since 2026-11-21. The dated snapshot after it describes the earlier split and is kept for history.
+
 | Runners | Repos | Cost |
 |---|---|---|
-| Self-hosted VM (`vm-runner`, count limited by host capacity) | repositories whose current `CI_RUNNER` names that pool | existing VM resources |
-| GitHub-hosted `ubuntu-latest` | repositories explicitly routed there or using their hosted default | GitHub minutes, existing $15/month budget (org Settings → Billing → Budgets) |
-| GitHub-hosted `windows-latest` | client installer, on client releases (merge to main or tag) | about $0.30 per release |
+| Self-hosted VM (`vm-runner`, count limited by host capacity) | gitops (private) | existing VM resources |
+| GitHub-hosted `ubuntu-latest` | every public repository | free (public repositories) |
+| GitHub-hosted `windows-latest` / macOS | client installer and iOS checks | free (client is public) |
 
 `runner.sh up` and `use <label>` switch only the heavy repos; `use github` resets all. Change the set with `SELF_HOSTED_REPOS="api messages" scripts/runner.sh up`.
 
