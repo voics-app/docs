@@ -36,7 +36,7 @@ The product is named **Voics** (`brand.json` `name`); the site domain stays `dis
 
 ## Download buttons
 
-Every Download button links to `downloads.windows` in `brand.json`, the stable URL of the latest installer (`https://updates.voics.nl/Voics-Setup-latest.exe`); the Android buttons link to `downloads.android` (`https://updates.voics.nl/Voics-latest.apk`). macOS and Linux show "coming soon".
+Every Download button links to `downloads.windows` in `brand.json`, the stable URL of the latest installer (`https://updates.voics.nl/Voics-Setup-latest.exe`); the Android buttons link to `downloads.android` (`https://updates.voics.nl/Voics-latest.apk`). The Linux buttons link to `downloads.linux` (`https://updates.voics.nl/Voics-latest.AppImage`) and `downloads.linuxDeb` (`https://updates.voics.nl/Voics-latest.deb`). macOS shows "coming soon".
 
 ## Deploy
 

@@ -10,6 +10,7 @@ Versioning follows [How we work](03-how-we-work.md#releases-and-versioning). `.g
 2. A **Windows (NSIS)** build runs on the configured Windows runner or GitHub-hosted `windows-latest`, including the native crypto module (Rust). The build checks that `latest.yml` carries the chosen version.
 3. `Voics-Setup-X.Y.Z.exe`, its `.blockmap` and `latest.yml` are attached to the GitHub Release `vX.Y.Z`, which the workflow creates (and tags at the merge commit) for `main` builds.
 4. Within 10 minutes the private gitops workflow `publish-public` (source `client-desktop`) uploads the `installer-windows` artifact to the `discordy-updates` bucket (served at `https://updates.voics.nl`) and copies the installer to `Voics-Setup-latest.exe`, the stable target of the website's Download button. The workflow requests a short cache for `latest.yml` and the stable name; verify the response and allow for caches during rollout.
+5. **Linux.** The job `linux` of the same workflow runs after the Windows job on `ubuntu-latest` (or the repo variable `CI_RUNNER`), with the same version, and builds an x64 AppImage and deb with electron-builder, including the native crypto module. It uploads the artifact `installer-linux` (`Voics-X.Y.Z.AppImage`, `Voics-X.Y.Z.deb`, `latest-linux.yml`) and attaches the files to the GitHub Release. The gitops source `client-linux` publishes them to the same bucket and copies them to the stable `Voics-latest.AppImage` and `Voics-latest.deb`, which the website's Linux buttons use (`downloads.linux`, `downloads.linuxDeb`). An installed AppImage updates itself from `latest-linux.yml` like Windows does; a deb install does not self-update (reinstall the newer deb). The job is `continue-on-error`, so a Linux failure never blocks the Windows release; the PR check `linux-package.yml` builds the packages when the packaging files change.
 
 A manual build when CI is unavailable: `pnpm dist:win` on Windows, then upload `apps/desktop/release/{Voics-Setup-X.Y.Z.exe,.blockmap,latest.yml}` to the bucket. The same steps are in [Release, Desktop client release](../runbooks/release.md#desktop-client-release).
 
@@ -54,6 +55,7 @@ To pull a bad release, restore the previous `latest.yml` in the `discordy-update
 | Platform | Status |
 |---|---|
 | Windows (NSIS, x64) | Built and published by CI |
-| macOS (dmg) and Linux (AppImage, deb) | Scripts exist (`pnpm dist:mac`, `pnpm dist:linux`), CI does not run them yet; the website says "coming soon" |
+| Linux (AppImage, deb, x64) | Built by CI (job `linux`) and published by gitops `publish-public` (source `client-linux`); AppImage auto-updates, deb does not |
+| macOS (dmg) | Script exists (`pnpm dist:mac`), CI does not run it yet; the website says "coming soon" |
 | Code signing | Installers are unsigned, so Windows SmartScreen shows "unknown publisher" (spec section 10) |
 | RC or beta channel | Not built (develop does not publish); a dev updates host exists for a future dev installer channel |
