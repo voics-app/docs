@@ -1,5 +1,5 @@
 @startuml
-title <size:24>Component View: Discordy - admin-web</size>\n<size:24>admin-web components.</size>
+title <size:24>Component View: Voics - admin-web</size>\n<size:24>admin-web components.</size>
 
 set separator none
 left to right direction
@@ -16,19 +16,19 @@ left to right direction
 !include <C4/C4_Container>
 !include <C4/C4_Component>
 
-System_Boundary("Discordy_boundary", "Discordy", $tags="") {
-  Container_Boundary("Discordy.adminweb_boundary", "admin-web", $tags="") {
-    Component(Discordy.adminweb.Pages, "Pages", $techn="React", $descr="Overview, Usage, Voice Regions, Platform Health, Trust & Safety, Feature Flags, Audit.", $tags="", $link="")
-    Component(Discordy.adminweb.Charts, "Charts", $techn="Recharts", $descr="Usage and health charts using the shared design tokens.", $tags="", $link="")
-    Component(Discordy.adminweb.adminapiclient, "admin-api client", $techn="TypeScript", $descr="Typed fetch client for /admin-api/*.", $tags="", $link="")
+System_Boundary("Voics_boundary", "Voics", $tags="") {
+  Container_Boundary("Voics.adminweb_boundary", "admin-web", $tags="") {
+    Component(Voics.adminweb.Pages, "Pages", $techn="React", $descr="Overview, Usage, Voice Regions, Platform Health, Trust & Safety, Feature Flags, Audit.", $tags="", $link="")
+    Component(Voics.adminweb.Charts, "Charts", $techn="Recharts", $descr="Usage and health charts using the shared design tokens.", $tags="", $link="")
+    Component(Voics.adminweb.adminapiclient, "admin-api client", $techn="TypeScript", $descr="Typed fetch client for /admin-api/*.", $tags="", $link="")
   }
 
-  Container(Discordy.adminbff, "admin-bff", $techn="Rust, Axum, SQLx", $descr="Admin backend: Access verification, usage aggregation, stats proxying, regions, drain, suspension, flags, audit.", $tags="", $link="")
+  Container(Voics.adminbff, "admin-bff", $techn="Rust, Axum, SQLx", $descr="Admin backend: Access verification, usage aggregation, stats proxying, regions, drain, suspension, flags, audit.", $tags="", $link="")
 }
 
-Rel(Discordy.adminweb.Pages, Discordy.adminweb.Charts, "Renders", $techn="", $tags="", $link="")
-Rel(Discordy.adminweb.Pages, Discordy.adminweb.adminapiclient, "Loads data via", $techn="", $tags="", $link="")
-Rel(Discordy.adminweb.adminapiclient, Discordy.adminbff, "Calls /admin-api", $techn="HTTPS/JSON", $tags="", $link="")
+Rel(Voics.adminweb.Pages, Voics.adminweb.Charts, "Renders", $techn="", $tags="", $link="")
+Rel(Voics.adminweb.Pages, Voics.adminweb.adminapiclient, "Loads data via", $techn="", $tags="", $link="")
+Rel(Voics.adminweb.adminapiclient, Voics.adminbff, "Calls /admin-api", $techn="HTTPS/JSON", $tags="", $link="")
 
 SHOW_LEGEND(true)
 hide stereotypes

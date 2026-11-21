@@ -1,5 +1,5 @@
 @startuml
-title <size:24>Component View: Discordy - gateway</size>\n<size:24>Code view: guild-scoped voice-server allocation.</size>
+title <size:24>Component View: Voics - gateway</size>\n<size:24>Code view: guild-scoped voice-server allocation.</size>
 
 set separator none
 top to bottom direction
@@ -16,39 +16,39 @@ top to bottom direction
 !include <C4/C4_Container>
 !include <C4/C4_Component>
 
-System_Boundary("Discordy_boundary", "Discordy", $tags="") {
-  Container_Boundary("Discordy.gateway_boundary", "gateway", $tags="") {
-    Component(Discordy.gateway.Guildprocess, "Guild process", $techn="GenServer", $descr="GenServer per guild: members, roles, channels, permission cache, voice state.", $tags="", $link="")
-    Component(Discordy.gateway.VoiceAllocator, "VoiceAllocator", $techn="GenServer", $descr="allocate(srv_id, channel) / reallocate(node_id); one per guild (or DM channel).", $tags="", $link="")
-    Component(Discordy.gateway.RegionResolver, "RegionResolver", $techn="pure module", $descr="Channel override, else guild voice_region, else DEFAULT_VOICE_REGION.", $tags="", $link="")
-    Component(Discordy.gateway.NodeSelector, "NodeSelector", $techn="pure module", $descr="Non-draining node with the fewest users; ties broken by cpu_pct.", $tags="", $link="")
-    Component(Discordy.gateway.VoiceNode, "VoiceNode", $techn="struct", $descr="node_id, region, ws_url, public_ip, udp_port, users, cpu_pct, egress_bps, draining, version.", $tags="", $link="")
-    Component(Discordy.gateway.NodeDirectory, "NodeDirectory", $techn="behaviour", $descr="Port: list(region), subscribe(region).", $tags="", $link="")
-    Component(Discordy.gateway.EtcdNodeDirectory, "EtcdNodeDirectory", $techn="module", $descr="Adapter: etcd prefix watch with lease-expiry removal.", $tags="", $link="")
-    Component(Discordy.gateway.AllocationStore, "AllocationStore", $techn="behaviour", $descr="Port: get/put/delete voice:alloc:<srv_id>.", $tags="", $link="")
-    Component(Discordy.gateway.ValkeyAllocationStore, "ValkeyAllocationStore", $techn="module", $descr="Adapter over Redix.", $tags="", $link="")
-    Component(Discordy.gateway.VoiceTokenSigner, "VoiceTokenSigner", $techn="module", $descr="HS256 JWT, 60 s: sub, sid, srv, chn, node, e2ee.", $tags="", $link="")
-    Component(Discordy.gateway.VoiceServerNotifier, "VoiceServerNotifier", $techn="module", $descr="Sends VOICE_SERVER_UPDATE {token, guild_id, channel_id, endpoint, region} to sessions.", $tags="", $link="")
+System_Boundary("Voics_boundary", "Voics", $tags="") {
+  Container_Boundary("Voics.gateway_boundary", "gateway", $tags="") {
+    Component(Voics.gateway.Guildprocess, "Guild process", $techn="GenServer", $descr="GenServer per guild: members, roles, channels, permission cache, voice state.", $tags="", $link="")
+    Component(Voics.gateway.VoiceAllocator, "VoiceAllocator", $techn="GenServer", $descr="allocate(srv_id, channel) / reallocate(node_id); one per guild (or DM channel).", $tags="", $link="")
+    Component(Voics.gateway.RegionResolver, "RegionResolver", $techn="pure module", $descr="Channel override, else guild voice_region, else DEFAULT_VOICE_REGION.", $tags="", $link="")
+    Component(Voics.gateway.NodeSelector, "NodeSelector", $techn="pure module", $descr="Non-draining node with the fewest users; ties broken by cpu_pct.", $tags="", $link="")
+    Component(Voics.gateway.VoiceNode, "VoiceNode", $techn="struct", $descr="node_id, region, ws_url, public_ip, udp_port, users, cpu_pct, egress_bps, draining, version.", $tags="", $link="")
+    Component(Voics.gateway.NodeDirectory, "NodeDirectory", $techn="behaviour", $descr="Port: list(region), subscribe(region).", $tags="", $link="")
+    Component(Voics.gateway.EtcdNodeDirectory, "EtcdNodeDirectory", $techn="module", $descr="Adapter: etcd prefix watch with lease-expiry removal.", $tags="", $link="")
+    Component(Voics.gateway.AllocationStore, "AllocationStore", $techn="behaviour", $descr="Port: get/put/delete voice:alloc:<srv_id>.", $tags="", $link="")
+    Component(Voics.gateway.ValkeyAllocationStore, "ValkeyAllocationStore", $techn="module", $descr="Adapter over Redix.", $tags="", $link="")
+    Component(Voics.gateway.VoiceTokenSigner, "VoiceTokenSigner", $techn="module", $descr="HS256 JWT, 60 s: sub, sid, srv, chn, node, e2ee.", $tags="", $link="")
+    Component(Voics.gateway.VoiceServerNotifier, "VoiceServerNotifier", $techn="module", $descr="Sends VOICE_SERVER_UPDATE {token, guild_id, channel_id, endpoint, region} to sessions.", $tags="", $link="")
   }
 
-  ContainerDb(Discordy.Valkey, "Valkey", $techn="Valkey 8", $descr="Resume buffers, presence, rate limits, voice allocations, E2EE inboxes (AOF on).", $tags="", $link="")
-  ContainerDb(Discordy.etcd, "etcd", $techn="etcd 3.6", $descr="Voice-server discovery under leased keys.", $tags="", $link="")
+  ContainerDb(Voics.Valkey, "Valkey", $techn="Valkey 8", $descr="Resume buffers, presence, rate limits, voice allocations, E2EE inboxes (AOF on).", $tags="", $link="")
+  ContainerDb(Voics.etcd, "etcd", $techn="etcd 3.6", $descr="Voice-server discovery under leased keys.", $tags="", $link="")
 }
 
-Rel(Discordy.gateway.VoiceAllocator, Discordy.gateway.RegionResolver, "1. resolves region with", $techn="", $tags="", $link="")
-Rel(Discordy.gateway.VoiceAllocator, Discordy.gateway.NodeDirectory, "2. lists healthy nodes from", $techn="", $tags="", $link="")
-Rel(Discordy.gateway.VoiceAllocator, Discordy.gateway.NodeSelector, "3. picks node with", $techn="", $tags="", $link="")
-Rel(Discordy.gateway.VoiceAllocator, Discordy.gateway.AllocationStore, "4. stores allocation in", $techn="", $tags="", $link="")
-Rel(Discordy.gateway.VoiceAllocator, Discordy.gateway.VoiceTokenSigner, "5. signs voice token with", $techn="", $tags="", $link="")
-Rel(Discordy.gateway.VoiceAllocator, Discordy.gateway.VoiceServerNotifier, "6. sends VOICE_SERVER_UPDATE via", $techn="", $tags="", $link="")
-Rel(Discordy.gateway.NodeSelector, Discordy.gateway.VoiceNode, "Ranks", $techn="", $tags="", $link="")
-Rel(Discordy.gateway.NodeDirectory, Discordy.gateway.VoiceNode, "Returns", $techn="", $tags="", $link="")
-Rel(Discordy.gateway.EtcdNodeDirectory, Discordy.gateway.NodeDirectory, "Implements", $techn="", $tags="", $link="")
-Rel(Discordy.gateway.ValkeyAllocationStore, Discordy.gateway.AllocationStore, "Implements", $techn="", $tags="", $link="")
-Rel(Discordy.gateway.EtcdNodeDirectory, Discordy.gateway.VoiceAllocator, "Notifies node loss (reallocate)", $techn="", $tags="", $link="")
-Rel(Discordy.gateway.Guildprocess, Discordy.gateway.VoiceAllocator, "allocate(srv_id, channel)", $techn="", $tags="", $link="")
-Rel(Discordy.gateway.EtcdNodeDirectory, Discordy.etcd, "Prefix watch", $techn="gRPC", $tags="", $link="")
-Rel(Discordy.gateway.ValkeyAllocationStore, Discordy.Valkey, "voice:alloc:*", $techn="RESP", $tags="", $link="")
+Rel(Voics.gateway.VoiceAllocator, Voics.gateway.RegionResolver, "1. resolves region with", $techn="", $tags="", $link="")
+Rel(Voics.gateway.VoiceAllocator, Voics.gateway.NodeDirectory, "2. lists healthy nodes from", $techn="", $tags="", $link="")
+Rel(Voics.gateway.VoiceAllocator, Voics.gateway.NodeSelector, "3. picks node with", $techn="", $tags="", $link="")
+Rel(Voics.gateway.VoiceAllocator, Voics.gateway.AllocationStore, "4. stores allocation in", $techn="", $tags="", $link="")
+Rel(Voics.gateway.VoiceAllocator, Voics.gateway.VoiceTokenSigner, "5. signs voice token with", $techn="", $tags="", $link="")
+Rel(Voics.gateway.VoiceAllocator, Voics.gateway.VoiceServerNotifier, "6. sends VOICE_SERVER_UPDATE via", $techn="", $tags="", $link="")
+Rel(Voics.gateway.NodeSelector, Voics.gateway.VoiceNode, "Ranks", $techn="", $tags="", $link="")
+Rel(Voics.gateway.NodeDirectory, Voics.gateway.VoiceNode, "Returns", $techn="", $tags="", $link="")
+Rel(Voics.gateway.EtcdNodeDirectory, Voics.gateway.NodeDirectory, "Implements", $techn="", $tags="", $link="")
+Rel(Voics.gateway.ValkeyAllocationStore, Voics.gateway.AllocationStore, "Implements", $techn="", $tags="", $link="")
+Rel(Voics.gateway.EtcdNodeDirectory, Voics.gateway.VoiceAllocator, "Notifies node loss (reallocate)", $techn="", $tags="", $link="")
+Rel(Voics.gateway.Guildprocess, Voics.gateway.VoiceAllocator, "allocate(srv_id, channel)", $techn="", $tags="", $link="")
+Rel(Voics.gateway.EtcdNodeDirectory, Voics.etcd, "Prefix watch", $techn="gRPC", $tags="", $link="")
+Rel(Voics.gateway.ValkeyAllocationStore, Voics.Valkey, "voice:alloc:*", $techn="RESP", $tags="", $link="")
 
 SHOW_LEGEND(true)
 hide stereotypes
