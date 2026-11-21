@@ -6,6 +6,7 @@ Desktop user privacy: [Streamer mode](desktop-streamer-mode.md).
 
 | Runbook | Use it when |
 |---|---|
+| [GIF provider](gif-provider.md) | Provider approval, configuration, and verification before enabling GIF search |
 | [Incident 2026-11-14: image reflector OOM](incident-2026-11-14-image-reflector.md) | Seven stale image scans, a 256Mi crash loop, memory evidence and GitOps recovery |
 | [Incident 2026-10-22: gateway never ready](incident-2026-10-22-gateway-etcd.md) | Gateway 0.3.0/0.4.0 never ready (eetcd already_started); cause, fix, prevention |
 | [Adding a voice region](voice-regions/adding-a-region.md) | Bringing up a new region or another node in a region |
@@ -17,6 +18,7 @@ Desktop user privacy: [Streamer mode](desktop-streamer-mode.md).
 | [Alerting](alerting.md) | Which alerts exist, adding the owner webhook (`ops-alerts`), what to do when one fires |
 | [Profile badge visibility](profile-badges.md) | Owner controls, public filtering, test coverage and open product choices |
 | [Push notifications](push-notifications.md) | APNs/FCM flow, deployed notifier status, credential maintenance and remaining real-device acceptance |
+| [Scheduled event reminders](scheduled-events.md) | Proposed outbox, deduplication, verification and offline push gap |
 | [Metrics and exporters](metrics-exporters.md) | Which components export metrics, scrape jobs, ports and main series; verifying a target is up |
 | [ScyllaDB maintenance](scylla-maintenance.md) | Adding a node, rolling restart, repair or draining ScyllaDB |
 | [Back-up- en herstelplan](backup-restore.md) | Voorgestelde doelen, sleutelbewaring en herstelproeven; nog geen geactiveerde jobs |
