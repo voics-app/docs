@@ -12,7 +12,17 @@ Manual exclusions are persistent keys at `/discordy/voice/blacklist/nodes/<node_
 
 The prepared `VOICE_PROBE_TOKEN_SECRET` is separate from `VOICE_TOKEN_SECRET`. No value or secret-store binding exists until rollout is approved. For rotation, first review the signaling/prober rollout and the resulting brief probe-authentication failures; generate a fresh independent key, update only their reviewed secret binding, and roll those consumers together. Confirm M consecutive passes before resuming required-health allocation. Do not expose keys or signed probe tokens in logs. Never grant the prober the ordinary call-signing key.
 
-Implementation evidence and exact executable operator commands will accompany the service PR before any rollout. The local validation must include real WebSocket, ICE, DTLS and RTP, stale-observer/node rejection, blacklist dominance and recovery hysteresis.
+Executable operator commands (see the [prober README](https://github.com/voics-app/voice/blob/develop/prober/README.md)):
+
+```sh
+voice-prober check eu-west-1                 # one JSON probe result, read-only, no lease, no health write
+voice-prober blacklist nodes eu-west-1 "UDP maintenance" "operator-name"
+voice-prober blacklist regions eu-west "upstream outage" "operator-name"
+voice-prober clear-blacklist nodes eu-west-1     # exact key only
+voice-prober clear-blacklist regions eu-west
+```
+
+Probe results are exported on the prober `/metrics` (port 4103): `voice_probe_state{state}`, `voice_probe_results_total{outcome}` and `voice_probe_observer_owned`, labelled by `node_id` and `region`. A node shown `unhealthy` is excluded from new allocation after two failed probes; re-admission needs two consecutive passes. The prober and `probe_required` enforcement are not activated until rollout is approved.
 
 ## Symptom index
 
