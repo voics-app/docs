@@ -30,6 +30,20 @@
 17. [Appendix A: Capacity worksheet](#appendix-a-capacity-worksheet)
 18. [Appendix B: What regionctl writes](#appendix-b-what-regionctl-writes)
 
+## Planning a second node in an existing region
+
+A second node needs a unique `VOICE_NODE_ID`, a distinct public WebSocket hostname routed to that node's signaling service, and a distinct reachable public IP/UDP-port pair routed to that node's SFU. A shared IP therefore requires different UDP ports and matching advertised, host and forwarding configuration. Use distinct Kubernetes Service selectors and labels for each signaling node, and pin each host-networked voice workload to its intended Kubernetes hostname. Verify the rendered selectors, EndpointSlices, tunnel/ingress routes and actual UDP reachability; a registration or HTTP health check alone does not prove them. Gateway rejects ambiguous registrations in [gateway 60](https://github.com/voics-app/gateway/pull/60); exclusive lease ownership is in [voice 33](https://github.com/voics-app/voice/pull/33). These develop changes are not proof of deployed versions or reachable traffic.
+
+[Voice PR 39](https://github.com/voics-app/voice/pull/39), stacked on [PR 38](https://github.com/voics-app/voice/pull/38), proposes an offline, read-only `plan-node` preview. It is not a released command. With that proposed branch checked out and an existing local gitops checkout, its test uses the following shape (documentation-only IP and hostname):
+
+```sh
+regionctl plan-node nl-home --node-id nl-home-2 --public-ip 198.51.100.4 \
+  --public-host rtc-2.example.invalid --udp-port 50001 --k8s-node node-2 \
+  --gitops-dir /path/to/gitops
+```
+
+The preview checks readable overlays and some literal collisions, and suggests a worker ID; it does not resolve substitutions, inspect live state, prove selector/ingress affinity or validate shared-IP port forwarding. It creates no overlay or DNS record. The existing `regionctl add` scaffolds one node per region and performs a real Cloudflare write; it is not an offline second-node planner. Review a separate GitOps change and test external WS, UDP, TURN, reconnect and failure behavior before traffic.
+
 ## Concepts
 
 | Term | Meaning |
@@ -59,7 +73,7 @@ A region therefore needs four things:
 | Failure mode | Losing the control plane takes the region down too | The region survives control-plane loss for existing calls, but no new allocations happen without etcd and the gateway |
 | Effort | Lower | Higher |
 
-> Rule of thumb: **use joined for anything on the home LAN** (for example a second Proxmox VM), and **standalone for every other site**. Never stretch a microk8s (dqlite) control plane across the internet. Remote sites join as **workers only**, if they join at all.
+A joined worker uses the existing cluster and its control plane; a standalone voice site still depends on central services and is not an independent full Voics cluster. A fully independent cluster requires its own identity, data, secrets, ingress and recovery design. Do not stretch the control plane across the internet. Verify the actual datastore and CNI: the present production cluster uses etcd and its configured networking, not an assumed dqlite/Calico installation.
 
 ## Prerequisites
 
@@ -70,7 +84,7 @@ A region therefore needs four things:
 - [ ] **Workstation tools**: `kubectl` (with a context for gen-serv), `flux` 2.x, `gh`, `jq`, `curl`, `wg`, `etcdctl` 3.6 and `regionctl` from the latest `voice` release.
 - [ ] **Credentials**:
   - The `CLOUDFLARE_API_TOKEN` scope (see [secrets](../../secrets/README.md#cloudflare-api-token)).
-  - Write access to `discordy-voics/gitops`.
+  - Write access to `voics-app/gitops`.
   - `op` signed in to the Voics vault.
 - [ ] For **standalone**: the region's locally managed tunnel exists, and its credentials secret is in the [inventory](../../secrets/README.md) and in gitops (see [region tunnels](../cloudflare-setup.md#region-tunnels-standalone-clusters)).
 
@@ -286,7 +300,7 @@ From the workstation:
    ```bash
    flux bootstrap github \
      --context=region-de-fra \
-     --owner=discordy-voics --repository=gitops --private \
+     --owner=voics-app --repository=gitops --private \
      --branch=main --path=clusters/region-de-fra
    ```
 
@@ -342,7 +356,7 @@ You then commit the change and open the PR yourself.
 export CLOUDFLARE_API_TOKEN="$(op read 'op://Voics/Cloudflare API token/credential')"
 export CLOUDFLARE_ZONE_ID="$(curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN"   'https://api.cloudflare.com/client/v4/zones?name=voics.nl' | jq -r '.result[0].id')"
 
-gh repo clone discordy-voics/gitops ~/src/gitops -- --branch main
+gh repo clone voics-app/gitops ~/src/gitops -- --branch main
 git -C ~/src/gitops switch -c feature/region-de-fra
 
 regionctl add de-fra   --public-ip <PUBLIC_IP>   --public-host discordy-rtc-de-fra.voics.nl   --gitops-dir ~/src/gitops
@@ -360,7 +374,7 @@ gh pr create --base main --title "feat(regions): add de-fra" --body "Adds voice 
 | `<name>` | The region name, which becomes `VOICE_REGION` |
 | `--public-ip` | The **public IPv4** that clients send UDP to (`VOICE_PUBLIC_IP` / `SFU_PUBLIC_IP`) |
 | `--public-host` | The one-level hostname for the voice WebSocket (`VOICE_PUBLIC_WS_URL` = `wss://<host>`). It **must** be `discordy-rtc-<region>.voics.nl` or another single label under the zone ([ADR-0005](../../adr/0005-cloudflare-tunnel.md)). |
-| `--gitops-dir` | Path to a local checkout of `discordy-voics/gitops` on a feature branch |
+| `--gitops-dir` | Path to a local checkout of `voics-app/gitops` on a feature branch |
 
 `regionctl` has no flags for the node ID, the UDP port, the standalone cluster files or the tunnel ingress rule. Before committing, edit them by hand:
 
@@ -412,7 +426,7 @@ Notes:
 ## Step 9: Merge and reconcile
 
 ```bash
-gh pr merge --repo discordy-voics/gitops <PR#> --squash      # after review
+gh pr merge --repo voics-app/gitops <PR#> --squash      # after review
 flux reconcile source git flux-system
 flux reconcile kustomization regions --with-source            # joined
 # standalone: flux --context=region-de-fra reconcile kustomization regions --with-source
@@ -504,7 +518,7 @@ Use this to remove a region that failed verification, or one that is being decom
 3. **Remove the gitops overlay** with a PR that deletes `regions/<region>/` and its entry in the regions kustomization. For standalone regions, also delete `clusters/region-<region>/`.
 
    ```bash
-   gh pr create --repo discordy-voics/gitops --base main \
+   gh pr create --repo voics-app/gitops --base main \
      --title "chore(regions): remove <region>" --body "Rollback of region <region>"
    flux reconcile kustomization regions --with-source
    ```

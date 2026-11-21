@@ -2,7 +2,7 @@
 
 - Status: accepted
 - Date: 2026-10-18
-- Tracking: [docs#9](https://github.com/discordy-voics/docs/issues/9)
+- Tracking: [docs#9](https://github.com/voics-app/docs/issues/9)
 - Scope: ten posts from the Discord engineering blog, compared with the spec, the ADRs and the code in the sibling repositories
 
 ## How to read this
@@ -19,16 +19,16 @@ File references are relative to the repository named in the text. Every "missing
 
 | # | Post | Status | Issues |
 |---|---|---|---|
-| 1 | How Discord indexes trillions of messages | Partial (storage implemented, search missing) | [messages#10](https://github.com/discordy-voics/messages/issues/10) |
-| 2 | How Discord indexes billions of messages | Missing | [messages#10](https://github.com/discordy-voics/messages/issues/10) |
-| 3 | Encryption for voice and video on Discord | Partial | [voice#8](https://github.com/discordy-voics/voice/issues/8) |
-| 4 | How Discord maintains performance while adding features | Partial | [client#24](https://github.com/discordy-voics/client/issues/24) |
-| 5 | We care about your voice (engineering special) | Partial | [voice#7](https://github.com/discordy-voics/voice/issues/7) |
-| 6 | Push request bursts with Elixir GenStage | Missing | [api#20](https://github.com/discordy-voics/api/issues/20) |
-| 7 | Modernized MFA with WebAuthn | Missing | [api#19](https://github.com/discordy-voics/api/issues/19) |
-| 8 | Reduced WebSocket traffic by 40 percent | Partial | [gateway#11](https://github.com/discordy-voics/gateway/issues/11), [gateway#12](https://github.com/discordy-voics/gateway/issues/12) |
-| 9 | Automating ScyllaDB clusters at scale | Missing (single-node today) | [gitops#18](https://github.com/discordy-voics/gitops/issues/18) |
-| 10 | App-wide keyboard navigation | Partial | [client#23](https://github.com/discordy-voics/client/issues/23) |
+| 1 | How Discord indexes trillions of messages | Partial (storage implemented, search missing) | [messages#10](https://github.com/voics-app/messages/issues/10) |
+| 2 | How Discord indexes billions of messages | Missing | [messages#10](https://github.com/voics-app/messages/issues/10) |
+| 3 | Encryption for voice and video on Discord | Partial | [voice#8](https://github.com/voics-app/voice/issues/8) |
+| 4 | How Discord maintains performance while adding features | Partial | [client#24](https://github.com/voics-app/client/issues/24) |
+| 5 | We care about your voice (engineering special) | Partial | [voice#7](https://github.com/voics-app/voice/issues/7) |
+| 6 | Push request bursts with Elixir GenStage | Missing | [api#20](https://github.com/voics-app/api/issues/20) |
+| 7 | Modernized MFA with WebAuthn | Missing | [api#19](https://github.com/voics-app/api/issues/19) |
+| 8 | Reduced WebSocket traffic by 40 percent | Partial | [gateway#11](https://github.com/voics-app/gateway/issues/11), [gateway#12](https://github.com/voics-app/gateway/issues/12) |
+| 9 | Automating ScyllaDB clusters at scale | Missing (single-node today) | [gitops#18](https://github.com/voics-app/gitops/issues/18) |
+| 10 | App-wide keyboard navigation | Partial | [client#23](https://github.com/voics-app/client/issues/23) |
 
 Issues are filed in the owning repository, labelled `type:feature`, assigned to the owner, set to milestone v0.1.0 and placed in the backlog column of the Voics project. Two of them are blocked on an owner decision or a dependency (see posts 3 and 1).
 
@@ -45,7 +45,7 @@ Source: <https://discord.com/blog/how-discord-indexes-trillions-of-messages>
 - Search is missing. It is deferred by `docs/adr/0012-search-deferred.md` and excluded in spec section 1. Client README line 75 also excludes it.
 - Search topology is now recorded as `docs/adr/0013-search-index-topology.md` (proposed), so the sharding and refresh decisions exist before the engine is chosen.
 
-**Issues:** [messages#10](https://github.com/discordy-voics/messages/issues/10).
+**Issues:** [messages#10](https://github.com/voics-app/messages/issues/10).
 
 ## 2. How Discord indexes billions of messages
 
@@ -55,7 +55,7 @@ Source: <https://discord.com/blog/how-discord-indexes-billions-of-messages>
 
 **Our status: Missing.** There is no search index, no shard mapping and no refresh control. The design points that apply to us are recorded in `docs/adr/0013-search-index-topology.md`. The data model is compatible: the message store is the source of truth and Snowflake IDs already encode time, which allows ID-range queries.
 
-**Issues:** [messages#10](https://github.com/discordy-voics/messages/issues/10), blocked on ADR-0013 acceptance and on the revisit conditions of ADR-0012.
+**Issues:** [messages#10](https://github.com/voics-app/messages/issues/10), blocked on ADR-0013 acceptance and on the revisit conditions of ADR-0012.
 
 ## 3. Encryption for voice and video on Discord
 
@@ -70,7 +70,7 @@ Source: <https://discord.com/blog/encryption-for-voice-and-video-on-discord>, an
 - Encryption is opt-in for guild and DM calls. Spec section 7 says "always on in Ephemeral and P2P chats, opt-in per channel in Standard". `gateway/lib/discordy_gateway/domain/voice/voice_token_claims.ex` lines 31 and 32 apply the same rule.
 - This is a product decision, not a defect. The owner must choose between keeping Standard calls opt-in and making E2EE the default.
 
-**Issues:** [voice#8](https://github.com/discordy-voics/voice/issues/8) (decision).
+**Issues:** [voice#8](https://github.com/voics-app/voice/issues/8) (decision).
 
 ## 4. How Discord maintains performance while adding features
 
@@ -85,7 +85,7 @@ Source: <https://discord.com/blog/how-discord-maintains-performance-while-adding
 - No chunk-size budget runs in CI.
 - Server-side performance work is tracked in the messages and gateway ADRs and is outside this post's scope.
 
-**Issues:** [client#24](https://github.com/discordy-voics/client/issues/24).
+**Issues:** [client#24](https://github.com/voics-app/client/issues/24).
 
 ## 5. We care about your voice (engineering special)
 
@@ -101,7 +101,7 @@ Source: <https://discord.com/blog/we-care-about-your-voice-engineering-special> 
 - Client resume is implemented: `client/apps/desktop/src/renderer/infrastructure/gateway/gatewayClient.ts` handles RESUME, and the gateway keeps a resume buffer (`gateway/lib/discordy_gateway/application/ports/resume_store.ex`).
 - Missing: active synthetic probing. A lease shows that a process is alive, not that media is healthy. Nothing in `voice` (excluding deps) probes nodes.
 
-**Issues:** [voice#7](https://github.com/discordy-voics/voice/issues/7).
+**Issues:** [voice#7](https://github.com/voics-app/voice/issues/7).
 
 ## 6. Push request bursts with Elixir GenStage
 
@@ -111,7 +111,7 @@ Source: <https://discord.com/blog/how-discord-handles-push-request-bursts-of-ove
 
 **Our status: Missing.** No push delivery exists. A search of `api`, `gateway`, `messages` and `voice` for fcm, firebase, apns and push_token finds nothing. The API publishes events through the outbox to Kafka-compatible topics (`api/crates/infrastructure/src/events/kafka.rs`), but no notification consumer reads them. The back-pressure design is recorded in `docs/adr/0016-push-backpressure.md` (proposed) so it is settled before push is built.
 
-**Issues:** [api#20](https://github.com/discordy-voics/api/issues/20).
+**Issues:** [api#20](https://github.com/voics-app/api/issues/20).
 
 ## 7. Modernized MFA with WebAuthn
 
@@ -126,7 +126,7 @@ Source: <https://discord.com/blog/how-discord-modernized-mfa-with-webauthn>
 - No backup codes exist in `api/crates` (`grep -ri backup` finds nothing).
 - Spec section 5 mentions only "optional TOTP 2FA". The choice is recorded in `docs/adr/0015-webauthn-second-factor.md` (proposed).
 
-**Issues:** [api#19](https://github.com/discordy-voics/api/issues/19).
+**Issues:** [api#19](https://github.com/voics-app/api/issues/19).
 
 ## 8. Reduced WebSocket traffic by 40 percent
 
@@ -140,7 +140,7 @@ Source: <https://discord.com/blog/how-discord-reduced-websocket-traffic-by-40-pe
 - Passive sessions: none. `grep -ri passive gateway/lib` finds nothing. Guild fan-out in `gateway/lib/discordy_gateway/application/guild.ex` sends the full stream.
 - Gateway resume is implemented (`gateway/lib/discordy_gateway/application/ports/resume_store.ex`), which is the base that passive mode would reuse.
 
-**Issues:** [gateway#11](https://github.com/discordy-voics/gateway/issues/11) (compression), [gateway#12](https://github.com/discordy-voics/gateway/issues/12) (passive sessions).
+**Issues:** [gateway#11](https://github.com/voics-app/gateway/issues/11) (compression), [gateway#12](https://github.com/voics-app/gateway/issues/12) (passive sessions).
 
 ## 9. Automating ScyllaDB clusters at scale
 
@@ -150,7 +150,7 @@ Source: <https://discord.com/blog/how-discord-automates-scylladb-clusters-at-sca
 
 **Our status: Missing for multi-node operations.** The only deployment is one node in developer mode (`gitops/infrastructure/data/scylla/scylla.yaml`). `gitops/bootstrap/10-prepare-node.sh` sets the kernel I/O limit and nothing else is scripted. The backup policy is in `docs/runbooks/backup-restore.md`. A procedure runbook is added as `docs/runbooks/scylla-maintenance.md`. Automation waits until a second node exists.
 
-**Issues:** [gitops#18](https://github.com/discordy-voics/gitops/issues/18).
+**Issues:** [gitops#18](https://github.com/voics-app/gitops/issues/18).
 
 ## 10. App-wide keyboard navigation
 
@@ -165,7 +165,7 @@ Source: <https://discord.com/blog/how-discord-implemented-app-wide-keyboard-navi
 - The focus indicator is weak. `client/apps/desktop/src/renderer/interface/shared/theme/base.css` line 26 sets `:focus { outline: none; }`, and line 27 adds a `:focus-visible` outline only where the browser supports it.
 - There is no focus-ring component, no systematic ARIA audit and no keyboard-only flow tests.
 
-**Issues:** [client#23](https://github.com/discordy-voics/client/issues/23) (priority p1, accessibility).
+**Issues:** [client#23](https://github.com/voics-app/client/issues/23) (priority p1, accessibility).
 
 ## Decisions added with this research
 

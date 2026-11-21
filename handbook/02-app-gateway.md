@@ -4,8 +4,8 @@ Summary: the realtime WebSocket edge in Elixir: sessions, presence, event fan-ou
 
 | | |
 |---|---|
-| Repository | `discordy-voics/gateway` |
-| Image | `ghcr.io/discordy-voics/gateway` (namespace `voics-apps`, port 4000) |
+| Repository | `voics-app/gateway` |
+| Image | `ghcr.io/voics-app/gateway` (namespace `voics-apps`, port 4000) |
 | Tech | Elixir 1.20 / OTP 29, Phoenix 1.8, brod, Redix, eetcd, libcluster |
 | Owns | Valkey keys `gw:*`, `e2ee:*`, `voice:*`, `presence:*` |
 | Consumes | every `discordy.*.v1` topic, one consumer group per topic |

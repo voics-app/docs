@@ -3,7 +3,7 @@
 - Status: proposed
 - Date: 2026-11-18
 - Deciders: Voics maintainer review
-- Technical story: [messages#23](https://github.com/discordy-voics/messages/issues/23), [atomic accounting](0026-atomic-read-accounting.md)
+- Technical story: [messages#23](https://github.com/voics-app/messages/issues/23), [atomic accounting](0026-atomic-read-accounting.md)
 
 ## Context and Problem Statement
 

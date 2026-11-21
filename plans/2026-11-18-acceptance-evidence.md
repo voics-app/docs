@@ -5,7 +5,7 @@ Summary: concrete testresultaten, gevonden fouten en resterende acceptatievoorwa
 Dit verslag onderscheidt een gecontroleerde ontwikkelwijziging van een productie-
 of app-store-release. De coördinator heeft onderstaande controles zelf uitgevoerd.
 Er zijn geen tweede server, nieuwe VM, clusterjoin of back-upjobs gestart.
-De [Kanban](https://github.com/orgs/discordy-voics/projects/1) bevat per kaart het
+De [Kanban](https://github.com/orgs/voics-app/projects/1) bevat per kaart het
 actuele bewijs; een merge naar develop sluit een brede featurekaart niet automatisch.
 
 ## Mobiele app en media
@@ -22,7 +22,7 @@ laatste desktoppeer vertrok en met camera terugkwam. De laatste fout kwam door
 anonieme ontvangers op lokale uplinksecties van het geconstrueerde SDP-antwoord.
 Die secties zijn nu `recvonly`; echte peerstreams houden hun eigen track-identiteit.
 
-[Client338](https://github.com/discordy-voics/client/pull/338) is na groene CI op
+[Client338](https://github.com/voics-app/client/pull/338) is na groene CI op
 `36cd35e` gemerged als `fba4db0`. De coördinator herhaalde 69 gedeelde voice-/SDP-tests
 en twee echte vertrek-/terugkeercycli met tweerichtingsvideo. Het Android-proces
 bleef hetzelfde; de desktop decodeerde rechtopstaand beeld van 720×1280. In de
@@ -41,8 +41,8 @@ tweede apparaat, camera wisselen en versleutelde media blijven aparte controles.
 
 ## Berichten en bijlagen
 
-[Messages79](https://github.com/discordy-voics/messages/pull/79) en
-[client344](https://github.com/discordy-voics/client/pull/344) leveren wijzigingen
+[Messages79](https://github.com/voics-app/messages/pull/79) en
+[client344](https://github.com/voics-app/client/pull/344) leveren wijzigingen
 van beschrijvingen en spoilerflags na verzending. De Android-bediening is uitgevoerd
 tegen de bijgewerkte berichtendienst. Een tweede account las beide gewijzigde
 bijlagen terug; opnieuw openen toonde dezelfde waarden. Een nieuwe wijziging met
@@ -50,7 +50,7 @@ Cancel liet de eerder opgeslagen waarden intact.
 
 De toestelproef vond daarnaast een verschoven meetrechthoek in de omgekeerde
 berichtenlijst. Een kleine MOVE kon lang indrukken, een avatarknop of inline link
-annuleren. [Client350](https://github.com/discordy-voics/client/pull/350) gebruikt de
+annuleren. [Client350](https://github.com/voics-app/client/pull/350) gebruikt de
 upstream Fabric-correctie in keyboard-controller 1.23.1. De native QA-app is opnieuw
 gebouwd en geïnstalleerd. Lang indrukken met MOVE, avatar/link, spoiler/mention,
 verticaal scrollen en naar links vegen om te antwoorden zijn op de emulator
@@ -69,8 +69,8 @@ typecontrole en lint slagen. De volledige suite met de dependency-update slaagde
 eerder met 1044 tests en vier configuratiecontroles, vóór de laatste layoutwijziging.
 Deze aantallen mogen niet worden verwisseld met native toestelproeven.
 
-De [herhaalbare chatproef](https://github.com/discordy-voics/client/blob/feature/message-long-press-gesture-20261118/docs/native-chat-input.md)
-staat bij de clientcode. De [iOS-native controle op deze wijziging](https://github.com/discordy-voics/client/actions/runs/44255079798)
+De [herhaalbare chatproef](https://github.com/voics-app/client/blob/feature/message-long-press-gesture-20261118/docs/native-chat-input.md)
+staat bij de clientcode. De [iOS-native controle op deze wijziging](https://github.com/voics-app/client/actions/runs/44255079798)
 is geslaagd: de volledige app, ReplayKit-uitbreiding en simulatorproeven voor
 aanmelden en herstel slagen. De overige client-CI loopt nog; fysieke iPhone-
 toetsenbordgebaren, rotatie, VoiceOver en een ondertekende release blijven open.
@@ -87,7 +87,7 @@ toetsenbordgebaren, rotatie, VoiceOver en een ondertekende release blijven open.
 
 ## Ongelezen tellers
 
-[Messages82](https://github.com/discordy-voics/messages/pull/82) is gemerged als
+[Messages82](https://github.com/voics-app/messages/pull/82) is gemerged als
 `bfb8e03` na groene CI op `7b38654`. De coördinator herhaalde vier echte HTTP-
 recipienttests en vijf echte Scylla-tests. Bij 1024 unieke berichten en 2048
 aanroepen via vier onafhankelijke repositories waren er 1465 CAS-conflicten,
