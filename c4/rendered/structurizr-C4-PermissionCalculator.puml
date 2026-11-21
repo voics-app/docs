@@ -1,5 +1,5 @@
 @startuml
-title <size:24>Component View: Discordy - api</size>\n<size:24>Code view: Discord-compatible permission computation (api domain; mirrored in gateway).</size>
+title <size:24>Component View: Voics - api</size>\n<size:24>Code view: Discord-compatible permission computation (api domain; mirrored in gateway).</size>
 
 set separator none
 top to bottom direction
@@ -15,31 +15,31 @@ top to bottom direction
 !include <C4/C4_Context>
 !include <C4/C4_Component>
 
-System_Boundary("Discordy_boundary", "Discordy", $tags="") {
-  Container_Boundary("Discordy.api_boundary", "api", $tags="") {
-    Component(Discordy.api.Guildusecases, "Guild use cases", $techn="Rust", $descr="Guilds, channels, roles, members, overwrites, bans, invites, emojis, audit log.", $tags="", $link="")
-    Component(Discordy.api.PermissionCalculator, "PermissionCalculator", $techn="struct", $descr="Pure service: compute(guild, member, channel?) -> Permissions.", $tags="", $link="")
-    Component(Discordy.api.Permissions, "Permissions", $techn="newtype", $descr="u64 bitfield value object: contains, insert, remove, all(); serialised as a decimal string.", $tags="", $link="")
-    Component(Discordy.api.GuildContext, "GuildContext", $techn="struct", $descr="owner_id, @everyone role, roles by id.", $tags="", $link="")
-    Component(Discordy.api.MemberContext, "MemberContext", $techn="struct", $descr="user_id and assigned role ids.", $tags="", $link="")
-    Component(Discordy.api.PermissionOverwrite, "PermissionOverwrite", $techn="struct", $descr="id, kind (role|member), allow, deny.", $tags="", $link="")
-    Component(Discordy.api.compute_base_permissions, "compute_base_permissions", $techn="fn", $descr="@everyone | member roles; ADMINISTRATOR or owner short-circuits to all().", $tags="", $link="")
-    Component(Discordy.api.apply_overwrites, "apply_overwrites", $techn="fn", $descr="@everyone overwrite, then role denies, role allows, then the member overwrite.", $tags="", $link="")
-    Component(Discordy.api.apply_implicit_denies, "apply_implicit_denies", $techn="fn", $descr="Strips channel-scoped bits when VIEW_CHANNEL is missing; text bits when SEND_MESSAGES is missing.", $tags="", $link="")
+System_Boundary("Voics_boundary", "Voics", $tags="") {
+  Container_Boundary("Voics.api_boundary", "api", $tags="") {
+    Component(Voics.api.Guildusecases, "Guild use cases", $techn="Rust", $descr="Guilds, channels, roles, members, overwrites, bans, invites, emojis, audit log.", $tags="", $link="")
+    Component(Voics.api.PermissionCalculator, "PermissionCalculator", $techn="struct", $descr="Pure service: compute(guild, member, channel?) -> Permissions.", $tags="", $link="")
+    Component(Voics.api.Permissions, "Permissions", $techn="newtype", $descr="u64 bitfield value object: contains, insert, remove, all(); serialised as a decimal string.", $tags="", $link="")
+    Component(Voics.api.GuildContext, "GuildContext", $techn="struct", $descr="owner_id, @everyone role, roles by id.", $tags="", $link="")
+    Component(Voics.api.MemberContext, "MemberContext", $techn="struct", $descr="user_id and assigned role ids.", $tags="", $link="")
+    Component(Voics.api.PermissionOverwrite, "PermissionOverwrite", $techn="struct", $descr="id, kind (role|member), allow, deny.", $tags="", $link="")
+    Component(Voics.api.compute_base_permissions, "compute_base_permissions", $techn="fn", $descr="@everyone | member roles; ADMINISTRATOR or owner short-circuits to all().", $tags="", $link="")
+    Component(Voics.api.apply_overwrites, "apply_overwrites", $techn="fn", $descr="@everyone overwrite, then role denies, role allows, then the member overwrite.", $tags="", $link="")
+    Component(Voics.api.apply_implicit_denies, "apply_implicit_denies", $techn="fn", $descr="Strips channel-scoped bits when VIEW_CHANNEL is missing; text bits when SEND_MESSAGES is missing.", $tags="", $link="")
   }
 
 }
 
-Rel(Discordy.api.PermissionCalculator, Discordy.api.compute_base_permissions, "1. computes base with", $techn="", $tags="", $link="")
-Rel(Discordy.api.PermissionCalculator, Discordy.api.apply_overwrites, "2. applies channel overwrites with", $techn="", $tags="", $link="")
-Rel(Discordy.api.PermissionCalculator, Discordy.api.apply_implicit_denies, "3. applies implicit denies with", $techn="", $tags="", $link="")
-Rel(Discordy.api.compute_base_permissions, Discordy.api.GuildContext, "Reads @everyone and role permissions from", $techn="", $tags="", $link="")
-Rel(Discordy.api.compute_base_permissions, Discordy.api.MemberContext, "Reads role ids from", $techn="", $tags="", $link="")
-Rel(Discordy.api.apply_overwrites, Discordy.api.PermissionOverwrite, "Folds", $techn="", $tags="", $link="")
-Rel(Discordy.api.compute_base_permissions, Discordy.api.Permissions, "Returns", $techn="", $tags="", $link="")
-Rel(Discordy.api.apply_overwrites, Discordy.api.Permissions, "Transforms", $techn="", $tags="", $link="")
-Rel(Discordy.api.apply_implicit_denies, Discordy.api.Permissions, "Transforms", $techn="", $tags="", $link="")
-Rel(Discordy.api.Guildusecases, Discordy.api.PermissionCalculator, "compute(guild, member, channel)", $techn="", $tags="", $link="")
+Rel(Voics.api.PermissionCalculator, Voics.api.compute_base_permissions, "1. computes base with", $techn="", $tags="", $link="")
+Rel(Voics.api.PermissionCalculator, Voics.api.apply_overwrites, "2. applies channel overwrites with", $techn="", $tags="", $link="")
+Rel(Voics.api.PermissionCalculator, Voics.api.apply_implicit_denies, "3. applies implicit denies with", $techn="", $tags="", $link="")
+Rel(Voics.api.compute_base_permissions, Voics.api.GuildContext, "Reads @everyone and role permissions from", $techn="", $tags="", $link="")
+Rel(Voics.api.compute_base_permissions, Voics.api.MemberContext, "Reads role ids from", $techn="", $tags="", $link="")
+Rel(Voics.api.apply_overwrites, Voics.api.PermissionOverwrite, "Folds", $techn="", $tags="", $link="")
+Rel(Voics.api.compute_base_permissions, Voics.api.Permissions, "Returns", $techn="", $tags="", $link="")
+Rel(Voics.api.apply_overwrites, Voics.api.Permissions, "Transforms", $techn="", $tags="", $link="")
+Rel(Voics.api.apply_implicit_denies, Voics.api.Permissions, "Transforms", $techn="", $tags="", $link="")
+Rel(Voics.api.Guildusecases, Voics.api.PermissionCalculator, "compute(guild, member, channel)", $techn="", $tags="", $link="")
 
 SHOW_LEGEND(true)
 hide stereotypes

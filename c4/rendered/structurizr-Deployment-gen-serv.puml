@@ -1,5 +1,5 @@
 @startuml
-title <size:24>Deployment View: Discordy - gen-serv</size>\n<size:24>Production on the owner's Proxmox VM gen-serv (microk8s), behind Cloudflare.</size>
+title <size:24>Deployment View: Voics - gen-serv</size>\n<size:24>Production on the owner's Proxmox VM gen-serv (microk8s), behind Cloudflare.</size>
 
 set separator none
 left to right direction

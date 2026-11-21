@@ -1,5 +1,5 @@
 /*
- * Discordy — C4 model (Structurizr DSL)
+ * Voics — C4 model (Structurizr DSL)
  *
  * Source of truth for every architecture diagram in the docs repo.
  *   C1  System context
@@ -13,7 +13,7 @@
  * Render locally with `make render` (see c4/README.md). CI re-renders on
  * every change and commits the result under c4/rendered/.
  */
-workspace "Discordy" "Discord-equivalent chat, voice, video and screen-share platform (no payments)." {
+workspace "Voics" "Discord-equivalent chat, voice, video and screen-share platform (no payments)." {
 
     !identifiers flat
     !impliedRelationships false
@@ -42,9 +42,9 @@ workspace "Discordy" "Discord-equivalent chat, voice, video and screen-share pla
         onePassword = softwareSystem "1Password" "Holds the OpenBao unseal keys and root token." "External"
 
         # ------------------------------------------------------------------
-        # Discordy (C2 containers, C3 components, C4 code elements)
+        # Voics (C2 containers, C3 components, C4 code elements)
         # ------------------------------------------------------------------
-        discordy = softwareSystem "Discordy" "Real-time chat, voice, video and screen share with three delivery modes." {
+        discordy = softwareSystem "Voics" "Real-time chat, voice, video and screen share with three delivery modes." {
 
             # ---------------- client ----------------
             client = container "Desktop client" "End-user application for Windows (primary), macOS and Linux." "Electron, React, TypeScript, napi-rs" "Desktop" {
@@ -644,14 +644,14 @@ workspace "Discordy" "Discord-equivalent chat, voice, video and screen-share pla
     views {
 
         # ---------------- C1 ----------------
-        systemContext discordy "C1-SystemContext" "Who uses Discordy and which external systems it depends on." {
+        systemContext discordy "C1-SystemContext" "Who uses Voics and which external systems it depends on." {
             include *
             include botDeveloper onePassword
             autolayout lr
         }
 
         # ---------------- C2 ----------------
-        container discordy "C2-Containers" "Deployable units and data stores of Discordy." {
+        container discordy "C2-Containers" "Deployable units and data stores of Voics." {
             include *
             exclude cloudflare router github notion onePassword
             autolayout lr
