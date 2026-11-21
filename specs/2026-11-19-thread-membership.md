@@ -1,7 +1,7 @@
-# Thread browsing and membership (draft)
+# Thread browsing, membership, lock and lifecycle (api#34)
 
-This describes the proposed browse and membership subset of api#34, not completed thread
-parity. The API, gateway, messages and desktop changes remain subject to review and verification.
+Specification of thread parity: browse, join/leave, private threads, lock, archive and
+auto-archive. Gateway and messages protections must ship before the API (see the rollout section).
 
 ## Behavior
 
@@ -27,31 +27,28 @@ private-thread permissions rather than relying on its normal five-second access 
 
 The gateway and messages protections must be available before an API sends the internal state or
 allows membership changes; older gateways can forward unknown internal guild fields to clients.
-This is a deployment dependency, not authorization to deploy. The version and visibility design
-still requires review and end-to-end testing, including removals, rejoin, replay and passive sessions.
+This is a deployment dependency, not authorization to deploy. Verify
+end to end after release: removals, rejoin, replay and passive sessions.
 
-## Proposed lock and lifecycle changes
+## Lock
 
-A separate draft exposes the current `thread_locked` state on internal access and webhook
-routing responses. The corresponding messages and gateway changes reject sends and relays to
-locked threads, including sends with administrator permissions. A thread response without the
-new lock field is treated as locked by updated consumers. Ship the API field before either
-consumer; validate the combined forum-opener path and concurrent lock/send behavior before release.
+The API exposes `thread_locked` on the internal access and webhook-routing responses. Messages
+and the gateway relay path reject sends to locked threads, including senders with administrator
+permissions. A response without the field is treated as locked by updated consumers, so deploy the
+API before either consumer.
 
-The lifecycle draft stores clock-driven inactivity state and puts archive/reopen events in the
-same transaction as the channel change. Its worker is not enabled: ordinary message writes do
-not yet provide durable activity updates. Message count, deletes and historical backfill also need
-an authoritative, retry-safe source. Do not infer successful archiving from the presence of the
-migration or the lifecycle store.
+## Lifecycle and counts
+
+Archive and reopen transitions are stored with the channel change in one transaction and publish
+the usual thread update event. Messages reports each new message to the internal
+`POST /internal/v1/threads/{id}/activity` route, which records the last activity time. A bounded
+worker in the API archives threads after their `auto_archive_duration` of inactivity; a thread that
+was archived automatically is reopened by the next message, while a manual archive stays archived.
+`message_count` on thread responses comes from the authoritative message store through
+`message_counts`, so list and detail responses agree.
 
 ## Verification
 
-A synthetic Electron route covers signing in, browsing a channel?s active threads, joining a
-thread and archiving it. This exercises a local fake backend, not the combined services or live
-delivery.
-
-## Remaining work
-
-Automatic inactivity archiving, unarchive on a new message, message counts, and end-to-end delivery,
-private invitation and notification behavior are not established by this subset. Do not close
-api#34 until its complete acceptance criteria and normal user flow are verified.
+Integration jobs run against disposable PostgreSQL in CI (membership, lifecycle and lock). A
+synthetic Electron route covers browsing a channel's threads, joining and archiving against a fake
+backend. Live end-to-end delivery across services is verified after release, not in CI.

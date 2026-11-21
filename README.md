@@ -1,7 +1,7 @@
 # Voics docs
 
 [Thread membership and browsing](specs/2026-11-19-thread-membership.md) describes the
-in-progress authorization contract, release dependency and remaining parity work.
+membership, lock and auto-archive behaviour and the release order.
 
 [Age-restricted channels](specs/2026-11-18-age-restricted-channels.md): account
 preference and desktop/mobile confirmation boundaries under review for client#76.
