@@ -6,7 +6,7 @@ Desktop user privacy: [Streamer mode](desktop-streamer-mode.md).
 
 | Runbook | Use it when |
 |---|---|
-| [GIF provider](gif-provider.md) | Provider approval, configuration, and verification before enabling GIF search |
+| [GIF provider](gif-provider.md) | Decision record: no GIF picker or provider is offered |
 | [Incident 2026-11-14: image reflector OOM](incident-2026-11-14-image-reflector.md) | Seven stale image scans, a 256Mi crash loop, memory evidence and GitOps recovery |
 | [Incident 2026-10-22: gateway never ready](incident-2026-10-22-gateway-etcd.md) | Gateway 0.3.0/0.4.0 never ready (eetcd already_started); cause, fix, prevention |
 | [Adding a voice region](voice-regions/adding-a-region.md) | Bringing up a new region or another node in a region |

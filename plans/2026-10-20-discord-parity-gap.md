@@ -54,7 +54,7 @@ Status counts in the matrix below: Implemented 32, Partial 25, Missing 50. 66 ne
 | Messaging | Reactions add/remove, custom emoji in picker | Yes | Implemented | - | - | - |
 | Messaging | Reaction details, frequently used, skin tone, remove all | Yes | Partial | - | [client#55](https://github.com/voics-app/client/issues/55) | P1 |
 | Messaging | Stickers | Yes | Missing | - | [api#33](https://github.com/voics-app/api/issues/33) | P1 |
-| Messaging | GIF picker | Yes | Missing | - | [api#32](https://github.com/voics-app/api/issues/32) | P1 |
+| Messaging | GIF picker | Yes | Not offered (owner decision, no provider account) | - | [api#32](https://github.com/voics-app/api/issues/32), closed not planned | - |
 | Messaging | Attachments upload, drag-drop, paste, progress, video/audio | Yes | Implemented | Basic | - | - |
 | Messaging | Lightbox, spoiler, alt text, grids, cancel | Yes | Partial | - | [client#54](https://github.com/voics-app/client/issues/54) | P0 |
 | Messaging | Link unfurling and embeds for user links | Yes | Partial | Bot embeds render only | [messages#12](https://github.com/voics-app/messages/issues/12) | P0 |

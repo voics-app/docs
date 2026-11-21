@@ -155,6 +155,8 @@ Messages render GitHub-style pipe tables: a header row, a delimiter row (`|---|`
 
 Dynamic timestamps (`<t:unix:format>`, formats `t T d D f F R`) show in each reader's time zone with the full date and time on hover. To write one, type `@time` in the composer or press the clock button: pick a date, a time and a format (the list previews each one) and Insert adds the timestamp at the cursor. The model is `domain/timestampPicker.ts`.
 
+There is no GIF picker: Voics does not use a GIF provider. Animated GIFs can still be attached or pasted as direct links and render as images (see `runbooks/gif-provider.md`).
+
 ## Media viewer
 
 Images and videos open in one lightbox with the same chrome: Save as, Open original and a Close button; clicking outside the media and Esc also close it. The video player's own fullscreen button is hidden there.

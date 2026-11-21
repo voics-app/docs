@@ -68,7 +68,7 @@ do not reuse the owner's broad GitHub CLI OAuth token as a cluster credential.
 
 ### api_community
 
-- [ ] [api#32](https://github.com/voics-app/api/issues/32): Discord parity: GIF picker (Tenor-compatible provider proxy)
+- [x] [api#32](https://github.com/voics-app/api/issues/32): Discord parity: GIF picker. Closed as not planned: no GIF provider will be configured
 - [ ] [api#33](https://github.com/voics-app/api/issues/33): Discord parity: stickers (server stickers and a built-in pack)
 - [ ] [api#34](https://github.com/voics-app/api/issues/34): Discord parity: threads parity (browse, join/leave, archive, lock, private threads, members)
 - [ ] [api#35](https://github.com/voics-app/api/issues/35): Discord parity: forum channels parity (tags, sorting, guidelines, post list)

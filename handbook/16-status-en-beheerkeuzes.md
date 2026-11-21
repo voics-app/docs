@@ -71,7 +71,7 @@ De [mobiele handleiding](14-handleiding-mobiele-app.md) en [desktophandleiding](
 | Juridische naam / teksten | Naam van verantwoordelijke en overige beleidskeuzes expliciet vaststellen; de brede featureopdracht kiest geen juridische identiteit |
 | Frankrijk / encryptie | Frankrijk en China blijven uitgesloten; `ITSAppUsesNonExemptEncryption` blijft false. ANSSI-/BIS-vraagstukken zijn afzonderlijk te beoordelen, geen impliciete goedkeuring |
 | E-mailcredential | Eerdere Brevo-keyrotatie blijft te verifiëren via [het e-mailrunbook](../runbooks/email-brevo.md); geen waarden publiceren |
-| Externe featureproviders | GIF-/accountproviders, bijbehorende voorwaarden en credentials zijn afzonderlijke afhankelijkheden wanneer de feature die nodig heeft |
+| Externe featureproviders | accountproviders (een GIF-picker wordt niet aangeboden, zie runbooks/gif-provider.md), bijbehorende voorwaarden en credentials zijn afzonderlijke afhankelijkheden wanneer de feature die nodig heeft |
 | Alarmkanaal | Historische ops-alerts-actie opnieuw op werkelijke bereikbaarheid controleren; een portalbanner is geen bezorgde externe alarmmelding |
 
 De vroegere algemene vraag ‘Notion-token nog leveren’ is achterhaald: de bestaande mirror heeft al gewerkt. Deze documentatie wordt via de bestaande `main`-workflow bijgewerkt. Succes van eerdere synchronisaties bewijst niet dat deze nieuwe pagina’s al zijn gepubliceerd.
