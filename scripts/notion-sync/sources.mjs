@@ -6,7 +6,7 @@ import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { tableCells, rt } from './md.mjs';
 
-export const GITHUB_ORG = 'https://github.com/discordy-voics';
+export const GITHUB_ORG = 'https://github.com/voics-app';
 export const BRANCH = 'main';
 
 export const slug = (s) =>
@@ -228,7 +228,7 @@ async function serviceRows(catalogPromise) {
   const rows = [];
   for (const s of sections.filter((x) => x.body.some((l) => /^\| Repo \/ /.test(l)))) {
     const kv = kvTable(s.body);
-    const repoName = /discordy-voics\/([\w.-]+)/.exec(kv['Repo / image'] ?? kv['Repo / artefact'] ?? '')?.[1];
+    const repoName = /voics-app\/([\w.-]+)/.exec(kv['Repo / image'] ?? kv['Repo / artefact'] ?? '')?.[1];
     rows.push({ db: 'services', key: `services/catalog.md#${slug(s.name)}`, title: s.name, icon: BACKEND.has(s.name) ? '⚙️' : s.name === 'Desktop client' ? '🖥️' : '📦',
       md: s.body.join('\n').trim(), docPath: 'services/catalog.md', dependsText: kv['Depends on'] ?? '', norm: s.name.toLowerCase(),
       props: { Kind: prop.select(BACKEND.has(s.name) ? 'Service' : s.name === 'Desktop client' ? 'Client' : 'Library'),

@@ -4,8 +4,8 @@ Summary: the single source of truth for every wire contract, with generated Type
 
 | | |
 |---|---|
-| Repository | `discordy-voics/contracts` |
-| Artifacts | npm `@discordy-voics/contracts`, Rust crate `discordy-contracts`, Elixir `Discordy.Contracts` |
+| Repository | `voics-app/contracts` |
+| Artifacts | npm `@voics-app/contracts`, Rust crate `discordy-contracts`, Elixir `Discordy.Contracts` |
 | Catalog entry | [Service catalog: contracts](../services/catalog.md#contracts) |
 
 ## Folder map

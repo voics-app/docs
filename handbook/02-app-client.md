@@ -4,8 +4,8 @@ Summary: the Electron and React desktop app, with a Rust native crypto module.
 
 | | |
 |---|---|
-| Repository | `discordy-voics/client` |
-| Output | Windows NSIS installer on the update feed `https://discordy-updates.voics.nl`; macOS and Linux build from the same sources but CI does not publish them yet |
+| Repository | `voics-app/client` |
+| Output | Windows NSIS installer on the update feed `https://updates.voics.nl` (published by gitops `publish-public`); macOS and Linux build from the same sources but CI does not publish them yet |
 | Tech | Electron, React, Zustand, WebRTC, Rust (napi-rs, OpenMLS) |
 | Catalog entry | [Service catalog: Desktop client](../services/catalog.md#desktop-client) |
 
@@ -132,6 +132,14 @@ Report Message (message menu, other people's messages), Report (user menu and pr
 When a friend request becomes a friendship (the gateway's `RELATIONSHIP_ADD` with type 1, on either side) the client creates the DM with `POST /users/@me/channels` (idempotent), adds it to Direct Messages and reopens it if it had been closed. The top of an empty or fully loaded 1:1 DM shows a large avatar, the display name, the username and "This is the beginning of your direct message history with @name."; while the DM has no messages, a "Wave to name" button sends a wave message and then disappears. Logic in `domain/dmIntro.ts`, view in `interface/features/chat/DmIntro.tsx`.
 
 The profile dialog and the DM profile panel show "Friends since" with the date, read from `Relationship.since`. Clicking the avatar in either one opens it full size in the image viewer. The About me field allows 300 characters (`BIO_MAX_LENGTH`); the api stores and validates the same limit from api 0.13.0.
+
+Server avatars also appear in member rows and hover cards, chat authors and replies,
+command headers, mention/reaction lists, and voice occupants and tiles. These views
+use their explicit server context and the shared profile-image resolver, including
+the `/guilds/<guild>/users/<user>/avatars/<hash>` path. They react to member-profile
+updates; clearing an override restores the global avatar. DMs and account controls
+remain global. An image failure leaves initials, presence and speaking indicators
+visible, and changing the image starts a fresh load attempt.
 
 ## Pinned DMs and pinned channels
 

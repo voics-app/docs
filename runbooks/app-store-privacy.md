@@ -1,6 +1,6 @@
 # App Store privacy answers (iPhone app)
 
-Draft answers for the "App Privacy" section in App Store Connect, derived from what the mobile app and the services do (client `apps/mobile`, api, messages, gateway). The public policy is the website's `privacy.html` ([website PR #11](https://github.com/discordy-voics/website/pull/11)); keep both in step. This is not legal advice; the owner confirms every answer before submitting, because the answers are a declaration to Apple.
+Draft answers for the "App Privacy" section in App Store Connect, derived from what the mobile app and the services do (client `apps/mobile`, api, messages, gateway). The public policy is the website's `privacy.html` ([website PR #11](https://github.com/voics-app/website/pull/11)); keep both in step. This is not legal advice; the owner confirms every answer before submitting, because the answers are a declaration to Apple.
 
 Apple's wording: "collect" means data leaves the device and is kept longer than needed to serve the request in real time. The categories are Apple's: [App privacy details](https://developer.apple.com/app-store/app-privacy-details/).
 

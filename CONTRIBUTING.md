@@ -1,6 +1,6 @@
 # Contributing to Voics
 
-These rules apply to **every** repository in `discordy-voics`. The goal is a codebase any software engineer can pick up: predictable structure, small intention-revealing units, and decisions written down.
+These rules apply to **every** repository in `voics-app`. The goal is a codebase any software engineer can pick up: predictable structure, small intention-revealing units, and decisions written down.
 
 ## Contents
 
@@ -244,7 +244,7 @@ release-please derives the version and the changelog from these messages, so a w
 
 ## Definition of Done
 
-An issue is **done** only when all of these apply. The issue and PR templates (`discordy-voics/.github`) carry the same checklist, and the closing comment says how it was verified.
+An issue is **done** only when all of these apply. The issue and PR templates (`voics-app/.github`) carry the same checklist, and the closing comment says how it was verified.
 
 1. **Merged** to `develop` through a PR with green CI (lint, tests, scan).
 2. **Tested**: tests added or updated; behaviour verified. Use live/e2e checks for calls, message delivery and deployments.

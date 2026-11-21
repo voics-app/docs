@@ -65,8 +65,8 @@ All hosts live in one file per environment: gitops `cluster-config.yaml` (`DISCO
 
 These are remaining legacy identifiers. The owner requested their eventual removal under docs#135. Renaming them needs a **separate migration** (data, secrets, compatibility and deployment together); this guide does not treat them as already removed or as permanently exempt:
 
-- Crate, package and image names: `discordy-*` crates, `@discordy/*`, `@discordy-voics/bots`, `ghcr.io/discordy-voics/*`, class names such as `DiscordyApi`.
-- The GitHub organisation `discordy-voics` and the repository names.
+- Crate, package and image names: `discordy-*` crates, `@discordy/*`, `@voics-app/bots`, `ghcr.io/voics-app/*`, class names such as `DiscordyApi`.
+- The GitHub organisation `voics-app` and the repository names.
 - Kubernetes namespaces (`voics-apps`, `voics-data`, `voics-system`, `voics-voice`), the IngressClass `discordy-nginx`, ConfigMap and Secret names.
 - Env var prefixes such as `DISCORDY_ENV`, `DISCORDY_PROFILE`, `DISCORDY_DOMAIN`.
 - Object storage buckets (`discordy-site`, `discordy-assets`, `discordy-attachments`, `discordy-updates`), the Scylla keyspace `discordy`, the OpenBao `kv/discordy/*` paths and the `RTC_HOST_PREFIX` value.
