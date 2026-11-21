@@ -2,7 +2,7 @@
 
 Summary: wat Voics moet kunnen herstellen, benodigde kopieën, voorgestelde bewaartermijnen en de latere herstelproef.
 
-**Status op 18 november 2026: plan, niet geactiveerd.** Er is geen offsite-bestemming ingericht, geen job of schema geactiveerd en geen herstelproef uitgevoerd. Er is nog geen bewezen RPO of RTO. [gitops#117](https://github.com/discordy-voics/gitops/issues/117) blijft open.
+**Status op 18 november 2026: plan, niet geactiveerd.** Er is geen offsite-bestemming ingericht, geen job of schema geactiveerd en geen herstelproef uitgevoerd. Er is nog geen bewezen RPO of RTO. [gitops#117](https://github.com/voics-app/gitops/issues/117) blijft open.
 
 Productie is live en bevat gebruikersdata. De ene VM, hostpath-volumes en lokale MinIO delen een storingsrisico. Een extra [worker](server-uitbreiden.md), lokale snapshot of kopie in dezelfde MinIO neemt dat niet weg.
 
@@ -31,6 +31,7 @@ De vorige tekst beschreef geplande jobs alsof ze draaiden. Die claims en instruc
 | Postgres `discordy_admin` | Beheerdersdata, schema en rollen afzonderlijk meenemen |
 | Postgres `discordy_search` | Afgeleide zoekindex; herbouwbaar vanuit Scylla, maar backfill/checkpoints kosten tijd en moeten zijn getest |
 | Scylla-keyspace `discordy` | Berichten, reacties, pins, read states; schema, volledige SSTablecomponenten en migratiestatus |
+| Voorgestelde poll-keyspace `<SCYLLA_KEYSPACE>_polls` | Stemrevisies, tellingen, definitieve/verwijderde status en vervalindex; samen met het hoofdkeyspace back-uppen en herstellen nadat alle poll-writers/workers zijn gedraind. Een leeg companion-keyspace is geen geldige nulstand. Zie [ADR0029](../adr/0029-persistent-polls.md). |
 | MinIO | Gebruikersassets/bijlagen met metadata en beleid; daarna updatefeed, installers, website en uitnodigingspagina’s |
 | OpenBao | Consistente PebbleDB-data, configuratie, versie en secret-inventaris; static seal key onafhankelijk bewaren |
 | Kubernetes-etcd | Clusterobjecten, PVC-/PV-koppelingen, Secrets; gevoelige data. Niet dezelfde etcd als voice-discovery |

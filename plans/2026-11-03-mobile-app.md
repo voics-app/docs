@@ -6,7 +6,7 @@ Why now: mobile was a written non-goal of the v1 spec ("Web and mobile clients i
 
 ## Owner decisions needed first
 
-Tracked in [docs#10](https://github.com/discordy-voics/docs/issues/10) with `needs:owner`. M0 can start before 1 and 2 are answered. TestFlight (end of M1) cannot.
+Tracked in [docs#10](https://github.com/voics-app/docs/issues/10) with `needs:owner`. M0 can start before 1 and 2 are answered. TestFlight (end of M1) cannot.
 
 1. **Apple Developer account** ($99 a year, created by the owner, an individual or organization account). Only needed for TestFlight and the App Store, not to write the code.
 2. **Stack:** approve ADR 0024 (React Native with Expo in the client monorepo), or choose native Swift.
@@ -19,11 +19,11 @@ Tracked in [docs#10](https://github.com/discordy-voics/docs/issues/10) with `nee
 | Need | Status |
 |---|---|
 | REST API (`/api/v1`), auth, 2FA, guilds, channels, messages, DMs, attachments on the CDN | ready |
-| Gateway (Elixir, WebSocket, resume) | ready. Mobile networks drop often, so resume and passive sessions ([gateway#12](https://github.com/discordy-voics/gateway/issues/12)) and zstd ([gateway#11](https://github.com/discordy-voics/gateway/issues/11)) start to matter |
+| Gateway (Elixir, WebSocket, resume) | ready. Mobile networks drop often, so resume and passive sessions ([gateway#12](https://github.com/voics-app/gateway/issues/12)) and zstd ([gateway#11](https://github.com/voics-app/gateway/issues/11)) start to matter |
 | Voice signalling plus str0m SFU (WebRTC) | ready for clear calls. E2EE calls use DAVE frame encryption through `RTCRtpScriptTransform`, which `react-native-webrtc` does not offer: M3 |
 | **Push notifications** (APNs for iOS, FCM for Android) | **missing.** A phone app is useless without them: it only receives gateway events while it's open |
 | CORS | not an issue: native apps send no browser origin |
-| QR login ([gateway#17](https://github.com/discordy-voics/gateway/issues/17)) | parked as "needs a mobile client". The phone scans the desktop's QR code. M4 |
+| QR login ([gateway#17](https://github.com/voics-app/gateway/issues/17)) | parked as "needs a mobile client". The phone scans the desktop's QR code. M4 |
 | Native crypto (`native/crypto`: OpenMLS, Ed25519, encrypted SQLite, napi-rs) | desktop only. Needs an iOS/Android build plus a JSI binding: M3 |
 
 ## Architecture
@@ -53,8 +53,8 @@ client/                          (pnpm monorepo, already exists)
 | Piece | Where | What |
 |---|---|---|
 | Device push tokens | api | `POST/DELETE /users/@me/devices/push` stores an APNs or FCM token per device. The tables live next to the existing devices |
-| Notifier | new worker (Rust), next to `messages` | Consumes the same dispatch event topics the gateway fans out from (Redpanda). Decides who gets a push using the existing notification settings ([api#28](https://github.com/discordy-voics/api/issues/28): mutes, @mentions only, DMs). Skips users with an active gateway session on that device. Sends to APNs (token auth, a `.p8` key in OpenBao) and FCM (a service account in OpenBao) |
-| Back-pressure | notifier | [api#20](https://github.com/discordy-voics/api/issues/20) (bounded queue, drop or merge per user) |
+| Notifier | new worker (Rust), next to `messages` | Consumes the same dispatch event topics the gateway fans out from (Redpanda). Decides who gets a push using the existing notification settings ([api#28](https://github.com/voics-app/api/issues/28): mutes, @mentions only, DMs). Skips users with an active gateway session on that device. Sends to APNs (token auth, a `.p8` key in OpenBao) and FCM (a service account in OpenBao) |
+| Back-pressure | notifier | [api#20](https://github.com/voics-app/api/issues/20) (bounded queue, drop or merge per user) |
 | Privacy | notifier | Encrypted modes never put message text in a push; the push only says "New message". Standard messages carry a preview unless the user turns previews off |
 | Ops | gitops | Deployment, OpenBao paths for the APNs key and FCM credentials, alerts on send failures. Definition of Done: Terraform, bootstrap, env.sh, overlays |
 

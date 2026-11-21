@@ -31,7 +31,7 @@ Chosen option: **1**.
 - **Inventory first.** Existing workloads are inventoried before anything is installed and are left untouched.
 - **Isolation.** Voics lives only in its own namespaces: `voics-apps`, `voics-data`, `voics-voice`, `voics-system`, `observability` and `flux-system`.
 - **Add-ons.** Only `dns`, `hostpath-storage` and `metrics-server` are enabled.
-- **Flux.** Flux is bootstrapped to `discordy-voics/gitops` at `clusters/gen-serv`. Infrastructure controllers and configs are applied before apps, and regions last.
+- **Flux.** Flux is bootstrapped to `voics-app/gitops` at `clusters/gen-serv`. Infrastructure controllers and configs are applied before apps, and regions last.
 - **Resource limits.** Every component sets requests and limits. ScyllaDB runs in developer mode with 1 core and about 1.5 GB, and Redpanda runs with `--smp 1 --memory 1G`.
 - **Monitoring.** The host's Prometheus snap is not touched. Voics brings VictoriaMetrics and Grafana into `observability`.
 

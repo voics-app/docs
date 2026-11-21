@@ -3,7 +3,7 @@
 - Status: accepted
 - Date: 2026-10-22
 - Deciders: @oussamaelhajoui
-- Technical story: [gitops#39](https://github.com/discordy-voics/gitops/issues/39)
+- Technical story: [gitops#39](https://github.com/voics-app/gitops/issues/39)
 - Related: [ADR 0006](0006-secrets-flow.md), [OpenBao unseal runbook](../runbooks/openbao-unseal.md), see also [ADR 0023](0023-openbao-transit-seal.md) (proposed transit seal follow-up)
 
 ## Context and Problem Statement
@@ -51,4 +51,4 @@ Chosen option: **1 now, 2 as a follow-up** once the dev VM or the 3-node cluster
 - Reboots no longer need the owner. Verified on production: a deleted pod came back unsealed and the `ClusterSecretStore` stayed `Valid` ([runbook](../runbooks/openbao-unseal.md#restart-test-2026-10-22)).
 - `bootstrap/20-openbao.sh` creates the Secret first, initialises with recovery keys, and finishes a Shamir migration if it finds one. `SEAL_MODE=static` is the default for `gen-serv` and `dev` (`clusters/*/env.conf`).
 - Disaster recovery now needs two owner-held items: the recovery keys and the seal key.
-- Follow-up: transit seal against a second OpenBao ([gitops backlog](https://github.com/discordy-voics/gitops/issues)).
+- Follow-up: transit seal against a second OpenBao ([gitops backlog](https://github.com/voics-app/gitops/issues)).

@@ -31,7 +31,7 @@ Deployment_Node(genserv.Homenetwork, "Home network", $type="LAN 192.168.1.0/24",
   Deployment_Node(genserv.Homenetwork.Proxmoxhost, "Proxmox host", $type="Proxmox VE", $descr="", $tags="", $link="") {
     Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv, "gen-serv", $type="Ubuntu VM, microk8s 1.35", $descr="192.168.1.212, 7.6 GB RAM (16 GB recommended)", $tags="", $link="") {
       Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv.fluxsystem, "flux-system", $type="Kubernetes namespace", $descr="", $tags="", $link="") {
-        Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv.fluxsystem.Flux, "Flux", $type="Flux v2", $descr="Reconciles discordy-voics/gitops; image automation on semver tags.", $tags="", $link="")
+        Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv.fluxsystem.Flux, "Flux", $type="Flux v2", $descr="Reconciles voics-app/gitops; image automation on semver tags.", $tags="", $link="")
       }
 
       Deployment_Node(genserv.Homenetwork.Proxmoxhost.genserv.voicssystem, "voics-system", $type="Kubernetes namespace", $descr="", $tags="", $link="") {

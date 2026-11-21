@@ -4,8 +4,8 @@ Summary: the TypeScript SDK for building bots on Voics.
 
 | | |
 |---|---|
-| Repository | `discordy-voics/bots-sdk` |
-| Package | npm `@discordy-voics/bots` on GitHub Packages (Node.js 22 or newer) |
+| Repository | `voics-app/bots-sdk` |
+| Package | npm `@voics-app/bots` on GitHub Packages (Node.js 22 or newer) |
 | Catalog entry | [Service catalog: bots-sdk](../services/catalog.md#bots-sdk) |
 
 ## What it provides
@@ -32,4 +32,4 @@ make test && make lint
 make docs            # regenerate docs/api
 ```
 
-Install by pointing the `@discordy-voics` scope at `https://npm.pkg.github.com` in `.npmrc`. Releases tag `vX.Y.Z` and publish the package.
+Install by pointing the `@voics-app` scope at `https://npm.pkg.github.com` in `.npmrc`. Releases tag `vX.Y.Z` and publish the package.
