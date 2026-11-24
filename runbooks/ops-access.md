@@ -23,7 +23,36 @@ How the owner reaches the operator tools of the gen-serv cluster, and how that a
 | MinIO console | <https://discordy-minio.voics.nl> | MinIO root user + password | root |
 | Redpanda Console | <https://discordy-redpanda.voics.nl> | none | full |
 | OpenBao UI | <https://discordy-openbao.voics.nl> | Username method, user `owner` (created by `gitops/bootstrap/22-openbao-owner-admin.sh`) | policy `owner-admin` (everything) |
-| Admin panel | <https://discordy-admin.voics.nl> | none beyond Access; admin-bff also checks `ADMIN_ALLOWED_EMAILS` | platform admin; panel data sources and gaps in [the admin handbook](../handbook/02-app-admin.md#production-data-sources-verified-on-gen-serv-v016-2026-10-22) |
+| Admin panel | Primary: <https://admin.voics.nl>; fallback: <https://discordy-admin.voics.nl> | none beyond Access; admin-bff also checks `ADMIN_ALLOWED_EMAILS` | platform admin; panel data sources and gaps in [the admin handbook](../handbook/02-app-admin.md#production-data-sources-verified-on-gen-serv-v016-2026-10-22) |
+
+### Admin panel: two Access applications
+
+The primary and fallback hostnames are separate owner-only Cloudflare Access applications.
+The admin BFF must validate the audience for the **requested host**:
+
+| Host | Cloudflare Access audience (`AUD`) |
+|---|---|
+| `admin.voics.nl` | `951aad1dba52a0533bf64d66d7356055917f48f3cf85cdbf4ab13ca331a60a79` |
+| `discordy-admin.voics.nl` | `f90db405248de81f32bfc0432b8aea3743d40e2a83b2bfb7575a3c544b7f0a72` |
+
+The intended `CF_ACCESS_HOST_AUDIENCES` setting maps these exact hostnames to their respective audiences in the
+[GitOps production admin overlay](https://github.com/voics-app/gitops/blob/main/apps/admin/production/kustomization.yaml).
+`CF_ACCESS_TEAM_DOMAIN` identifies the issuer; `CF_ACCESS_AUD` remains the legacy
+single-audience setting. The audience identifies the Access application, whereas
+`ADMIN_ALLOWED_EMAILS` is the BFF's separate allowlist of people allowed to administer.
+Passing Access alone does not grant admin access.
+
+**Status, 20 November 2026:** production admin 0.5.0 opens Overview and Audit log on
+the fallback host, while the primary host's API reports `InvalidAudience`. The 0.5.1
+host-mapping fix is available only after its image and production configuration are rolled out;
+do not assume it is live. Track [admin#36](https://github.com/voics-app/admin/issues/36).
+Until rollout is verified, use the fallback host.
+
+After rollout, sign in through Cloudflare Access separately on **each** hostname and open
+Overview on each. Confirm the page loads its data without an audience or authorization error;
+a successful Access login or the SPA shell alone is not sufficient. Check Audit log as an
+additional read-only page. If either host fails, compare its Access app audience with its exact
+mapping and confirm the Access email is in `ADMIN_ALLOWED_EMAILS` before changing anything.
 
 The owner asked for full admin rights on every tool (2026-10-20). The Kubernetes Dashboard (and the microk8s `dashboard` addon built on it) was **retired by the Kubernetes project in January 2026**; Headlamp is its successor, and its Flux plugin shows Kustomizations, HelmReleases, sources and image automation, with reconcile and suspend actions.
 
@@ -53,4 +82,4 @@ You get 403 everywhere. Change `OPS_ALLOWED_CIDRS` in `gitops/infrastructure/con
 | 530 / 1033 from Cloudflare | Tunnel down: `kubectl -n voics-system get pods \| grep cloudflared` |
 | Headlamp "unauthorized" | The token expired; create a new one |
 | Headlamp shows nothing before sign-in | Expected: the Headlamp pod has no rights of its own since RBAC was enabled (2026-11-03); sign in with a `headlamp-admin` token. Who has what: [access control](access-control.md) |
-| Admin panel 401/403 | `ADMIN_ALLOWED_EMAILS` does not list the Access email, or `CF_ACCESS_AUD` no longer matches the Access app |
+| Admin panel 401/403 | Check the host-specific Access audience and the separate `ADMIN_ALLOWED_EMAILS` gate; see [Admin panel: two Access applications](#admin-panel-two-access-applications) |

@@ -8,7 +8,7 @@ Summary: the operator portal, a Rust backend-for-frontend with an embedded React
 | Image | `ghcr.io/voics-app/admin-bff` (namespace `voics-apps`, port 8090; the SPA is embedded) |
 | Tech | Rust 1.99, axum, sqlx; React, Vite, Recharts |
 | Owns | Postgres database `discordy_admin` (minute, hour and day rollups of event counters) |
-| URL | `https://discordy-admin.voics.nl` behind the IP lock and Cloudflare Access ([Ops and access](04-ops-and-access.md)) |
+| URL | Primary: <https://admin.voics.nl>; fallback: <https://discordy-admin.voics.nl>, behind the IP lock and Cloudflare Access ([admin access and current rollout status](../runbooks/ops-access.md#admin-panel-two-access-applications)) |
 | Catalog entry | [Service catalog: admin](../services/catalog.md#admin-bff--admin-web) |
 
 ## What it does
@@ -39,7 +39,7 @@ Page `/notify` (<https://discordy-admin.voics.nl/notify>, sidebar entry *Send no
 
 ## Auth
 
-Cloudflare Access issues a JWT verified against the team JWKS (`CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD`), then the email must be in `ADMIN_ALLOWED_EMAILS`. With `DISCORDY_ENV=local` the header `X-Dev-Admin-Email` replaces the token; production ignores it.
+Cloudflare Access issues a JWT verified against the team JWKS (`CF_ACCESS_TEAM_DOMAIN`) and the configured application audience; the email must separately be in `ADMIN_ALLOWED_EMAILS`. After the 0.5.1 fix and production configuration are deployed, `CF_ACCESS_HOST_AUDIENCES` binds each admin host to its own audience; without it, the legacy `CF_ACCESS_AUD` applies. See [admin access](../runbooks/ops-access.md#admin-panel-two-access-applications) for the host mapping, rollout status and verification. With `DISCORDY_ENV=local` the header `X-Dev-Admin-Email` replaces the token; production ignores it.
 
 ## Run, test, release
 
